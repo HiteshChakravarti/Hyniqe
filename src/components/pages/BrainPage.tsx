@@ -92,28 +92,28 @@ export function BrainPage({ onBack, onNavigate }: BrainPageProps) {
   return (
     <div className="min-h-screen bg-white">
       {/* Hero Section */}
-      <section className="relative overflow-hidden py-20 px-6 bg-gradient-to-br from-purple-50/50 via-white to-cyan-50/30">
+      <section className="relative overflow-hidden py-12 md:py-16 lg:py-20 px-4 md:px-6 bg-gradient-to-br from-purple-50/50 via-white to-cyan-50/30">
         {/* Background Effects */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute top-0 left-1/4 w-96 h-96 bg-purple-200/30 rounded-full blur-3xl"></div>
-          <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-cyan-200/30 rounded-full blur-3xl"></div>
+          <div className="absolute top-0 left-1/4 w-64 h-64 md:w-96 md:h-96 bg-purple-200/30 rounded-full blur-3xl"></div>
+          <div className="absolute bottom-0 right-1/4 w-64 h-64 md:w-96 md:h-96 bg-cyan-200/30 rounded-full blur-3xl"></div>
         </div>
 
         <div className="relative max-w-6xl mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="text-center mb-16"
+            className="text-center mb-8 md:mb-12 lg:mb-16"
           >
-            <h1 className="text-5xl md:text-6xl lg:text-7xl mb-6 bg-gradient-to-r from-purple-600 via-purple-500 to-cyan-500 bg-clip-text text-transparent">
+            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl mb-4 md:mb-6 bg-gradient-to-r from-purple-600 via-purple-500 to-cyan-500 bg-clip-text text-transparent px-2">
               Unlock the Power of<br />Personalized AI with Brain AI
             </h1>
-            <p className="text-xl text-[#52525b] max-w-4xl mx-auto mb-8 leading-relaxed">
+            <p className="text-sm sm:text-base md:text-lg lg:text-xl text-[#52525b] max-w-4xl mx-auto mb-6 md:mb-8 leading-relaxed px-4">
               Empower your AI helpers with context-rich knowledge, tailored to your brand or business. Brain AI centralizes the knowledge you choose to save—documents, conversations, past campaigns, key insights, knowledge bases, client notes, and more—so every AI assistant you use becomes smarter, faster, and hyper-personalized. No more repeating yourself, no more scattered data. Just seamless, context-aware conversations powered intelligently across teams from day one.
             </p>
             <button 
               onClick={() => onNavigate?.('auth')}
-              className="px-8 py-4 bg-[#a78bfa] text-white rounded-full hover:scale-105 transition-transform shadow-lg hover:shadow-xl"
+              className="px-6 md:px-8 py-3 md:py-4 bg-[#a78bfa] text-white rounded-full hover:scale-105 transition-transform shadow-lg hover:shadow-xl text-sm md:text-base"
             >
               Create your first Brain Profile
             </button>
@@ -124,7 +124,7 @@ export function BrainPage({ onBack, onNavigate }: BrainPageProps) {
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: 0.3 }}
-            className="relative max-w-4xl mx-auto h-[500px] flex items-center justify-center"
+            className="relative max-w-4xl mx-auto h-[350px] sm:h-[450px] md:h-[500px] lg:h-[550px] flex items-center justify-center px-2"
           >
             {/* Central Brain Image */}
             <motion.div
@@ -132,7 +132,7 @@ export function BrainPage({ onBack, onNavigate }: BrainPageProps) {
                 y: [0, -15, 0],
               }}
               transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
-              className="relative z-10 w-80 h-80"
+              className="relative z-10 w-40 h-40 sm:w-56 sm:h-56 md:w-72 md:h-72 lg:w-80 lg:h-80"
             >
               <img 
                 src={brainImage}
@@ -152,15 +152,15 @@ export function BrainPage({ onBack, onNavigate }: BrainPageProps) {
               style={{
                 y: [0, -10, 0],
               }}
-              className="absolute top-12 left-8 md:left-20 bg-white/90 backdrop-blur-md border border-purple-200 rounded-2xl p-4 shadow-xl max-w-[220px]"
+              className="absolute top-2 sm:top-6 md:top-12 left-1 sm:left-4 md:left-8 lg:left-20 bg-white/90 backdrop-blur-md border border-purple-200 rounded-xl md:rounded-2xl p-2 sm:p-3 md:p-4 shadow-xl max-w-[120px] sm:max-w-[160px] md:max-w-[220px]"
             >
-              <div className="flex items-center gap-3 mb-2">
-                <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center">
-                  <FileText className="w-4 h-4 text-purple-600" />
+              <div className="flex items-center gap-2 md:gap-3 mb-1 md:mb-2">
+                <div className="w-6 h-6 md:w-8 md:h-8 bg-purple-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                  <FileText className="w-3 h-3 md:w-4 md:h-4 text-purple-600" />
                 </div>
-                <span className="text-sm font-medium text-[#18181b]">Documents</span>
+                <span className="text-[10px] sm:text-xs md:text-sm font-medium text-[#18181b]">Documents</span>
               </div>
-              <p className="text-xs text-[#71717a]">PDFs, files, brand guidelines</p>
+              <p className="text-[8px] sm:text-[10px] md:text-xs text-[#71717a] hidden sm:block">PDFs, brand files</p>
             </motion.div>
 
             {/* Top Right - Context */}
@@ -171,15 +171,15 @@ export function BrainPage({ onBack, onNavigate }: BrainPageProps) {
               style={{
                 y: [0, -15, 0],
               }}
-              className="absolute top-20 right-8 md:right-20 bg-white/90 backdrop-blur-md border border-cyan-200 rounded-2xl p-4 shadow-xl max-w-[220px]"
+              className="absolute top-6 sm:top-12 md:top-20 right-1 sm:right-4 md:right-8 lg:right-20 bg-white/90 backdrop-blur-md border border-cyan-200 rounded-xl md:rounded-2xl p-2 sm:p-3 md:p-4 shadow-xl max-w-[120px] sm:max-w-[160px] md:max-w-[220px]"
             >
-              <div className="flex items-center gap-3 mb-2">
-                <div className="w-8 h-8 bg-cyan-100 rounded-lg flex items-center justify-center">
-                  <MessageSquare className="w-4 h-4 text-cyan-600" />
+              <div className="flex items-center gap-2 md:gap-3 mb-1 md:mb-2">
+                <div className="w-6 h-6 md:w-8 md:h-8 bg-cyan-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                  <MessageSquare className="w-3 h-3 md:w-4 md:h-4 text-cyan-600" />
                 </div>
-                <span className="text-sm font-medium text-[#18181b]">Conversations</span>
+                <span className="text-[10px] sm:text-xs md:text-sm font-medium text-[#18181b]">Chats</span>
               </div>
-              <p className="text-xs text-[#71717a]">Past chats, key insights</p>
+              <p className="text-[8px] sm:text-[10px] md:text-xs text-[#71717a] hidden sm:block">Past insights</p>
             </motion.div>
 
             {/* Middle Left - Integrations */}
@@ -190,15 +190,15 @@ export function BrainPage({ onBack, onNavigate }: BrainPageProps) {
               style={{
                 y: [0, -12, 0],
               }}
-              className="absolute left-2 md:left-8 top-1/2 -translate-y-1/2 bg-white/90 backdrop-blur-md border border-blue-200 rounded-2xl p-4 shadow-xl max-w-[200px]"
+              className="absolute left-0 sm:left-1 md:left-2 lg:left-8 top-1/2 -translate-y-1/2 bg-white/90 backdrop-blur-md border border-blue-200 rounded-xl md:rounded-2xl p-2 sm:p-3 md:p-4 shadow-xl max-w-[100px] sm:max-w-[140px] md:max-w-[200px]"
             >
-              <div className="flex items-center gap-3 mb-2">
-                <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
-                  <Zap className="w-4 h-4 text-blue-600" />
+              <div className="flex items-center gap-1 sm:gap-2 md:gap-3 mb-1 md:mb-2">
+                <div className="w-6 h-6 md:w-8 md:h-8 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                  <Zap className="w-3 h-3 md:w-4 md:h-4 text-blue-600" />
                 </div>
-                <span className="text-sm font-medium text-[#18181b]">Integrations</span>
+                <span className="text-[10px] sm:text-xs md:text-sm font-medium text-[#18181b]">Apps</span>
               </div>
-              <p className="text-xs text-[#71717a]">Gmail, Calendar, Sheets</p>
+              <p className="text-[8px] sm:text-[10px] md:text-xs text-[#71717a] hidden sm:block">Gmail</p>
             </motion.div>
 
             {/* Middle Right - Knowledge Base */}
@@ -209,15 +209,15 @@ export function BrainPage({ onBack, onNavigate }: BrainPageProps) {
               style={{
                 y: [0, -8, 0],
               }}
-              className="absolute right-2 md:right-8 top-1/2 -translate-y-1/2 bg-white/90 backdrop-blur-md border border-pink-200 rounded-2xl p-4 shadow-xl max-w-[200px]"
+              className="absolute right-0 sm:right-1 md:right-2 lg:right-8 top-1/2 -translate-y-1/2 bg-white/90 backdrop-blur-md border border-pink-200 rounded-xl md:rounded-2xl p-2 sm:p-3 md:p-4 shadow-xl max-w-[100px] sm:max-w-[140px] md:max-w-[200px]"
             >
-              <div className="flex items-center gap-3 mb-2">
-                <div className="w-8 h-8 bg-pink-100 rounded-lg flex items-center justify-center">
-                  <Database className="w-4 h-4 text-pink-600" />
+              <div className="flex items-center gap-1 sm:gap-2 md:gap-3 mb-1 md:mb-2">
+                <div className="w-6 h-6 md:w-8 md:h-8 bg-pink-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                  <Database className="w-3 h-3 md:w-4 md:h-4 text-pink-600" />
                 </div>
-                <span className="text-sm font-medium text-[#18181b]">Knowledge</span>
+                <span className="text-[10px] sm:text-xs md:text-sm font-medium text-[#18181b]">Data</span>
               </div>
-              <p className="text-xs text-[#71717a]">Client notes, campaigns</p>
+              <p className="text-[8px] sm:text-[10px] md:text-xs text-[#71717a] hidden sm:block">Notes</p>
             </motion.div>
 
             {/* Bottom Left - AI Helpers */}
@@ -228,15 +228,15 @@ export function BrainPage({ onBack, onNavigate }: BrainPageProps) {
               style={{
                 y: [0, -14, 0],
               }}
-              className="absolute bottom-16 left-12 md:left-24 bg-white/90 backdrop-blur-md border border-orange-200 rounded-2xl p-4 shadow-xl max-w-[220px]"
+              className="absolute bottom-6 sm:bottom-12 md:bottom-16 left-2 sm:left-8 md:left-12 lg:left-24 bg-white/90 backdrop-blur-md border border-orange-200 rounded-xl md:rounded-2xl p-2 sm:p-3 md:p-4 shadow-xl max-w-[120px] sm:max-w-[160px] md:max-w-[220px]"
             >
-              <div className="flex items-center gap-3 mb-2">
-                <div className="w-8 h-8 bg-orange-100 rounded-lg flex items-center justify-center">
-                  <Users className="w-4 h-4 text-orange-600" />
+              <div className="flex items-center gap-2 md:gap-3 mb-1 md:mb-2">
+                <div className="w-6 h-6 md:w-8 md:h-8 bg-orange-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                  <Users className="w-3 h-3 md:w-4 md:h-4 text-orange-600" />
                 </div>
-                <span className="text-sm font-medium text-[#18181b]">AI Helpers</span>
+                <span className="text-[10px] sm:text-xs md:text-sm font-medium text-[#18181b]">Helpers</span>
               </div>
-              <p className="text-xs text-[#71717a]">Esha, Karo, Nivi, Orin, Turbo</p>
+              <p className="text-[8px] sm:text-[10px] md:text-xs text-[#71717a] hidden sm:block">AI Team</p>
             </motion.div>
 
             {/* Bottom Right - Brand Profiles */}
@@ -247,33 +247,33 @@ export function BrainPage({ onBack, onNavigate }: BrainPageProps) {
               style={{
                 y: [0, -10, 0],
               }}
-              className="absolute bottom-12 right-12 md:right-24 bg-white/90 backdrop-blur-md border border-green-200 rounded-2xl p-4 shadow-xl max-w-[220px]"
+              className="absolute bottom-4 sm:bottom-8 md:bottom-12 right-2 sm:right-8 md:right-12 lg:right-24 bg-white/90 backdrop-blur-md border border-green-200 rounded-xl md:rounded-2xl p-2 sm:p-3 md:p-4 shadow-xl max-w-[120px] sm:max-w-[160px] md:max-w-[220px]"
             >
-              <div className="flex items-center gap-3 mb-2">
-                <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
-                  <Sparkles className="w-4 h-4 text-green-600" />
+              <div className="flex items-center gap-2 md:gap-3 mb-1 md:mb-2">
+                <div className="w-6 h-6 md:w-8 md:h-8 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                  <Sparkles className="w-3 h-3 md:w-4 md:h-4 text-green-600" />
                 </div>
-                <span className="text-sm font-medium text-[#18181b]">5 Profiles</span>
+                <span className="text-[10px] sm:text-xs md:text-sm font-medium text-[#18181b]">Profiles</span>
               </div>
-              <p className="text-xs text-[#71717a]">Multi-brand switching</p>
+              <p className="text-[8px] sm:text-[10px] md:text-xs text-[#71717a] hidden sm:block">Multi-brand</p>
             </motion.div>
           </motion.div>
         </div>
       </section>
 
       {/* Your Business, Your Knowledge Section */}
-      <section className="py-20 px-6 bg-gradient-to-b from-white via-purple-50/20 to-white">
+      <section className="py-12 md:py-16 lg:py-20 px-4 md:px-6 bg-gradient-to-b from-white via-purple-50/20 to-white">
         <div className="max-w-7xl mx-auto">
-          <div className="grid lg:grid-cols-2 gap-16 items-center">
+          <div className="grid lg:grid-cols-2 gap-8 md:gap-12 lg:gap-16 items-center">
             <motion.div
               initial={{ opacity: 0, x: -20 }}
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true }}
             >
-              <h2 className="text-4xl md:text-5xl mb-6 text-[#18181b]">
+              <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl mb-4 md:mb-6 text-[#18181b]">
                 Your Business, Your Knowledge.
               </h2>
-              <div className="space-y-4 text-[#52525b] text-lg">
+              <div className="space-y-3 md:space-y-4 text-[#52525b] text-sm sm:text-base md:text-lg">
                 <p>
                   Brain AI is more than just storage — it's advanced software for your business, acting as your digital business brain. Upload docs, webpages, and files to make a comprehensive knowledge base that all your AI helpers can tap into, delivering personalized, on-brand responses and efficiently reducing time and personalized assistance.
                 </p>
@@ -288,72 +288,72 @@ export function BrainPage({ onBack, onNavigate }: BrainPageProps) {
               initial={{ opacity: 0, x: 20 }}
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true }}
-              className="bg-white rounded-3xl shadow-2xl p-6"
+              className="bg-white rounded-2xl md:rounded-3xl shadow-2xl p-4 sm:p-5 md:p-6"
             >
               {/* Header */}
-              <div className="flex items-center justify-between mb-6">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-gradient-to-r from-purple-600 to-pink-600 rounded-xl flex items-center justify-center">
-                    <Brain className="w-6 h-6 text-white" />
+              <div className="flex items-center justify-between mb-4 md:mb-6">
+                <div className="flex items-center gap-2 md:gap-3">
+                  <div className="w-8 h-8 md:w-10 md:h-10 bg-gradient-to-r from-purple-600 to-pink-600 rounded-lg md:rounded-xl flex items-center justify-center">
+                    <Brain className="w-4 h-4 md:w-6 md:h-6 text-white" />
                   </div>
                   <div>
-                    <h3 className="text-gray-900">Brain AI</h3>
-                    <span className="text-xs text-purple-600">Powered by HYNIQE</span>
+                    <h3 className="text-sm md:text-base text-gray-900">Brain AI</h3>
+                    <span className="text-[10px] md:text-xs text-purple-600">Powered by HYNIQE</span>
                   </div>
                 </div>
                 <div className="flex gap-2">
-                  <button className="px-4 py-2 border border-gray-300 rounded-lg text-sm text-gray-700 hover:bg-gray-50">
+                  <button className="px-2 md:px-4 py-1.5 md:py-2 border border-gray-300 rounded-lg text-xs md:text-sm text-gray-700 hover:bg-gray-50">
                     Manage
                   </button>
-                  <button className="px-4 py-2 bg-purple-600 text-white rounded-lg text-sm hover:bg-purple-700">
+                  <button className="px-2 md:px-4 py-1.5 md:py-2 bg-purple-600 text-white rounded-lg text-xs md:text-sm hover:bg-purple-700">
                     Sync
                   </button>
                 </div>
               </div>
 
               {/* Brain Card */}
-              <div className="bg-gradient-to-br from-purple-600 to-purple-800 rounded-2xl p-6 mb-6 text-white">
-                <h4 className="text-lg mb-2 font-semibold">Active Brain Profile: Brand X</h4>
-                <div className="text-sm opacity-90 mb-3 space-y-1">
+              <div className="bg-gradient-to-br from-purple-600 to-purple-800 rounded-xl md:rounded-2xl p-4 md:p-6 mb-4 md:mb-6 text-white">
+                <h4 className="text-sm md:text-lg mb-2 font-semibold">Active Brain Profile: Brand X</h4>
+                <div className="text-xs md:text-sm opacity-90 mb-3 space-y-1">
                   <p>Used by: Esha, Karo, Orin, Nivi, Turbo</p>
                   <p>Power-Ups enabled: 12</p>
                 </div>
-                <div className="grid grid-cols-4 gap-4 mt-4">
+                <div className="grid grid-cols-4 gap-2 md:gap-4 mt-4">
                   {['M', 'Tu', 'W', 'Th'].map((day, i) => (
                     <div key={i} className="text-center">
-                      <div className="text-xs opacity-80 mb-1">{day}</div>
-                      <div className="text-2xl">{15 + i}</div>
+                      <div className="text-[10px] md:text-xs opacity-80 mb-1">{day}</div>
+                      <div className="text-lg md:text-2xl">{15 + i}</div>
                     </div>
                   ))}
                 </div>
               </div>
 
               {/* Integrations */}
-              <div className="mb-6">
-                <div className="flex items-center justify-between mb-4">
-                  <h4 className="text-gray-900">Integrations</h4>
+              <div className="mb-4 md:mb-6">
+                <div className="flex items-center justify-between mb-3 md:mb-4">
+                  <h4 className="text-sm md:text-base text-gray-900">Integrations</h4>
                   <div className="flex gap-2">
-                    <button className="w-6 h-6 rounded-full bg-gray-100 flex items-center justify-center">
-                      <ChevronRight className="w-4 h-4 text-gray-600 rotate-180" />
+                    <button className="w-5 h-5 md:w-6 md:h-6 rounded-full bg-gray-100 flex items-center justify-center">
+                      <ChevronRight className="w-3 h-3 md:w-4 md:h-4 text-gray-600 rotate-180" />
                     </button>
-                    <button className="w-6 h-6 rounded-full bg-gray-100 flex items-center justify-center">
-                      <ChevronRight className="w-4 h-4 text-gray-600" />
+                    <button className="w-5 h-5 md:w-6 md:h-6 rounded-full bg-gray-100 flex items-center justify-center">
+                      <ChevronRight className="w-3 h-3 md:w-4 md:h-4 text-gray-600" />
                     </button>
                   </div>
                 </div>
-                <div className="grid grid-cols-5 gap-3">
+                <div className="grid grid-cols-5 gap-2 md:gap-3">
                   {integrations.map((integration, index) => (
                     <div key={index} className="text-center">
-                      <div className={`w-12 h-12 rounded-xl flex items-center justify-center mb-2 ${
+                      <div className={`w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 rounded-lg md:rounded-xl flex items-center justify-center mb-1 md:mb-2 ${
                         integration.connected ? 'bg-blue-100' : 'bg-gray-100'
                       }`}>
-                        <integration.icon className={`w-6 h-6 ${
+                        <integration.icon className={`w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 ${
                           integration.connected ? 'text-blue-600' : 'text-gray-400'
                         }`} />
                       </div>
-                      <p className="text-xs text-gray-600 truncate">{integration.name}</p>
+                      <p className="text-[10px] md:text-xs text-gray-600 truncate">{integration.name}</p>
                       {integration.connected && (
-                        <p className="text-xs text-green-600">Connected</p>
+                        <p className="text-[10px] md:text-xs text-green-600">Connected</p>
                       )}
                     </div>
                   ))}
@@ -362,27 +362,27 @@ export function BrainPage({ onBack, onNavigate }: BrainPageProps) {
 
               {/* AI Knowledge */}
               <div>
-                <div className="flex items-center justify-between mb-4">
-                  <h4 className="text-gray-900">AI Knowledge</h4>
+                <div className="flex items-center justify-between mb-3 md:mb-4">
+                  <h4 className="text-sm md:text-base text-gray-900">AI Knowledge</h4>
                   <div className="flex gap-2">
-                    <button className="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center">
-                      <Search className="w-4 h-4 text-gray-600" />
+                    <button className="w-7 h-7 md:w-8 md:h-8 rounded-lg bg-gray-100 flex items-center justify-center">
+                      <Search className="w-3 h-3 md:w-4 md:h-4 text-gray-600" />
                     </button>
-                    <button className="px-4 py-2 bg-purple-600 text-white rounded-lg text-sm hover:bg-purple-700 flex items-center gap-1">
-                      <Plus className="w-4 h-4" />
-                      New
+                    <button className="px-2 md:px-4 py-1.5 md:py-2 bg-purple-600 text-white rounded-lg text-xs md:text-sm hover:bg-purple-700 flex items-center gap-1">
+                      <Plus className="w-3 h-3 md:w-4 md:h-4" />
+                      <span className="hidden sm:inline">New</span>
                     </button>
                   </div>
                 </div>
-                <div className="space-y-3">
+                <div className="space-y-2 md:space-y-3">
                   {knowledgeItems.map((item, index) => (
-                    <div key={index} className="flex items-start gap-3 p-3 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors">
-                      <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                        <item.icon className="w-4 h-4 text-purple-600" />
+                    <div key={index} className="flex items-start gap-2 md:gap-3 p-2 md:p-3 bg-gray-50 rounded-lg md:rounded-xl hover:bg-gray-100 transition-colors">
+                      <div className="w-6 h-6 md:w-8 md:h-8 bg-purple-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                        <item.icon className="w-3 h-3 md:w-4 md:h-4 text-purple-600" />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <h5 className="text-sm text-gray-900 mb-1">{item.title}</h5>
-                        <p className="text-xs text-gray-500 truncate">{item.description}</p>
+                        <h5 className="text-xs md:text-sm text-gray-900 mb-0.5 md:mb-1">{item.title}</h5>
+                        <p className="text-[10px] md:text-xs text-gray-500 truncate">{item.description}</p>
                       </div>
                     </div>
                   ))}
@@ -390,7 +390,7 @@ export function BrainPage({ onBack, onNavigate }: BrainPageProps) {
               </div>
 
               {/* Footer Button */}
-              <button className="w-full mt-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl hover:scale-105 transition-transform">
+              <button className="w-full mt-4 md:mt-6 py-2.5 md:py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg md:rounded-xl hover:scale-105 transition-transform text-sm md:text-base">
                 Upload knowledge
               </button>
             </motion.div>
@@ -399,19 +399,19 @@ export function BrainPage({ onBack, onNavigate }: BrainPageProps) {
       </section>
 
       {/* Seamless Brand Switching */}
-      <section className="py-20 px-6 bg-gradient-to-b from-white to-purple-50/30">
+      <section className="py-12 md:py-16 lg:py-20 px-4 md:px-6 bg-gradient-to-b from-white to-purple-50/30">
         <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-12">
-            <h2 className="text-4xl md:text-5xl mb-6 text-[#18181b]">
+          <div className="text-center mb-8 md:mb-12">
+            <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl mb-4 md:mb-6 text-[#18181b] px-4">
               Seamless Brand Switching
             </h2>
-            <p className="text-xl text-[#52525b] max-w-3xl mx-auto">
+            <p className="text-sm sm:text-base md:text-lg lg:text-xl text-[#52525b] max-w-3xl mx-auto px-4">
               Manage up to 5 different Brain AI profiles effortlessly. Perfect for agencies, multi-brand businesses, or personal and professional separation. Switch between profiles instantly for relevant AI interactions across all your domains.
             </p>
           </div>
 
           {/* Tabs */}
-          <div className="flex justify-center gap-4 mb-12">
+          <div className="flex flex-wrap justify-center gap-3 md:gap-4 mb-8 md:mb-12 px-4">
             {[
               { id: 'businesses', label: 'For Businesses' },
               { id: 'agencies', label: 'For Agencies' },
@@ -420,7 +420,7 @@ export function BrainPage({ onBack, onNavigate }: BrainPageProps) {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id as any)}
-                className={`px-6 py-3 rounded-full transition-all ${
+                className={`px-4 md:px-6 py-2 md:py-3 rounded-full transition-all text-sm md:text-base ${
                   activeTab === tab.id
                     ? 'bg-[#a78bfa] text-white shadow-md'
                     : 'bg-white border-2 border-purple-200 text-[#71717a] hover:text-[#18181b] hover:border-purple-300'
@@ -456,34 +456,34 @@ export function BrainPage({ onBack, onNavigate }: BrainPageProps) {
           </motion.div>
 
           {/* Brand Cards Visual */}
-          <div className="flex justify-center items-center gap-6 mb-16">
+          <div className="flex flex-col sm:flex-row justify-center items-center gap-4 md:gap-6 mb-8 md:mb-12 lg:mb-16 px-4">
             <motion.div
               animate={{ rotateY: [0, 5, 0] }}
               transition={{ duration: 4, repeat: Infinity }}
-              className="w-80 h-48 bg-gradient-to-br from-green-500 to-emerald-600 rounded-3xl p-6 shadow-2xl"
+              className="w-full sm:w-64 md:w-72 lg:w-80 h-40 sm:h-44 md:h-48 bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl md:rounded-3xl p-4 md:p-6 shadow-2xl"
             >
               <div className="text-white">
-                <div className="flex items-center gap-2 mb-4">
-                  <div className="w-8 h-8 bg-white/20 rounded-full"></div>
-                  <span className="text-sm">Client 1 - September</span>
+                <div className="flex items-center gap-2 mb-3 md:mb-4">
+                  <div className="w-6 h-6 md:w-8 md:h-8 bg-white/20 rounded-full"></div>
+                  <span className="text-xs md:text-sm">Client 1 - September</span>
                 </div>
-                <h3 className="text-3xl mb-2">27</h3>
-                <p className="text-sm opacity-80">Active campaigns this month</p>
+                <h3 className="text-2xl md:text-3xl mb-1 md:mb-2">27</h3>
+                <p className="text-xs md:text-sm opacity-80">Active campaigns this month</p>
               </div>
             </motion.div>
 
             <motion.div
               animate={{ rotateY: [0, -5, 0] }}
               transition={{ duration: 4, repeat: Infinity, delay: 0.5 }}
-              className="w-80 h-48 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-3xl p-6 shadow-2xl relative z-10 scale-110"
+              className="w-full sm:w-64 md:w-72 lg:w-80 h-40 sm:h-44 md:h-48 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-2xl md:rounded-3xl p-4 md:p-6 shadow-2xl relative z-10 sm:scale-110"
             >
               <div className="text-white">
-                <div className="flex items-center gap-2 mb-4">
-                  <div className="w-8 h-8 bg-white/20 rounded-full"></div>
-                  <span className="text-sm">Client 2 - August</span>
+                <div className="flex items-center gap-2 mb-3 md:mb-4">
+                  <div className="w-6 h-6 md:w-8 md:h-8 bg-white/20 rounded-full"></div>
+                  <span className="text-xs md:text-sm">Client 2 - August</span>
                 </div>
-                <h3 className="text-3xl mb-2">15</h3>
-                <p className="text-sm opacity-80">Completed projects</p>
+                <h3 className="text-2xl md:text-3xl mb-1 md:mb-2">15</h3>
+                <p className="text-xs md:text-sm opacity-80">Completed projects</p>
               </div>
             </motion.div>
           </div>
@@ -491,27 +491,27 @@ export function BrainPage({ onBack, onNavigate }: BrainPageProps) {
       </section>
 
       {/* AI That Grows With You */}
-      <section className="py-20 px-6 bg-gradient-to-b from-purple-50/30 via-white to-white">
+      <section className="py-12 md:py-16 lg:py-20 px-4 md:px-6 bg-gradient-to-b from-purple-50/30 via-white to-white">
         <div className="max-w-7xl mx-auto">
-          <div className="grid lg:grid-cols-2 gap-16 items-start mb-16">
+          <div className="grid lg:grid-cols-2 gap-8 md:gap-12 lg:gap-16 items-start mb-12 md:mb-16">
             <motion.div
               initial={{ opacity: 0, x: -20 }}
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true }}
             >
-              <h2 className="text-4xl md:text-5xl mb-6 text-[#18181b]">
+              <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl mb-4 md:mb-6 text-[#18181b]">
                 AI That Grows With You
               </h2>
-              <p className="text-xl text-[#52525b] mb-8">
+              <p className="text-sm sm:text-base md:text-lg lg:text-xl text-[#52525b] mb-6 md:mb-8">
                 Brain AI assistant daily. Brain AI helps users develop and improve essential skills such as creativity, critical thinking, and problem-solving. Our helpers are personalized questions about your brand, continuously expanding brain understanding. Brain AI absorbs the discussing abilities of users by automatically learning and delivering more and more tailored to your needs Brain AI becomes.
               </p>
-              <div className="grid grid-cols-2 gap-8">
+              <div className="grid grid-cols-2 gap-4 md:gap-6 lg:gap-8">
                 {stats.map((stat, index) => (
                   <div key={index}>
-                    <div className="text-5xl mb-2 bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+                    <div className="text-3xl sm:text-4xl md:text-5xl mb-2 bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
                       {stat.value}
                     </div>
-                    <p className="text-[#71717a]">{stat.label}</p>
+                    <p className="text-xs sm:text-sm md:text-base text-[#71717a]">{stat.label}</p>
                   </div>
                 ))}
               </div>
@@ -522,26 +522,26 @@ export function BrainPage({ onBack, onNavigate }: BrainPageProps) {
               initial={{ opacity: 0, x: 20 }}
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true }}
-              className="flex gap-6 justify-center items-end"
+              className="flex gap-3 sm:gap-4 md:gap-6 justify-center items-end overflow-x-auto pb-4"
             >
               {/* Phone 1 - Blue */}
               <motion.div 
                 whileHover={{ y: -5, scale: 1.02 }}
                 transition={{ duration: 0.3 }}
-                className="w-72 h-[560px] bg-gradient-to-br from-white/90 to-white/60 backdrop-blur-xl rounded-[3.5rem] p-4 shadow-2xl border border-white/50 hover:shadow-[0_25px_50px_-12px_rgba(59,130,246,0.3)]"
+                className="w-48 sm:w-56 md:w-64 lg:w-72 h-[380px] sm:h-[440px] md:h-[500px] lg:h-[560px] flex-shrink-0 bg-gradient-to-br from-white/90 to-white/60 backdrop-blur-xl rounded-[2.5rem] md:rounded-[3.5rem] p-2 sm:p-3 md:p-4 shadow-2xl border border-white/50 hover:shadow-[0_25px_50px_-12px_rgba(59,130,246,0.3)]"
               >
-                <div className="w-full h-full bg-gradient-to-b from-blue-50/80 to-white/80 backdrop-blur-md rounded-[3rem] p-6 flex flex-col border border-blue-100/50">
-                  <div className="w-24 h-7 bg-gradient-to-r from-gray-900 to-gray-800 rounded-full mx-auto mb-8 shadow-lg"></div>
+                <div className="w-full h-full bg-gradient-to-b from-blue-50/80 to-white/80 backdrop-blur-md rounded-[2rem] md:rounded-[3rem] p-3 sm:p-4 md:p-6 flex flex-col border border-blue-100/50">
+                  <div className="w-16 sm:w-20 md:w-24 h-5 sm:h-6 md:h-7 bg-gradient-to-r from-gray-900 to-gray-800 rounded-full mx-auto mb-4 sm:mb-6 md:mb-8 shadow-lg"></div>
                   <div className="flex-1 flex flex-col justify-between">
                     <div>
-                      <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center mb-4 shadow-sm">
-                        <MessageSquare className="w-7 h-7 text-blue-600" />
+                      <div className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 bg-blue-100 rounded-lg md:rounded-xl flex items-center justify-center mb-2 sm:mb-3 md:mb-4 shadow-sm">
+                        <MessageSquare className="w-4 h-4 sm:w-5 sm:h-5 md:w-7 md:h-7 text-blue-600" />
                       </div>
-                      <h3 className="text-[#18181b] mb-2 text-base font-medium leading-tight">What are the company&apos;s annual revenue figures for the past three years?</h3>
+                      <h3 className="text-[#18181b] mb-1 sm:mb-2 text-xs sm:text-sm md:text-base font-medium leading-tight">What are the company&apos;s annual revenue figures?</h3>
                     </div>
-                    <div className="space-y-3">
-                      <button className="w-full py-3.5 bg-gradient-to-r from-blue-600 to-blue-500 text-white rounded-xl shadow-lg hover:shadow-xl transition-shadow font-medium">Send</button>
-                      <button className="w-full py-3.5 bg-white/80 backdrop-blur-sm border-2 border-blue-200 text-[#18181b] rounded-xl hover:bg-white transition-colors font-medium">Ask Later</button>
+                    <div className="space-y-2 sm:space-y-3">
+                      <button className="w-full py-2 sm:py-2.5 md:py-3.5 bg-gradient-to-r from-blue-600 to-blue-500 text-white rounded-lg md:rounded-xl shadow-lg hover:shadow-xl transition-shadow font-medium text-xs sm:text-sm">Send</button>
+                      <button className="w-full py-2 sm:py-2.5 md:py-3.5 bg-white/80 backdrop-blur-sm border-2 border-blue-200 text-[#18181b] rounded-lg md:rounded-xl hover:bg-white transition-colors font-medium text-xs sm:text-sm">Ask Later</button>
                     </div>
                   </div>
                 </div>
@@ -551,18 +551,18 @@ export function BrainPage({ onBack, onNavigate }: BrainPageProps) {
               <motion.div 
                 whileHover={{ y: -5, scale: 1.02 }}
                 transition={{ duration: 0.3 }}
-                className="w-72 h-[560px] bg-gradient-to-br from-white/90 to-white/60 backdrop-blur-xl rounded-[3.5rem] p-4 shadow-2xl border border-white/50 hover:shadow-[0_25px_50px_-12px_rgba(249,115,22,0.3)]"
+                className="w-48 sm:w-56 md:w-64 lg:w-72 h-[380px] sm:h-[440px] md:h-[500px] lg:h-[560px] flex-shrink-0 bg-gradient-to-br from-white/90 to-white/60 backdrop-blur-xl rounded-[2.5rem] md:rounded-[3.5rem] p-2 sm:p-3 md:p-4 shadow-2xl border border-white/50 hover:shadow-[0_25px_50px_-12px_rgba(249,115,22,0.3)]"
               >
-                <div className="w-full h-full bg-gradient-to-b from-orange-50/80 to-white/80 backdrop-blur-md rounded-[3rem] p-6 flex flex-col border border-orange-100/50">
-                  <div className="w-24 h-7 bg-gradient-to-r from-gray-900 to-gray-800 rounded-full mx-auto mb-8 shadow-lg"></div>
+                <div className="w-full h-full bg-gradient-to-b from-orange-50/80 to-white/80 backdrop-blur-md rounded-[2rem] md:rounded-[3rem] p-3 sm:p-4 md:p-6 flex flex-col border border-orange-100/50">
+                  <div className="w-16 sm:w-20 md:w-24 h-5 sm:h-6 md:h-7 bg-gradient-to-r from-gray-900 to-gray-800 rounded-full mx-auto mb-4 sm:mb-6 md:mb-8 shadow-lg"></div>
                   <div className="flex-1 flex flex-col justify-between">
                     <div>
-                      <div className="text-7xl mb-6">🎨</div>
-                      <h3 className="text-[#18181b] mb-2 text-base font-medium leading-tight">Q: Has Stella worked on creative for any major product launches or campaigns?</h3>
+                      <div className="text-4xl sm:text-5xl md:text-7xl mb-3 sm:mb-4 md:mb-6">🎨</div>
+                      <h3 className="text-[#18181b] mb-1 sm:mb-2 text-xs sm:text-sm md:text-base font-medium leading-tight">Q: Has Stella worked on creative campaigns?</h3>
                     </div>
-                    <div className="space-y-3">
-                      <button className="w-full py-3.5 bg-gradient-to-r from-orange-500 to-red-500 text-white rounded-xl shadow-lg hover:shadow-xl transition-shadow font-medium">Yes, that&apos;s right</button>
-                      <button className="w-full py-3.5 bg-white/80 backdrop-blur-sm border-2 border-orange-200 text-[#18181b] rounded-xl hover:bg-white transition-colors font-medium">Adjust the fact</button>
+                    <div className="space-y-2 sm:space-y-3">
+                      <button className="w-full py-2 sm:py-2.5 md:py-3.5 bg-gradient-to-r from-orange-500 to-red-500 text-white rounded-lg md:rounded-xl shadow-lg hover:shadow-xl transition-shadow font-medium text-xs sm:text-sm">Yes, that&apos;s right</button>
+                      <button className="w-full py-2 sm:py-2.5 md:py-3.5 bg-white/80 backdrop-blur-sm border-2 border-orange-200 text-[#18181b] rounded-lg md:rounded-xl hover:bg-white transition-colors font-medium text-xs sm:text-sm">Adjust the fact</button>
                     </div>
                   </div>
                 </div>
@@ -572,20 +572,20 @@ export function BrainPage({ onBack, onNavigate }: BrainPageProps) {
               <motion.div 
                 whileHover={{ y: -5, scale: 1.02 }}
                 transition={{ duration: 0.3 }}
-                className="w-72 h-[560px] bg-gradient-to-br from-purple-100/50 to-white/60 backdrop-blur-xl rounded-[3.5rem] p-4 shadow-2xl border border-purple-200/50 hover:shadow-[0_25px_50px_-12px_rgba(168,85,247,0.4)]"
+                className="w-48 sm:w-56 md:w-64 lg:w-72 h-[380px] sm:h-[440px] md:h-[500px] lg:h-[560px] flex-shrink-0 bg-gradient-to-br from-purple-100/50 to-white/60 backdrop-blur-xl rounded-[2.5rem] md:rounded-[3.5rem] p-2 sm:p-3 md:p-4 shadow-2xl border border-purple-200/50 hover:shadow-[0_25px_50px_-12px_rgba(168,85,247,0.4)]"
               >
-                <div className="w-full h-full bg-gradient-to-b from-purple-600 to-purple-700 backdrop-blur-md rounded-[3rem] p-6 flex flex-col border border-purple-400/30 shadow-inner">
-                  <div className="w-24 h-7 bg-gradient-to-r from-gray-900 to-gray-800 rounded-full mx-auto mb-8 shadow-lg"></div>
+                <div className="w-full h-full bg-gradient-to-b from-purple-600 to-purple-700 backdrop-blur-md rounded-[2rem] md:rounded-[3rem] p-3 sm:p-4 md:p-6 flex flex-col border border-purple-400/30 shadow-inner">
+                  <div className="w-16 sm:w-20 md:w-24 h-5 sm:h-6 md:h-7 bg-gradient-to-r from-gray-900 to-gray-800 rounded-full mx-auto mb-4 sm:mb-6 md:mb-8 shadow-lg"></div>
                   <div className="flex-1 flex flex-col justify-between">
                     <div>
-                      <div className="w-20 h-20 bg-white/10 backdrop-blur-sm rounded-2xl flex items-center justify-center mb-6 border border-white/20">
-                        <Brain className="w-12 h-12 text-white" />
+                      <div className="w-12 h-12 sm:w-16 sm:h-16 md:w-20 md:h-20 bg-white/10 backdrop-blur-sm rounded-xl md:rounded-2xl flex items-center justify-center mb-3 sm:mb-4 md:mb-6 border border-white/20">
+                        <Brain className="w-6 h-6 sm:w-8 sm:h-8 md:w-12 md:h-12 text-white" />
                       </div>
-                      <h3 className="text-white text-xl mb-2 font-semibold">New knowledge added</h3>
-                      <p className="text-purple-100 text-sm">New launch campaign notes</p>
-                      <p className="text-purple-200 text-sm mt-2">Brand voice updated: friendly + confident</p>
+                      <h3 className="text-white text-sm sm:text-base md:text-xl mb-1 sm:mb-2 font-semibold">New knowledge added</h3>
+                      <p className="text-purple-100 text-xs sm:text-sm">New launch campaign notes</p>
+                      <p className="text-purple-200 text-xs sm:text-sm mt-1 sm:mt-2">Brand voice updated</p>
                     </div>
-                    <button className="w-full py-3.5 bg-white text-purple-600 rounded-xl hover:bg-purple-50 transition-colors shadow-lg font-medium">Continue</button>
+                    <button className="w-full py-2 sm:py-2.5 md:py-3.5 bg-white text-purple-600 rounded-lg md:rounded-xl hover:bg-purple-50 transition-colors shadow-lg font-medium text-xs sm:text-sm">Continue</button>
                   </div>
                 </div>
               </motion.div>
@@ -607,7 +607,7 @@ export function BrainPage({ onBack, onNavigate }: BrainPageProps) {
       </section>
 
       {/* Features Grid */}
-      <section className="py-20 px-6 bg-gradient-to-b from-white to-purple-50/30">
+      <section className="py-12 md:py-16 lg:py-20 px-4 md:px-6 bg-gradient-to-b from-white to-purple-50/30">
         <div className="max-w-7xl mx-auto">
           <motion.p
             initial={{ opacity: 0, y: 20 }}
@@ -640,7 +640,7 @@ export function BrainPage({ onBack, onNavigate }: BrainPageProps) {
       </section>
 
       {/* Modern Brain AI Hub Section */}
-      <section className="relative py-24 px-6 bg-gradient-to-br from-purple-50/60 via-pink-50/40 to-blue-50/30 overflow-hidden">
+      <section className="relative py-12 md:py-16 lg:py-24 px-4 md:px-6 bg-gradient-to-br from-purple-50/60 via-pink-50/40 to-blue-50/30 overflow-hidden">
         {/* Soft Background */}
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-purple-100/30 via-transparent to-transparent"></div>
 
@@ -650,18 +650,18 @@ export function BrainPage({ onBack, onNavigate }: BrainPageProps) {
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="text-center mb-16"
+            className="text-center mb-8 md:mb-12 lg:mb-16"
           >
-            <h2 className="text-5xl md:text-6xl mb-4 bg-gradient-to-r from-purple-600 via-pink-500 to-cyan-500 bg-clip-text text-transparent">
+            <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl mb-3 md:mb-4 bg-gradient-to-r from-purple-600 via-pink-500 to-cyan-500 bg-clip-text text-transparent px-4">
               Your Brain AI Hub
             </h2>
-            <p className="text-lg text-[#52525b] max-w-2xl mx-auto">
+            <p className="text-sm sm:text-base md:text-lg text-[#52525b] max-w-2xl mx-auto px-4">
               Centralized intelligence powering all your AI helpers with contextual knowledge
             </p>
           </motion.div>
 
           {/* Main Content Grid */}
-          <div className="grid lg:grid-cols-2 gap-8 max-w-6xl mx-auto mb-12">
+          <div className="grid lg:grid-cols-2 gap-6 md:gap-8 max-w-6xl mx-auto mb-8 md:mb-12">
             {/* Left Side - Brain Visual */}
             <motion.div
               initial={{ opacity: 0, x: -30 }}
@@ -901,13 +901,13 @@ export function BrainPage({ onBack, onNavigate }: BrainPageProps) {
       </section>
 
       {/* Final CTA */}
-      <section className="py-20 px-6 bg-gradient-to-b from-purple-50/30 to-white">
+      <section className="py-12 md:py-16 lg:py-20 px-4 md:px-6 bg-gradient-to-b from-purple-50/30 to-white">
         <div className="max-w-4xl mx-auto">
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             whileInView={{ opacity: 1, scale: 1 }}
             viewport={{ once: true }}
-            className="bg-gradient-to-br from-purple-600 to-purple-800 rounded-3xl p-12 text-center relative overflow-hidden shadow-2xl"
+            className="bg-gradient-to-br from-purple-600 to-purple-800 rounded-2xl md:rounded-3xl p-6 md:p-10 lg:p-12 text-center relative overflow-hidden shadow-2xl"
           >
             {/* Background Pattern */}
             <div className="absolute inset-0 opacity-10">
@@ -918,15 +918,15 @@ export function BrainPage({ onBack, onNavigate }: BrainPageProps) {
             </div>
 
             <div className="relative">
-              <h2 className="text-4xl md:text-5xl text-white mb-6">
+              <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl text-white mb-4 md:mb-6">
                 Get Brain AI and<br />personal AI Helpers today.
               </h2>
-              <p className="text-xl text-purple-100 mb-8">
+              <p className="text-sm sm:text-base md:text-lg lg:text-xl text-purple-100 mb-6 md:mb-8 px-4">
                 Transform how you work with advanced, harnessing the power of AI helpers with Brain.
               </p>
               <button 
                 onClick={() => onNavigate?.('auth')}
-                className="px-8 py-4 bg-white text-purple-600 rounded-full hover:scale-105 transition-transform shadow-xl font-medium"
+                className="px-6 md:px-8 py-3 md:py-4 bg-white text-purple-600 rounded-full hover:scale-105 transition-transform shadow-xl font-medium text-sm md:text-base"
               >
                 Get Brain Today
               </button>
@@ -936,10 +936,10 @@ export function BrainPage({ onBack, onNavigate }: BrainPageProps) {
       </section>
 
       {/* FAQ Section */}
-      <section className="py-20 px-6 bg-white">
+      <section className="py-12 md:py-16 lg:py-20 px-4 md:px-6 bg-white">
         <div className="max-w-4xl mx-auto">
-          <h2 className="text-4xl text-[#18181b] text-center mb-12">Frequently asked questions</h2>
-          <div className="space-y-4">
+          <h2 className="text-2xl sm:text-3xl md:text-4xl text-[#18181b] text-center mb-8 md:mb-12 px-4">Frequently asked questions</h2>
+          <div className="space-y-3 md:space-y-4">
             {[
               'How does Brain AI differ from regular AI interactions?',
               'Can I use Brain AI for multiple brands or clients?',
@@ -953,10 +953,10 @@ export function BrainPage({ onBack, onNavigate }: BrainPageProps) {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: index * 0.1 }}
-                className="bg-white border-2 border-purple-100 rounded-2xl p-6 flex items-center justify-between cursor-pointer hover:shadow-md hover:border-purple-200 transition-all"
+                className="bg-white border-2 border-purple-100 rounded-xl md:rounded-2xl p-4 md:p-6 flex items-center justify-between cursor-pointer hover:shadow-md hover:border-purple-200 transition-all"
               >
-                <span className="text-[#18181b] font-medium">{question}</span>
-                <Plus className="w-6 h-6 text-[#71717a]" />
+                <span className="text-sm sm:text-base text-[#18181b] font-medium pr-4">{question}</span>
+                <Plus className="w-5 h-5 md:w-6 md:h-6 text-[#71717a] flex-shrink-0" />
               </motion.div>
             ))}
           </div>
