@@ -3,9 +3,7 @@ name: CI
 on:
   push:
     branches: [main]
-    paths: ['engine/**', '.github/workflows/**']
   pull_request:
-    paths: ['engine/**', '.github/workflows/**']
   workflow_dispatch:
 
 permissions:
@@ -16,8 +14,36 @@ defaults:
     working-directory: engine
 
 jobs:
+  hub:
+    name: Hub solutions, benchmarks and website build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: .
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install dev tools (TypeScript only)
+        run: npm install --no-audit --no-fund
+      - name: Type-check
+        run: npm run typecheck
+      - name: Solution tests
+        run: npm test
+      - name: Benchmarks with quality gates
+        run: npm run bench
+      - name: Build the website
+        run: npm run build:site
+      - name: Website loads every module
+        run: |
+          node -e "for (const m of ['ssi-checker/src/ssi.js','duplicate-payments/src/duplicates.js','payment-data-repair/src/repair.js']) await import('./docs/lib/solutions/' + m); console.log('ok')" --input-type=module
+      - name: Publish summary
+        if: always()
+        run: for f in out/benchmark-*.md; do [ -f "$f" ] && cat "$f" >> "$GITHUB_STEP_SUMMARY" && echo >> "$GITHUB_STEP_SUMMARY"; done
+
   test:
-    name: Test, type-check and run the agent company (Node ${{ matrix.node }})
+    name: Engine tests, benchmark and agent run (Node ${{ matrix.node }})
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -31,19 +57,43 @@ jobs:
         run: npm install --no-audit --no-fund
       - name: Type-check
         run: npm run typecheck
-      - name: Unit and end-to-end tests
+      - name: Unit, end-to-end and report tests
         run: npm test
+      - name: Accuracy benchmark (built-in gazetteer, quality gates)
+        run: |
+          node --disable-warning=ExperimentalWarning scripts/benchmark.ts --set tuning --out out --min-precision 0.99
+          node --disable-warning=ExperimentalWarning scripts/benchmark.ts --set holdout --out out --min-precision 0.95
       - name: Run the agent company on the sample vendor master
         run: npm run demo:board -- --out out
-      - name: Publish run summary
+      - name: Download GeoNames cities (population 15,000+)
+        if: matrix.node == '22'
+        continue-on-error: true
+        run: |
+          curl -sSfL --retry 3 -o /tmp/cities15000.zip https://download.geonames.org/export/dump/cities15000.zip
+          unzip -o -q /tmp/cities15000.zip -d /tmp
+          wc -l /tmp/cities15000.txt
+      - name: Accuracy benchmark with GeoNames
+        if: matrix.node == '22'
+        env:
+          HYNIQE_GEONAMES: /tmp/cities15000.txt
+        run: |
+          if [ ! -f /tmp/cities15000.txt ]; then echo "GeoNames not available; skipping"; exit 0; fi
+          node --disable-warning=ExperimentalWarning scripts/benchmark.ts --set tuning --out out --min-precision 0.97
+          node --disable-warning=ExperimentalWarning scripts/benchmark.ts --set holdout --out out --min-precision 0.95
+      - name: Sample Payment Data Health Check (HTML + PDF)
+        if: matrix.node == '22'
+        run: |
+          node --disable-warning=ExperimentalWarning scripts/healthcheck.ts --input data/vendor_master_sample.csv \
+            --client "Larkspur Industrial Group (sample)" --out out/healthcheck --benchmark out/benchmark-holdout.json --pdf
+      - name: Publish summary
+        if: always()
         run: |
           echo '## Hyniqe run (Node ${{ matrix.node }})' >> "$GITHUB_STEP_SUMMARY"
-          echo '```' >> "$GITHUB_STEP_SUMMARY"
-          cat out/summary.txt >> "$GITHUB_STEP_SUMMARY"
-          echo '```' >> "$GITHUB_STEP_SUMMARY"
-      - name: Upload report, state and structured CSV
-        if: matrix.node == '22'
+          if [ -f out/summary.txt ]; then echo '```' >> "$GITHUB_STEP_SUMMARY"; cat out/summary.txt >> "$GITHUB_STEP_SUMMARY"; echo '```' >> "$GITHUB_STEP_SUMMARY"; fi
+          for f in out/benchmark-*.md; do [ -f "$f" ] && cat "$f" >> "$GITHUB_STEP_SUMMARY" && echo >> "$GITHUB_STEP_SUMMARY"; done
+      - name: Upload reports (dashboard snapshot, benchmark, Health Check)
+        if: matrix.node == '22' && always()
         uses: actions/upload-artifact@v4
         with:
-          name: hyniqe-demo-report
+          name: hyniqe-reports
           path: engine/out/
