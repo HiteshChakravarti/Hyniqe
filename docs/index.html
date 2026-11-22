@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hyniqe Hub: free, open-source tools for settlement and payment data</title>
+<meta name="description" content="Check standing settlement instructions for T+1, find duplicate payments and repair payment address data. Free, open source, and your file never leaves your computer.">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<a class="skip" href="#tool">Skip to the tools</a>
+<header class="top">
+  <a class="logo" href="#" aria-label="Hyniqe Hub home"><span class="mark" aria-hidden="true"></span>Hyniqe Hub</a>
+  <nav aria-label="Main">
+    <a href="#tool">Tools</a>
+    <a href="#accuracy">Accuracy</a>
+    <a href="#next">What's next</a>
+    <a href="#health-check">Health Check</a>
+    <a href="https://github.com/HiteshChakravarti/Hyniqe">GitHub</a>
+  </nav>
+</header>
+
+<main>
+<section class="hero">
+  <div class="hero-text">
+    <h1>Find the bad data before it fails a trade or pays an invoice twice.</h1>
+    <p class="lede">Free, open-source checks for settlement instructions, supplier payments and payment addresses. Drop in a spreadsheet and get a report in seconds. Your file is processed in this browser tab and never leaves your computer.</p>
+    <div class="actions">
+      <a class="btn primary" href="#tool" data-open="ssi">Check your SSIs for T+1</a>
+      <a class="btn" href="https://github.com/HiteshChakravarti/Hyniqe">See the code</a>
+    </div>
+    <p class="t1" id="t1-line"></p>
+  </div>
+
+  <figure class="instruction" aria-label="Example: one settlement instruction checked field by field">
+    <figcaption>One standing settlement instruction, checked</figcaption>
+    <dl>
+      <div class="ok"><dt>Counterparty</dt><dd>Brightwater Securities</dd><span class="verdict">LEI valid</span></div>
+      <div class="ok"><dt>Market</dt><dd>Germany, EUR, equities</dd><span class="verdict">ok</span></div>
+      <div class="bad"><dt>Place of settlement</dt><dd><code>AGNTDEFFXXX</code></dd><span class="verdict">Not a CSD. Use Clearstream Banking Frankfurt, <code>DAKVDEFFXXX</code></span></div>
+      <div class="ok"><dt>Settlement agent</dt><dd><code>AGNTDEFFXXX</code></dd><span class="verdict">ok</span></div>
+      <div class="warn"><dt>Safekeeping account</dt><dd><code>40218867</code></dd><span class="verdict">Golden source says <code>40218876</code></span></div>
+      <div class="warn"><dt>Last verified</dt><dd>14 months ago, by email</dd><span class="verdict">Re-confirm before T+1</span></div>
+    </dl>
+    <p class="result">Result: this trade would fail to match at the CSD.</p>
+  </figure>
+</section>
+
+<section id="tool" class="tool" aria-labelledby="tool-title">
+  <h2 id="tool-title">Run a check</h2>
+  <div class="switcher" role="tablist" aria-label="Choose a solution">
+    <button role="tab" id="tab-ssi" aria-controls="panel" aria-selected="true" data-solution="ssi">SSI Checker</button>
+    <button role="tab" id="tab-dup" aria-controls="panel" aria-selected="false" data-solution="dup">Duplicate Payment Finder</button>
+    <button role="tab" id="tab-pdr" aria-controls="panel" aria-selected="false" data-solution="pdr">Payment Data Repair</button>
+  </div>
+
+  <div id="panel" class="panel" role="tabpanel" aria-labelledby="tab-ssi">
+    <div class="panel-intro">
+      <h3 id="sol-title"></h3>
+      <p id="sol-what"></p>
+      <details>
+        <summary>Which columns does my file need?</summary>
+        <div id="sol-columns"></div>
+      </details>
+    </div>
+
+    <div class="inputs">
+      <label class="drop" id="drop-main">
+        <input type="file" id="file-main" accept=".csv,.txt,.tsv">
+        <span class="drop-title" id="drop-main-title">Drop your CSV here, or choose a file</span>
+        <span class="drop-file" id="file-main-name">No file chosen</span>
+      </label>
+      <label class="drop secondary" id="drop-golden">
+        <input type="file" id="file-golden" accept=".csv,.txt,.tsv">
+        <span class="drop-title">Optional: golden-source SSIs to compare against</span>
+        <span class="drop-file" id="file-golden-name">No file chosen</span>
+      </label>
+    </div>
+    <div class="actions">
+      <button class="btn primary" id="run" disabled>Run check</button>
+      <button class="btn" id="run-sample">Try it with sample data</button>
+      <span class="sample-links" id="sample-links"></span>
+    </div>
+    <p class="privacy">Processed locally in your browser. Nothing is uploaded, stored or tracked.</p>
+    <p class="error" id="error" role="alert" hidden></p>
+
+    <div id="results" class="results" hidden aria-live="polite">
+      <div class="headline" id="res-headline"></div>
+      <div class="stats" id="res-stats"></div>
+      <div class="actions">
+        <button class="btn primary" id="open-report">Open full report</button>
+        <button class="btn" id="dl-report">Download report (HTML)</button>
+        <button class="btn" id="dl-csv">Download results (CSV)</button>
+      </div>
+      <div class="table-wrap"><table id="res-table"></table></div>
+      <p class="note" id="res-note"></p>
+    </div>
+  </div>
+</section>
+
+<section id="accuracy" class="accuracy" aria-labelledby="acc-title">
+  <h2 id="acc-title">How accurate is it?</h2>
+  <p class="section-lede">Every solution ships with a benchmark that runs on every change. These numbers come from labelled test data, so they measure whether the rules catch known defects. A Health Check on your real data is the real test.</p>
+  <table class="acc-table" id="acc-table"></table>
+</section>
+
+<section id="next" class="next" aria-labelledby="next-title">
+  <h2 id="next-title">What's next on the hub</h2>
+  <p class="section-lede">Each new solution follows the same pattern: explainable rules, a report, a benchmark, and nothing leaves your machine. Vote with a GitHub issue for the one you need first.</p>
+  <ul class="roadmap">
+    <li><b>Corporate actions notice checker</b> Compare event details across custodian and vendor notices and flag disagreements before the election deadline.</li>
+    <li><b>Settlement fail predictor</b> Score pending instructions for fail risk on intended settlement date and estimate the CSDR penalty.</li>
+    <li><b>Vendor master cleanup</b> Find suppliers that exist twice, missing tax IDs and bank details shared across vendors.</li>
+    <li><b>Payment exception triage</b> Read return and reject reasons, group them by root cause and draft the fix.</li>
+    <li><b>Verification of Payee readiness</b> Predict which beneficiary names will come back as a close match or no match.</li>
+    <li><b>KYC document checker</b> List what is missing or expiring for each client file.</li>
+  </ul>
+</section>
+
+<section id="health-check" class="health" aria-labelledby="hc-title">
+  <div>
+    <h2 id="hc-title">Free to use. Paid when you want it done for you.</h2>
+    <p>The tools on this page are free and open source. Teams that want results on their real data, explained and turned into a fix plan, book a Health Check.</p>
+  </div>
+  <div class="tiers">
+    <div class="tier">
+      <h3>Free</h3>
+      <ul>
+        <li>Every tool on this page, unlimited</li>
+        <li>Full source code on GitHub</li>
+        <li>Run it on your own servers</li>
+        <li>Community support through GitHub issues</li>
+      </ul>
+    </div>
+    <div class="tier paid">
+      <h3>Health Check</h3>
+      <ul>
+        <li>We run the checks on your real data with you</li>
+        <li>A report your management and auditors can read</li>
+        <li>A prioritised fix plan and rules to stop defects coming back</li>
+        <li>Ongoing monitoring and support if you want it</li>
+      </ul>
+      <a class="btn primary" href="https://github.com/HiteshChakravarti/Hyniqe/issues/new?title=Health%20Check%20request&amp;body=Organisation%3A%0ASolution%20(SSI%20Checker%20%2F%20Duplicate%20Payments%20%2F%20Payment%20Data%20Repair)%3A%0ARough%20data%20volume%3A%0ABest%20way%20to%20contact%20you%3A">Request a Health Check</a>
+    </div>
+  </div>
+</section>
+</main>
+
+<footer class="foot">
+  <p>Hyniqe Hub is open source. The engine is licensed under Apache-2.0; the solutions under AGPL-3.0, with a commercial license available. Checks are rule-based and explainable, and every flag states its reason. Review flagged items before acting on them.</p>
+  <p><a href="https://github.com/HiteshChakravarti/Hyniqe">github.com/HiteshChakravarti/Hyniqe</a></p>
+</footer>
+
+<script type="module" src="app.js"></script>
+</body>
+</html>
