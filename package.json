@@ -1,20 +1,27 @@
 {
   "name": "hyniqe-hub",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "private": true,
-  "description": "Hyniqe Hub: free, open-source solutions for settlement and payment operations data. SSI Checker, Duplicate Payment Finder, Payment Data Repair.",
+  "description": "Hyniqe Hub: free, open-source tools for payment, treasury and securities operations data. Fix rejected payment files, convert bank statements, find duplicate payments and suppliers, triage returns, check SSIs and corporate actions, score data quality.",
   "type": "module",
   "engines": {
     "node": ">=22.18"
   },
   "scripts": {
     "test": "node --disable-warning=ExperimentalWarning --test solutions/*/test/*.test.ts",
-    "bench": "node --disable-warning=ExperimentalWarning solutions/ssi-checker/bench.ts --out out --min-recall 0.99 --max-false 0.01 && node --disable-warning=ExperimentalWarning solutions/duplicate-payments/bench.ts --out out --min-recall 0.9 --min-precision-high 0.99",
+    "bench": "node --disable-warning=ExperimentalWarning solutions/ssi-checker/bench.ts --out out --min-recall 0.99 --max-false 0.01 && node --disable-warning=ExperimentalWarning solutions/duplicate-payments/bench.ts --out out --min-recall 0.9 --min-precision-high 0.99 && node --disable-warning=ExperimentalWarning solutions/payment-file-doctor/bench.ts --out out --min-detect 0.99 --min-repair 0.95 && node --disable-warning=ExperimentalWarning solutions/corporate-actions-checker/bench.ts --out out --min-detect 0.99 && node --disable-warning=ExperimentalWarning solutions/vendor-master-cleanup/bench.ts --out out --min-detect 0.99 && node --disable-warning=ExperimentalWarning solutions/payment-returns-triage/bench.ts --out out && node --disable-warning=ExperimentalWarning solutions/data-quality-scorecard/bench.ts --out out",
     "prebuild:site": "npm run -s bench && cd engine && npm run -s seed && node --disable-warning=ExperimentalWarning scripts/benchmark.ts --set holdout --out out",
     "build:site": "node --disable-warning=ExperimentalWarning scripts/build-site.ts",
     "ssi": "node --disable-warning=ExperimentalWarning solutions/ssi-checker/cli.ts",
     "duplicates": "node --disable-warning=ExperimentalWarning solutions/duplicate-payments/cli.ts",
     "repair": "node --disable-warning=ExperimentalWarning solutions/payment-data-repair/cli.ts",
+    "doctor": "node --disable-warning=ExperimentalWarning solutions/payment-file-doctor/cli.ts",
+    "statement": "node --disable-warning=ExperimentalWarning solutions/bank-statement-converter/cli.ts",
+    "excel-to-payment": "node --disable-warning=ExperimentalWarning solutions/excel-to-payment-file/cli.ts",
+    "corporate-actions": "node --disable-warning=ExperimentalWarning solutions/corporate-actions-checker/cli.ts",
+    "vendors": "node --disable-warning=ExperimentalWarning solutions/vendor-master-cleanup/cli.ts",
+    "returns": "node --disable-warning=ExperimentalWarning solutions/payment-returns-triage/cli.ts",
+    "scorecard": "node --disable-warning=ExperimentalWarning solutions/data-quality-scorecard/cli.ts",
     "site": "cd docs && python3 -m http.server 8000",
     "typecheck": "tsc --noEmit"
   },

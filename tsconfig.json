@@ -19,6 +19,7 @@
   },
   "include": [
     "solutions",
-    "scripts"
+    "scripts",
+    "site"
   ]
 }
