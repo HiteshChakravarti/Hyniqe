@@ -20,6 +20,7 @@ Each solution is a set of explainable checks with a report and a published bench
 | [Returns and Rejects Triage](solutions/payment-returns-triage/) | Every rejected or returned payment (pain.002, pacs.002, pacs.004 or CSV) explained and grouped by root cause | Live |
 | [E-invoice Viewer & Checker](solutions/e-invoice-checker/) | Any Peppol, XRechnung, ZUGFeRD or Factur-X invoice shown as a readable invoice, with every broken EN 16931 rule explained | Live |
 | [Payment Message Explainer](solutions/payment-message-explainer/) | An MT103 or pacs.008 in plain English, field by field, with CBPR+ address checks and conversion to the other format | Live |
+| [Bank Reconciliation](solutions/bank-reconciliation/) | A bank statement (camt.053, MT940 or CSV) matched to your ledger by reference, combined and part payments, charges, amount, date and name, with every difference explained | Live |
 | [Bank Detail Change Check](solutions/bank-detail-change-check/) | Payments in a run going to changed, foreign or another supplier's bank account, before you release them | Live |
 | [Data Quality Scorecard](solutions/data-quality-scorecard/) | Completeness, validity, uniqueness and consistency for any table, with finance formats checked properly | Live |
 
@@ -46,6 +47,7 @@ npm run scorecard -- any-table.csv
 npm run einvoice -- invoice.xml
 npm run explain -- mt103.txt
 npm run bank-check -- payment-run.csv --trusted vendor-master.csv
+npm run reconcile -- statement.xml --ledger cash-ledger.csv
 ```
 
 Each command writes an HTML report (prints cleanly to PDF) and a CSV or corrected file to `out/`. Most accept `--sample` to try them on generated data.

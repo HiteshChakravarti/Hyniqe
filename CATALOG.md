@@ -87,3 +87,8 @@ Column types recognised automatically (IBAN, BIC, LEI, ISIN, currency, country, 
 **Folder:** `solutions/bank-detail-change-check` · **Status:** live · **Input:** a payment run and your trusted details (vendor master or earlier payment runs). **Output:** stop / check / ok per payment, report and CSV.
 **Checks:** account changed since the last trusted payment, new account in another country, paying into another payee's account, large first payment to a new payee, recently changed details, amount spikes, one account for several payees, invalid IBANs.
 **Benchmark:** 100% of injected redirection patterns found, no normal payment flagged.
+
+## Bank Reconciliation
+**Folder:** `solutions/bank-reconciliation` · **Status:** live · **Input:** a bank statement (camt.053/052, MT940/942 or CSV) and the cash ledger (CSV). **Output:** matches with the method and confidence, items to post, items in transit, a reconciliation that adds up, report and CSV.
+**Checks:** reference matches however the payer wrote the invoice number, combined payments, part payments, charges or FX taken off, amount + date + name matches (name read from the text when there is no name column), combined payments by customer, look-alike amounts never guessed, ledger sign convention.
+**Benchmark:** 1,768 bank lines in 4 statement formats; 100% reconciled exactly right, no wrong matches, no same-amount decoy taken.

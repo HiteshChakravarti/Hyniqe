@@ -18,6 +18,7 @@ import { generateStatus } from '../solutions/payment-returns-triage/src/sample.t
 import { generateTable } from '../solutions/data-quality-scorecard/src/sample.ts';
 import { generateRun } from '../solutions/bank-detail-change-check/src/sample.ts';
 import { generateInvoice } from '../solutions/e-invoice-checker/src/sample.ts';
+import { generatePair, ledgerCsv } from '../solutions/bank-reconciliation/src/sample.ts';
 import { homePage, searchIndex, toolPage } from '../site/render.ts';
 import { TOOLS } from '../site/tools.ts';
 
@@ -62,6 +63,8 @@ const SOURCES = [
   'solutions/e-invoice-checker/src/rules.ts',
   'solutions/e-invoice-checker/src/check.ts',
   'solutions/e-invoice-checker/src/report.ts',
+  'solutions/bank-reconciliation/src/recon.ts',
+  'solutions/bank-reconciliation/src/report.ts',
   'engine/src/address/countries.ts',
   'engine/src/address/gazetteer.ts',
   'engine/src/address/postcodes.ts',
@@ -131,13 +134,18 @@ VIA ROMA 20
 -}
 `);
 outputs.set('docs/samples/e-invoice-peppol.xml', generateInvoice(42, 'BR-S-09', 'UBL'));
+{
+  const g = generatePair(11, 30);
+  outputs.set('docs/samples/bank-statement-november.xml', toCamt053(g.statement));
+  outputs.set('docs/samples/cash-ledger-november.csv', ledgerCsv(g));
+}
 
 const vendors = join(root, 'engine/data/vendor_master_sample.csv');
 if (existsSync(vendors)) outputs.set('docs/samples/vendors.csv', readFileSync(vendors, 'utf8'));
 else console.warn('engine/data/vendor_master_sample.csv not found; run "cd engine && npm run seed" for the Payment Data Repair sample.');
 
 const bench: Record<string, unknown> = {};
-for (const [k, f] of [['ssi', 'benchmark-ssi-checker.json'], ['duplicates', 'benchmark-duplicate-payments.json'], ['doctor', 'benchmark-payment-file-doctor.json'], ['corporateActions', 'benchmark-corporate-actions.json'], ['vendors', 'benchmark-vendor-master.json'], ['returns', 'benchmark-returns.json'], ['dataQuality', 'benchmark-data-quality.json'], ['bankDetail', 'benchmark-bank-detail-change.json'], ['explainer', 'benchmark-message-explainer.json'], ['einvoice', 'benchmark-e-invoice.json'], ['address', 'engine/out/benchmark-holdout.json']] as const) {
+for (const [k, f] of [['ssi', 'benchmark-ssi-checker.json'], ['duplicates', 'benchmark-duplicate-payments.json'], ['doctor', 'benchmark-payment-file-doctor.json'], ['corporateActions', 'benchmark-corporate-actions.json'], ['vendors', 'benchmark-vendor-master.json'], ['returns', 'benchmark-returns.json'], ['dataQuality', 'benchmark-data-quality.json'], ['bankDetail', 'benchmark-bank-detail-change.json'], ['explainer', 'benchmark-message-explainer.json'], ['einvoice', 'benchmark-e-invoice.json'], ['recon', 'benchmark-bank-reconciliation.json'], ['address', 'engine/out/benchmark-holdout.json']] as const) {
   const p = f.startsWith('engine') ? join(root, f) : join(root, 'out', f);
   if (existsSync(p)) bench[k] = JSON.parse(readFileSync(p, 'utf8'));
 }
