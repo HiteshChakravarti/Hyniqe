@@ -13,6 +13,8 @@ try {
 }
 
 const files = { main: null, second: null };
+const paste = document.getElementById('paste');
+const hasInput = () => !!files.main || !!(paste && paste.value.trim());
 let output = null;
 const runBtn = $('run');
 const sampleBtn = $('run-sample');
@@ -32,7 +34,7 @@ function wire(n, key) {
   const set = (f) => {
     files[key] = f;
     $(`file-${n}-name`).textContent = f ? `${f.name} (${Math.max(1, Math.round(f.size / 1024))} KB)` : 'No file chosen';
-    runBtn.disabled = !files.main || !adapter;
+    runBtn.disabled = !hasInput() || !adapter;
     clearError();
   };
   input.addEventListener('change', () => set(input.files[0] || null));
@@ -46,6 +48,14 @@ function wire(n, key) {
 }
 wire(1, 'main');
 wire(2, 'second');
+paste?.addEventListener('input', () => {
+  runBtn.disabled = !hasInput() || !adapter;
+  clearError();
+});
+const readMain = async () => {
+  if (files.main) return adapter.binary ? new Uint8Array(await files.main.arrayBuffer()) : files.main.text();
+  return paste ? paste.value : null;
+};
 
 function fields() {
   const out = {};
@@ -81,12 +91,16 @@ if (!adapter) {
   runBtn.disabled = true;
 } else {
   runBtn.addEventListener('click', async () => {
-    if (!files.main) return showError('Choose a file first.');
-    run([await files.main.text(), files.second ? await files.second.text() : null], false);
+    if (!hasInput()) return showError(paste ? 'Choose a file or paste the message first.' : 'Choose a file first.');
+    run([await readMain(), files.second ? await files.second.text() : null], false);
   });
   sampleBtn.addEventListener('click', async () => {
     try {
-      const texts = await Promise.all(adapter.samples.map((f) => fetch(`../../samples/${f}`).then((r) => (r.ok ? r.text() : Promise.reject(new Error(`Could not load the sample file ${f}.`))))));
+      const texts = await Promise.all(adapter.samples.map((f, k) => fetch(`../../samples/${f}`).then(async (r) => {
+        if (!r.ok) throw new Error(`Could not load the sample file ${f}.`);
+        return adapter.binary && k === 0 ? new Uint8Array(await r.arrayBuffer()) : r.text();
+      })));
+      if (paste && typeof texts[0] === 'string' && !files.main) paste.value = texts[0];
       run(texts, true);
     } catch (e) {
       showError(e instanceof Error ? e.message : String(e));
