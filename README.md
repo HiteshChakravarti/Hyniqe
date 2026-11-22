@@ -18,6 +18,9 @@ Each solution is a set of explainable checks with a report and a published bench
 | [Corporate Actions Checker](solutions/corporate-actions-checker/) | Dates, rates, ratios and options that differ between custodian and vendor notices, and election deadlines too close to act on | Live |
 | [Vendor Master Cleanup](solutions/vendor-master-cleanup/) | Suppliers set up more than once, bank accounts shared by unrelated suppliers, invalid VAT numbers, missing details | Live |
 | [Returns and Rejects Triage](solutions/payment-returns-triage/) | Every rejected or returned payment (pain.002, pacs.002, pacs.004 or CSV) explained and grouped by root cause | Live |
+| [E-invoice Viewer & Checker](solutions/e-invoice-checker/) | Any Peppol, XRechnung, ZUGFeRD or Factur-X invoice shown as a readable invoice, with every broken EN 16931 rule explained | Live |
+| [Payment Message Explainer](solutions/payment-message-explainer/) | An MT103 or pacs.008 in plain English, field by field, with CBPR+ address checks and conversion to the other format | Live |
+| [Bank Detail Change Check](solutions/bank-detail-change-check/) | Payments in a run going to changed, foreign or another supplier's bank account, before you release them | Live |
 | [Data Quality Scorecard](solutions/data-quality-scorecard/) | Completeness, validity, uniqueness and consistency for any table, with finance formats checked properly | Live |
 
 See [CATALOG.md](CATALOG.md) for inputs, outputs and accuracy, and [ROADMAP.md](ROADMAP.md) for what comes next.
@@ -40,6 +43,9 @@ npm run corporate-actions -- notices.csv
 npm run vendors -- vendors.csv
 npm run returns -- status-report.xml
 npm run scorecard -- any-table.csv
+npm run einvoice -- invoice.xml
+npm run explain -- mt103.txt
+npm run bank-check -- payment-run.csv --trusted vendor-master.csv
 ```
 
 Each command writes an HTML report (prints cleanly to PDF) and a CSV or corrected file to `out/`. Most accept `--sample` to try them on generated data.
@@ -72,6 +78,9 @@ Every solution has a benchmark that runs in CI on every change and fails the bui
 - Corporate Actions Checker: 887 notices, 100% of injected disagreements and deadline problems found, 0 of 201 clean events flagged.
 - Vendor Master Cleanup: 1908 supplier records, 100% of injected problems found, 0 of 1440 clean records flagged.
 - Returns and Rejects Triage: 748 returns in five formats, 100% read correctly.
+- E-invoice Checker: 440 UBL and CII invoices, 100% of injected rule breaks found, 0 of 110 correct invoices flagged, 20 of 20 Factur-X PDFs read.
+- Payment Message Explainer: 500 MT103 / pacs.008 pairs read and converted with every core field unchanged; every structured address suggested was correct.
+- Bank Detail Change Check: 100% of injected redirection patterns found, no normal payment flagged.
 - Data Quality Scorecard: 3060 rows, every injected defect counted exactly in 60 of 60 columns.
 - Payment Data Repair: on a held-out set of 840 addresses, 57.6% repaired automatically with no wrong automatic repairs; the first blind run, before fixes, was 96.3% precise.
 

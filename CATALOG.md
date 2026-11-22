@@ -72,3 +72,18 @@ About 50 ISO 20022 reason codes explained in plain English, grouped into root ca
 **Folder:** `solutions/data-quality-scorecard` · **Status:** live · **Input:** any CSV. **Output:** scorecard report and per-column CSV.
 Column types recognised automatically (IBAN, BIC, LEI, ISIN, currency, country, date, email, amount, identifier); completeness, validity with check digits and real dates, uniqueness of identifiers and rows, consistency of style, and IBAN/country/BIC cross-checks.
 **Benchmark:** 3060 rows across six tables; every injected defect counted exactly.
+
+## E-invoice Viewer & Checker
+**Folder:** `solutions/e-invoice-checker` · **Status:** live · **Input:** UBL 2.1 (Peppol BIS 3, XRechnung UBL), UN/CEFACT CII (XRechnung CII, Factur-X, ZUGFeRD) or a Factur-X / ZUGFeRD PDF. **Output:** a readable invoice, the broken rules with IDs and sources, and a CSV of lines.
+**Rules:** EN 16931 mandatory fields, all document totals (BR-CO-10 to 16), VAT breakdown and calculation (BR-S-08, BR-S-09), exemption reasons, VAT prefixes, due date or terms, payee account and IBAN check digits, Peppol buyer reference and electronic addresses, XRechnung Leitweg-ID. Rules live in `src/rules.ts` with ID, source and plain-English title.
+**Benchmark:** 100% of injected rule breaks found, 0 correct invoices flagged, all Factur-X PDFs read.
+
+## Payment Message Explainer
+**Folder:** `solutions/payment-message-explainer` · **Status:** live · **Input:** an MT103 (with or without header blocks) or a pacs.008. **Output:** a plain-English summary, every field with its MT tag and pacs.008 element, checks, and the payment converted to the other format.
+**Checks:** mandatory fields, BIC format, IBAN check digits, 71A BEN without 71F, missing UETR or exchange rate, remittance length, name and character truncation into MT, and CBPR+ November 2026 address readiness with a structured address suggested where town and country are found with confidence.
+**Benchmark:** 500 message pairs read, converted and read back with every core field unchanged; every suggested structured address correct.
+
+## Bank Detail Change Check
+**Folder:** `solutions/bank-detail-change-check` · **Status:** live · **Input:** a payment run and your trusted details (vendor master or earlier payment runs). **Output:** stop / check / ok per payment, report and CSV.
+**Checks:** account changed since the last trusted payment, new account in another country, paying into another payee's account, large first payment to a new payee, recently changed details, amount spikes, one account for several payees, invalid IBANs.
+**Benchmark:** 100% of injected redirection patterns found, no normal payment flagged.
