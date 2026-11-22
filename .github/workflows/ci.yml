@@ -1,0 +1,49 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+    paths: ['engine/**', '.github/workflows/**']
+  pull_request:
+    paths: ['engine/**', '.github/workflows/**']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    working-directory: engine
+
+jobs:
+  test:
+    name: Test, type-check and run the agent company (Node ${{ matrix.node }})
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node: ['22', '24']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+      - name: Install dev tools (TypeScript only; the engine has no runtime dependencies)
+        run: npm install --no-audit --no-fund
+      - name: Type-check
+        run: npm run typecheck
+      - name: Unit and end-to-end tests
+        run: npm test
+      - name: Run the agent company on the sample vendor master
+        run: npm run demo:board -- --out out
+      - name: Publish run summary
+        run: |
+          echo '## Hyniqe run (Node ${{ matrix.node }})' >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          cat out/summary.txt >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+      - name: Upload report, state and structured CSV
+        if: matrix.node == '22'
+        uses: actions/upload-artifact@v4
+        with:
+          name: hyniqe-demo-report
+          path: engine/out/
