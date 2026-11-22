@@ -1,0 +1,26 @@
+{
+  "name": "hyniqe-hub",
+  "version": "0.2.0",
+  "private": true,
+  "description": "Hyniqe Hub: free, open-source solutions for settlement and payment operations data. SSI Checker, Duplicate Payment Finder, Payment Data Repair.",
+  "type": "module",
+  "engines": {
+    "node": ">=22.18"
+  },
+  "scripts": {
+    "test": "node --disable-warning=ExperimentalWarning --test solutions/*/test/*.test.ts",
+    "bench": "node --disable-warning=ExperimentalWarning solutions/ssi-checker/bench.ts --out out --min-recall 0.99 --max-false 0.01 && node --disable-warning=ExperimentalWarning solutions/duplicate-payments/bench.ts --out out --min-recall 0.9 --min-precision-high 0.99",
+    "prebuild:site": "npm run -s bench && cd engine && npm run -s seed && node --disable-warning=ExperimentalWarning scripts/benchmark.ts --set holdout --out out",
+    "build:site": "node --disable-warning=ExperimentalWarning scripts/build-site.ts",
+    "ssi": "node --disable-warning=ExperimentalWarning solutions/ssi-checker/cli.ts",
+    "duplicates": "node --disable-warning=ExperimentalWarning solutions/duplicate-payments/cli.ts",
+    "repair": "node --disable-warning=ExperimentalWarning solutions/payment-data-repair/cli.ts",
+    "site": "cd docs && python3 -m http.server 8000",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/node": "^22.18.0",
+    "typescript": "^5.9.0"
+  },
+  "license": "SEE LICENSE IN LICENSING.md"
+}

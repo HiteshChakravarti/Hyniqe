@@ -1,0 +1,9 @@
+node_modules/
+out/
+engine/out/
+engine/out-board/
+engine/data/
+*.log
+.env
+docs/lib/
+docs/samples/

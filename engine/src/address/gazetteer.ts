@@ -10,6 +10,8 @@ export interface City {
   aliases?: string[];
   /** Name is shared by many places inside the country; a state/region is needed. */
   needsRegion?: boolean;
+  /** Where the entry came from. GeoNames names are broad, so they need corroboration. */
+  source?: 'built-in' | 'geonames';
 }
 
 export const CITIES: City[] = [
@@ -86,10 +88,14 @@ export const CITIES: City[] = [
 ];
 
 const INDEX = new Map<string, City>();
+const BUILT_IN = new Set<string>();
 for (const c of CITIES) {
-  INDEX.set(norm(c.name), c);
-  for (const a of c.aliases ?? []) INDEX.set(norm(a), c);
+  for (const k of [c.name, ...(c.aliases ?? [])]) {
+    INDEX.set(norm(k), c);
+    BUILT_IN.add(norm(k));
+  }
 }
+let longestKey = 4;
 
 export function norm(s: string): string {
   return s.normalize('NFKD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9 ]/g, ' ').replace(/\s+/g, ' ').trim();
@@ -99,12 +105,62 @@ export function lookupCity(text: string): City | null {
   return INDEX.get(norm(text)) ?? null;
 }
 
-/** Find the longest known city name contained in `text` (word-bounded). */
+/** Find the longest known city name contained in `text` (word-bounded), by n-gram lookup. */
 export function findCityIn(text: string): { city: City; match: string } | null {
-  const n = ` ${norm(text)} `;
-  let best: { city: City; match: string } | null = null;
-  for (const [key, city] of INDEX) {
-    if (n.includes(` ${key} `) && (!best || key.length > best.match.length)) best = { city, match: key };
+  const words = norm(text).split(' ').filter(Boolean);
+  for (let len = Math.min(longestKey, words.length); len >= 1; len--) {
+    for (let i = 0; i + len <= words.length; i++) {
+      const key = words.slice(i, i + len).join(' ');
+      const city = INDEX.get(key);
+      if (city) return { city, match: key };
+    }
   }
-  return best;
+  return null;
+}
+
+export function gazetteerSize(): { names: number; builtIn: number } {
+  return { names: INDEX.size, builtIn: BUILT_IN.size };
+}
+
+/**
+ * Extend the gazetteer with a GeoNames cities file (e.g. cities15000.txt from
+ * download.geonames.org). Built-in entries always win. A name is treated as
+ * ambiguous across countries when another country has a place of that name
+ * with at least `ambiguousPopulation` people, and as needing a state/region
+ * when one country has several such places.
+ */
+export function loadGeoNames(tsv: string, opts: { minPopulation?: number; ambiguousPopulation?: number } = {}): number {
+  const minPop = opts.minPopulation ?? 15000;
+  const ambPop = opts.ambiguousPopulation ?? 100000;
+  const byKey = new Map<string, { name: string; country: string; pop: number }[]>();
+  for (const line of tsv.split('\n')) {
+    if (!line) continue;
+    const f = line.split('\t');
+    if (f.length < 15) continue;
+    const [name, ascii, country, pop] = [f[1], f[2], f[8], Number(f[14]) || 0];
+    if (!name || !country || pop < minPop) continue;
+    for (const k of new Set([norm(name), norm(ascii)])) {
+      if (!k || BUILT_IN.has(k)) continue;
+      const list = byKey.get(k) ?? [];
+      list.push({ name, country, pop });
+      byKey.set(k, list);
+    }
+  }
+  let added = 0;
+  for (const [key, list] of byKey) {
+    list.sort((a, b) => b.pop - a.pop);
+    const top = list[0];
+    const otherCountries = [...new Set(list.filter((x) => x.country !== top.country && x.pop >= ambPop).map((x) => x.country))];
+    const sameCountryBig = list.filter((x) => x.country === top.country && x.pop >= ambPop / 2).length;
+    INDEX.set(key, {
+      name: top.name,
+      country: top.country,
+      ...(otherCountries.length ? { alsoIn: otherCountries } : {}),
+      ...(sameCountryBig > 1 ? { needsRegion: true } : {}),
+      source: 'geonames',
+    });
+    longestKey = Math.max(longestKey, key.split(' ').length);
+    added++;
+  }
+  return added;
 }

@@ -2,7 +2,7 @@
   "name": "hyniqe-engine",
   "version": "0.1.0",
   "private": true,
-  "description": "A company of AI agents that fixes payment data at the source for ISO 20022, with human approvals and a tamper-evident audit trail.",
+  "description": "Hyniqe Engine: an agent runtime for finance operations, with task checkout, budgets, human approvals and a tamper-evident audit trail. Powers the Hyniqe Hub solutions.",
   "type": "module",
   "engines": {
     "node": ">=22.18"
@@ -15,6 +15,10 @@
     "demo": "node --disable-warning=ExperimentalWarning scripts/demo.ts",
     "predemo:board": "npm run -s seed",
     "demo:board": "node --disable-warning=ExperimentalWarning scripts/demo.ts --simulate-board",
+    "benchmark": "node --disable-warning=ExperimentalWarning scripts/benchmark.ts --set tuning --min-precision 0.99 && node --disable-warning=ExperimentalWarning scripts/benchmark.ts --set holdout --min-precision 0.95",
+    "healthcheck": "node --disable-warning=ExperimentalWarning scripts/healthcheck.ts",
+    "prehealthcheck:sample": "npm run -s seed",
+    "healthcheck:sample": "node --disable-warning=ExperimentalWarning scripts/healthcheck.ts --input data/vendor_master_sample.csv --client \"Larkspur Industrial Group\" --out out/healthcheck --pdf",
     "test": "node --disable-warning=ExperimentalWarning --test test/*.test.ts",
     "typecheck": "tsc --noEmit"
   },
@@ -22,5 +26,5 @@
     "@types/node": "^22.18.0",
     "typescript": "^5.9.0"
   },
-  "license": "UNLICENSED"
+  "license": "Apache-2.0"
 }

@@ -29,7 +29,8 @@ export type IssueCode =
   | 'POSTCODE_FORMAT'
   | 'ADRLINE_OVERFLOW'
   | 'FIELD_TOO_LONG'
-  | 'INVALID_COUNTRY';
+  | 'INVALID_COUNTRY'
+  | 'COUNTRY_CONFLICT';
 
 export interface Issue {
   code: IssueCode;
@@ -51,6 +52,9 @@ export const MAX_LEN: Record<string, number> = {
 };
 
 const STREET_WORDS = /\b(road|rd|street|st|avenue|ave|rue|strasse|straße|str|weg|laan|gracht|lane|ln|marg|boulevard|blvd|drive|dr|way|place|pl|square|sq|via|calle|avenida|rua|allee|gasse|platz|kade|straat|chaussee|quai|parade|terrace|crescent|close|highway|hwy)\b\.?/i;
+// Words that come before a street name ("Calle Santiago", "Rue de Lyon", "Via Roma").
+const STREET_PREFIX = /^(calle|carrer|rue|via|viale|avenida|av|avenue|rua|travessa|strada|ulica|ul|boulevard|bd|plaza|placa|paseo|largo|piazza|corso|chemin|allee|route|quai|cours|rambla|camino)$/i;
+const UNIT_WORDS = /\b(suite|ste|unit|flat|floor|flr|level|office|room|apt|apartment|building|bldg|plot|shop|attn|c\/o)\b/i;
 const STREET_SUFFIX = /(strasse|straße|str\.|weg|gracht|straat|laan|gasse|platz|allee|vej|gatan|katu|kade|dijk|singel|plein|ring|damm|ufer)$/i;
 const REGIONS: Record<string, Set<string>> = {
   US: US_STATES,
@@ -126,10 +130,18 @@ export function parseAddress(text: string, opts: { countryHint?: string | null }
   for (let i = segs.length - 1; i >= 0 && !cityHit; i--) {
     const hit = findCityIn(segs[i]);
     if (!hit) continue;
+    // "Colombo Street" is a street, not the town Colombo.
+    const segWords = norm(segs[i]).split(' ');
+    const key = hit.match.split(' ');
+    const at = segWords.findIndex((_, j) => segWords.slice(j, j + key.length).join(' ') === hit.match);
+    const next = at >= 0 ? segWords[at + key.length] : undefined;
+    const prev = at > 0 ? segWords[at - 1] : undefined;
+    if ((next && STREET_WORDS.test(next)) || (prev && STREET_PREFIX.test(prev))) continue;
     const fits = !country || hit.city.country === country || hit.city.alsoIn?.includes(country);
     if (fits) cityHit = { ...hit, idx: i };
   }
 
+  let inferredFromTown = false;
   if (cityHit) {
     const { city } = cityHit;
     // Settle an ambiguous town with hard evidence only: a postcode in a format
@@ -153,6 +165,7 @@ export function parseAddress(text: string, opts: { countryHint?: string | null }
     }
     if (!country) {
       country = city.country;
+      inferredFromTown = true;
       if (city.alsoIn?.length) {
         conf -= 0.35;
         issues.push({
@@ -160,11 +173,30 @@ export function parseAddress(text: string, opts: { countryHint?: string | null }
           severity: 'review',
           message: `"${city.name}" exists in ${[city.country, ...city.alsoIn].join(', ')} and no country was given`,
         });
+      } else if (city.source === 'geonames') {
+        // A large world gazetteer contains everyday words ("Riverside", "Sale"):
+        // a country guessed from such a name alone always goes to a human.
+        conf -= 0.25;
+        issues.push({ code: 'COUNTRY_INFERRED', severity: 'review', message: `Country ${city.country} guessed from the town name "${city.name}" alone` });
       } else {
         conf -= 0.1;
         issues.push({ code: 'COUNTRY_INFERRED', severity: 'info', message: `Country ${city.country} inferred from town ${city.name}` });
       }
       evidence.push(`Country ${city.country} inferred from town "${city.name}"`);
+    }
+    if (inferredFromTown) {
+      const conflicting = Object.entries(POSTCODES).filter(
+        ([c, f]) => c !== country && f.distinctive && f.re.test(text) && !(country && POSTCODES[country]?.re.test(text)),
+      );
+      if (conflicting.length) {
+        conf -= 0.3;
+        issues.push({
+          code: 'COUNTRY_CONFLICT',
+          severity: 'review',
+          message: `Town suggests ${country} but the postcode format suggests ${conflicting.map(([c]) => c).join('/')}`,
+        });
+        evidence.push(`Conflict: town points to ${country}, postcode format points to ${conflicting.map(([c]) => c).join('/')}`);
+      }
     }
     addr.TwnNm = city.name;
     if (city.needsRegion && !(after && REGIONS[city.country]?.has(after))) {
@@ -212,11 +244,17 @@ export function parseAddress(text: string, opts: { countryHint?: string | null }
       }
       seg = clean(seg);
       // Town written next to the postcode but not in the gazetteer ("10115 Berlin").
-      if (!addr.TwnNm && seg && /^[\p{L}][\p{L}' .-]{1,34}$/u.test(seg) && seg.split(' ').length <= 3 && !STREET_WORDS.test(seg)) {
+      if (!addr.TwnNm && seg && /^[\p{L}][\p{L}' .-]{1,34}$/u.test(seg) && seg.split(' ').length <= 3 && !STREET_WORDS.test(seg) && !UNIT_WORDS.test(seg)) {
         addr.TwnNm = seg;
         seg = '';
         conf -= 0.15;
-        issues.push({ code: 'TOWN_INFERRED', severity: 'info', message: `Town "${addr.TwnNm}" taken from the text beside the postcode` });
+        // With no line breaks or commas, there is little structure to trust: ask a human.
+        const singleLine = !/[\n,;]/.test(text.trim().replace(/,$/, ''));
+        issues.push({
+          code: 'TOWN_INFERRED',
+          severity: singleLine ? 'review' : 'info',
+          message: `Town "${addr.TwnNm}" taken from the text beside the postcode${singleLine ? ' in a single-line address' : ''}`,
+        });
         evidence.push(`Town "${addr.TwnNm}" taken from beside the postcode`);
       }
       segs[segIdx] = seg;
