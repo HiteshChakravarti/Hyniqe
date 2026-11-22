@@ -9,7 +9,7 @@
   },
   "scripts": {
     "test": "node --disable-warning=ExperimentalWarning --test solutions/*/test/*.test.ts",
-    "bench": "node --disable-warning=ExperimentalWarning solutions/ssi-checker/bench.ts --out out --min-recall 0.99 --max-false 0.01 && node --disable-warning=ExperimentalWarning solutions/duplicate-payments/bench.ts --out out --min-recall 0.9 --min-precision-high 0.99 && node --disable-warning=ExperimentalWarning solutions/payment-file-doctor/bench.ts --out out --min-detect 0.99 --min-repair 0.95 && node --disable-warning=ExperimentalWarning solutions/corporate-actions-checker/bench.ts --out out --min-detect 0.99 && node --disable-warning=ExperimentalWarning solutions/vendor-master-cleanup/bench.ts --out out --min-detect 0.99 && node --disable-warning=ExperimentalWarning solutions/payment-returns-triage/bench.ts --out out && node --disable-warning=ExperimentalWarning solutions/data-quality-scorecard/bench.ts --out out && node --disable-warning=ExperimentalWarning solutions/bank-detail-change-check/bench.ts --out out --min-detect 0.99 && node --disable-warning=ExperimentalWarning solutions/payment-message-explainer/bench.ts --out out && node --disable-warning=ExperimentalWarning solutions/e-invoice-checker/bench.ts --out out",
+    "bench": "node --disable-warning=ExperimentalWarning solutions/ssi-checker/bench.ts --out out --min-recall 0.99 --max-false 0.01 && node --disable-warning=ExperimentalWarning solutions/duplicate-payments/bench.ts --out out --min-recall 0.9 --min-precision-high 0.99 && node --disable-warning=ExperimentalWarning solutions/payment-file-doctor/bench.ts --out out --min-detect 0.99 --min-repair 0.95 && node --disable-warning=ExperimentalWarning solutions/corporate-actions-checker/bench.ts --out out --min-detect 0.99 && node --disable-warning=ExperimentalWarning solutions/vendor-master-cleanup/bench.ts --out out --min-detect 0.99 && node --disable-warning=ExperimentalWarning solutions/payment-returns-triage/bench.ts --out out && node --disable-warning=ExperimentalWarning solutions/data-quality-scorecard/bench.ts --out out && node --disable-warning=ExperimentalWarning solutions/bank-detail-change-check/bench.ts --out out --min-detect 0.99 && node --disable-warning=ExperimentalWarning solutions/payment-message-explainer/bench.ts --out out && node --disable-warning=ExperimentalWarning solutions/e-invoice-checker/bench.ts --out out && node --disable-warning=ExperimentalWarning solutions/bank-reconciliation/bench.ts --out out --min-correct 0.99",
     "prebuild:site": "npm run -s bench && cd engine && npm run -s seed && node --disable-warning=ExperimentalWarning scripts/benchmark.ts --set holdout --out out",
     "build:site": "node --disable-warning=ExperimentalWarning scripts/build-site.ts",
     "ssi": "node --disable-warning=ExperimentalWarning solutions/ssi-checker/cli.ts",
@@ -25,6 +25,7 @@
     "bank-check": "node --disable-warning=ExperimentalWarning solutions/bank-detail-change-check/cli.ts",
     "explain": "node --disable-warning=ExperimentalWarning solutions/payment-message-explainer/cli.ts",
     "einvoice": "node --disable-warning=ExperimentalWarning solutions/e-invoice-checker/cli.ts",
+    "reconcile": "node --disable-warning=ExperimentalWarning solutions/bank-reconciliation/cli.ts",
     "site": "cd docs && python3 -m http.server 8000",
     "typecheck": "tsc --noEmit"
   },
