@@ -49,7 +49,7 @@ Each command writes an HTML report (prints cleanly to PDF) and a CSV or correcte
 ## How the pieces fit
 
 ```
-engine/              Hyniqe Engine: agent runtime, approvals, budgets, audit chain   (Apache-2.0)
+engine/              Hyniqe Engine: agent runtime, approvals, budgets, audit chain   (AGPL-3.0)
 solutions/
   ssi-checker/       T+1 standing settlement instruction checks                       (AGPL-3.0)
   duplicate-payments/ duplicate and near-duplicate payment detection                  (AGPL-3.0)
@@ -94,4 +94,4 @@ cd engine && npm install && npm test   # engine tests
 
 ## Licensing
 
-The engine is Apache-2.0. The solutions and website are AGPL-3.0, with a commercial license available for organisations that want to embed them without AGPL obligations. See [LICENSING.md](LICENSING.md).
+Everything is AGPL-3.0, with a commercial license available for organisations that want to embed Hyniqe without AGPL obligations. "Hyniqe" is the project name and may not be used for modified versions. See [LICENSING.md](LICENSING.md).

@@ -2,7 +2,7 @@
 
 The agent runtime behind [Hyniqe Hub](../README.md): a team of AI agents with roles, a task board, budgets, heartbeats and human approvals, plus a tamper-evident record of every change. It is built for regulated finance operations, where a bank or corporate has to be able to show an auditor *why* each change was made.
 
-The first team template, **Payment Data Ops**, fixes vendor and beneficiary address data at the source for structured payment addresses (ISO 20022 PostalAddress24, CBPR+) and sends anything uncertain to a person. Its rules also power the stand-alone [Payment Data Repair](../solutions/payment-data-repair/) solution and the Hub website. Licensed under Apache-2.0.
+The first team template, **Payment Data Ops**, fixes vendor and beneficiary address data at the source for structured payment addresses (ISO 20022 PostalAddress24, CBPR+) and sends anything uncertain to a person. Its rules also power the stand-alone [Payment Data Repair](../solutions/payment-data-repair/) solution and the Hub website. Licensed under AGPL-3.0 (see [LICENSING.md](../LICENSING.md)); a commercial license is available.
 
 ```
                  ┌───────────────────────────┐
