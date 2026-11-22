@@ -1,0 +1,26 @@
+{
+  "name": "hyniqe-engine",
+  "version": "0.1.0",
+  "private": true,
+  "description": "A company of AI agents that fixes payment data at the source for ISO 20022, with human approvals and a tamper-evident audit trail.",
+  "type": "module",
+  "engines": {
+    "node": ">=22.18"
+  },
+  "scripts": {
+    "seed": "node --disable-warning=ExperimentalWarning scripts/seed.ts 240 data/vendor_master_sample.csv",
+    "prestart": "npm run -s seed",
+    "start": "node --disable-warning=ExperimentalWarning src/server.ts",
+    "predemo": "npm run -s seed",
+    "demo": "node --disable-warning=ExperimentalWarning scripts/demo.ts",
+    "predemo:board": "npm run -s seed",
+    "demo:board": "node --disable-warning=ExperimentalWarning scripts/demo.ts --simulate-board",
+    "test": "node --disable-warning=ExperimentalWarning --test test/*.test.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/node": "^22.18.0",
+    "typescript": "^5.9.0"
+  },
+  "license": "UNLICENSED"
+}
