@@ -4,16 +4,19 @@
 
 import type { Engine, Skill, AgentDef, SkillContext } from '../engine.ts';
 import { j } from '../db.ts';
-import { parseAddress, validateAddress, type ParseResult, type PostalAddress } from '../address/parse.ts';
-import { isCountryCode, lookupCountry } from '../address/countries.ts';
-import { ibanCountry, ibanValid, bicCountry } from '../address/iban.ts';
+import { validateAddress, type PostalAddress } from '../address/parse.ts';
+import { isCountryCode } from '../address/countries.ts';
+import { ibanCountry } from '../address/iban.ts';
+import { AUTO_ACCEPT_CONFIDENCE, controlReasons, decide, sourceText, structureRecord, type RepairDecision } from '../address/repair.ts';
+
+export { AUTO_ACCEPT_CONFIDENCE, decide, type RepairDecision };
 import { getRecords, insertRecords, recordsByStatus, updateRecord, type SourceRow, type RecordView } from '../records.ts';
 import { metrics } from '../metrics.ts';
 import { allRules, type RuleCheck } from '../rules.ts';
 import { llmEnabled, suggestAddress } from '../llm.ts';
 
-export const AUTO_ACCEPT_CONFIDENCE = 0.8;
 const BATCH = 40;
+const chunk = <T>(xs: T[], n: number): T[][] => Array.from({ length: Math.ceil(xs.length / n) }, (_, i) => xs.slice(i * n, i * n + n));
 
 export const AGENTS: AgentDef[] = [
   { key: 'lead', name: 'Orin', title: 'Head of Payment Data Ops', role: 'lead', budget: 300 },
@@ -23,49 +26,6 @@ export const AGENTS: AgentDef[] = [
   { key: 'outreach', name: 'Turbo', title: 'Vendor Outreach Coordinator', role: 'outreach', reportsTo: 'lead', budget: 150 },
   { key: 'rules', name: 'Dex', title: 'Validation Rule Engineer', role: 'rule_engineer', reportsTo: 'lead', budget: 200 },
 ];
-
-const chunk = <T>(xs: T[], n: number): T[][] => Array.from({ length: Math.ceil(xs.length / n) }, (_, i) => xs.slice(i * n, i * n + n));
-
-function sourceText(s: SourceRow): string {
-  if (s.address_text) return s.address_text;
-  return [s.building && s.street ? `${s.building} ${s.street}` : s.street, [s.postcode, s.town].filter(Boolean).join(' '), s.country]
-    .filter(Boolean)
-    .join(', ');
-}
-
-/** Already-split ERP fields: normalise them rather than re-parse free text. */
-function normaliseFields(s: SourceRow): ParseResult {
-  const evidence: string[] = [];
-  let conf = 0.97;
-  let ctry: string | undefined;
-  if (s.country) {
-    if (s.country.length === 2 && isCountryCode(s.country)) ctry = s.country.toUpperCase();
-    else {
-      const c = lookupCountry(s.country, { allowAlpha2: true });
-      if (c) {
-        ctry = c;
-        evidence.push(`Country "${s.country}" normalised to ISO code ${c}`);
-      }
-    }
-  }
-  const address: PostalAddress = {
-    ...(s.street ? { StrtNm: s.street } : {}),
-    ...(s.building ? { BldgNb: s.building } : {}),
-    ...(s.postcode ? { PstCd: s.postcode.toUpperCase() } : {}),
-    ...(s.town ? { TwnNm: s.town } : {}),
-    ...(ctry ? { Ctry: ctry } : {}),
-  };
-  if (!address.TwnNm || !address.Ctry) {
-    // Fields incomplete: fall back to parsing everything we have as text.
-    const parsed = parseAddress(sourceText(s), { countryHint: ctry ?? null });
-    parsed.evidence.unshift('ERP fields incomplete, re-parsed from combined text');
-    return parsed;
-  }
-  evidence.push('Existing ERP fields mapped to PostalAddress24');
-  const issues = validateAddress(address);
-  if (issues.some((i) => i.severity === 'review')) conf -= 0.3;
-  return { address, format: issues.some((i) => i.severity === 'block') ? 'unresolved' : 'structured', confidence: conf, evidence, issues };
-}
 
 // ----- Orin: Head of Payment Data Ops (the CEO agent) -------------------
 
@@ -196,13 +156,12 @@ const repair: Skill = {
     let llm = 0;
     for (const r of recs) {
       const s = r.source;
-      const viaFields = !!(s.town || s.street);
-      const result = viaFields ? normaliseFields(s) : parseAddress(s.address_text ?? '', { countryHint: s.country || null });
-      const method = viaFields ? 'field-normalisation' : 'rules-parser';
+      const { result, method } = structureRecord(s);
       const reviewIssues = result.issues.filter((i) => i.severity === 'review');
       const base = { address: result.address, confidence: result.confidence, method, evidence: result.evidence, issues: result.issues };
 
-      if (result.format === 'unresolved') {
+      const verdict = decide(result);
+      if (verdict === 'needs_data') {
         if (llmEnabled() && ctx.charge(25, 'Claude suggestion for unresolved address')) {
           try {
             const sug = await suggestAddress({ text: sourceText(s), countryHint: s.country, bankCountry: ibanCountry(r.iban) });
@@ -221,7 +180,7 @@ const repair: Skill = {
         missing++;
         continue;
       }
-      if (reviewIssues.length || result.confidence < AUTO_ACCEPT_CONFIDENCE) {
+      if (verdict === 'review') {
         updateRecord(ctx.engine, r.id, { ...base, status: 'in_review', format_after: result.format });
         ctx.log('record.escalated', 'record', r.id, { vendor: r.source_id, confidence: result.confidence, issues: reviewIssues.map((i) => i.code) });
         requestReview(ctx, r, result.address, reviewIssues.length ? reviewIssues.map((i) => i.message) : [`Confidence ${result.confidence} is below ${AUTO_ACCEPT_CONFIDENCE}`]);
@@ -247,13 +206,7 @@ const controls: Skill = {
     let passed = 0;
     let flagged = 0;
     for (const r of recs) {
-      const reasons: string[] = [];
-      const bank = ibanCountry(r.iban);
-      if (r.iban && !ibanValid(r.iban)) reasons.push('IBAN checksum is invalid');
-      if (bank && r.address?.Ctry && bank !== r.address.Ctry) reasons.push(`Bank account country ${bank} differs from address country ${r.address.Ctry}`);
-      const bicC = bicCountry(r.bic);
-      if (bicC && bank && bicC !== bank) reasons.push(`BIC country ${bicC} differs from IBAN country ${bank}`);
-      if (bicC && !bank && r.address?.Ctry && bicC !== r.address.Ctry) reasons.push(`Bank (BIC) country ${bicC} differs from address country ${r.address.Ctry}`);
+      const reasons = controlReasons(r);
       if (reasons.length) {
         updateRecord(ctx.engine, r.id, { status: 'in_review', evidence: [...r.evidence, ...reasons.map((x) => `Control: ${x}`)] });
         requestReview(ctx, r, r.address, reasons);
