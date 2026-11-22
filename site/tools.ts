@@ -20,6 +20,10 @@ export interface ToolPage {
   inputLabel: string;
   accept: string;
   secondInput?: { label: string; accept: string };
+  /** Offer a text box to paste the input instead of choosing a file. */
+  paste?: string;
+  /** The adapter receives the file as bytes (for PDFs). */
+  binary?: boolean;
   samples: { file: string; label: string }[];
   checks: string[];
   columns?: [string, string, boolean][];
@@ -116,6 +120,61 @@ export const TOOLS: ToolPage[] = [
     ],
   },
   {
+    slug: 'e-invoice-checker',
+    name: 'E-invoice Viewer & Checker',
+    group: 'fix',
+    status: 'live',
+    title: 'Open and validate an e-invoice (Peppol, XRechnung, ZUGFeRD, Factur-X) free | Hyniqe',
+    h1: 'Open any e-invoice as a readable invoice, and see exactly which rule it breaks.',
+    lede: 'Drop in a Peppol or XRechnung XML, or a ZUGFeRD / Factur-X PDF. You see the invoice the way a person reads it, and every broken EN 16931 rule explained in plain English: wrong totals, wrong VAT, missing references.',
+    short: 'Shows any XML e-invoice as a readable invoice and explains every rule it breaks.',
+    keywords: ['e-invoice', 'einvoice', 'peppol', 'xrechnung', 'zugferd', 'factur-x', 'ubl', 'cii', 'en 16931', 'validator', 'open xml invoice', 'invoice viewer', 'vat'],
+    inputLabel: 'Drop your e-invoice (.xml or .pdf) here, or choose a file',
+    accept: '.xml,.pdf',
+    binary: true,
+    samples: [{ file: 'e-invoice-peppol.xml', label: 'sample Peppol invoice with an error' }],
+    checks: [
+      'Every total and VAT amount recalculated: lines, rates, total with and without VAT, amount due',
+      'Mandatory fields: invoice number, dates, seller and buyer names and countries',
+      'VAT categories, exemption reasons and VAT number prefixes',
+      'Due date or payment terms, and an IBAN that passes its check digits',
+      'Peppol buyer reference and electronic addresses; the XRechnung Leitweg-ID',
+    ],
+    faq: [
+      ['Which formats does it read?', 'UBL 2.1 invoices and credit notes (Peppol BIS Billing 3.0, XRechnung UBL), UN/CEFACT CII (XRechnung CII, Factur-X, ZUGFeRD) and the XML attached inside Factur-X and ZUGFeRD PDFs.'],
+      ['Is this the official validation?', 'It checks the business rules behind most rejections and explains them. Your access point or e-invoicing platform still runs the full schema and Schematron validation.'],
+      PRIVATE,
+      FREE,
+    ],
+  },
+  {
+    slug: 'payment-message-explainer',
+    name: 'Payment Message Explainer',
+    group: 'fix',
+    status: 'live',
+    title: 'MT103 and pacs.008 explained in plain English, with MT to MX conversion | Hyniqe',
+    h1: 'Paste an MT103 or pacs.008. Read it in plain English and get it in the other format.',
+    lede: 'See who pays whom, how much, through which banks and who pays the charges, field by field with the MT tag and the ISO 20022 equivalent. It checks the message, flags addresses that will be rejected after November 2026, and converts MT103 to pacs.008 with structured addresses.',
+    short: 'Explains an MT103 or pacs.008 in plain English and converts it to the other format.',
+    keywords: ['mt103', 'pacs.008', 'swift message', 'iso 20022', 'mt to mx', 'cbpr+', 'structured address', 'uetr', 'payment investigation', 'swift'],
+    inputLabel: 'Drop the message file (.txt, .fin or .xml) here, or paste it below',
+    accept: '.txt,.fin,.xml,.mt,.out',
+    paste: 'Paste an MT103 (with or without the {1:}{2:} header blocks) or a pacs.008 XML',
+    samples: [{ file: 'mt103.txt', label: 'sample MT103' }],
+    checks: [
+      'Who pays whom, how much and through which banks, in one sentence',
+      'Every field with its MT103 tag, its pacs.008 element and what it means',
+      'Mandatory fields, BIC format, IBAN check digits, the BEN charges rule, missing UETR',
+      'Free-text addresses that CBPR+ rejects from November 2026, with a structured version',
+      'The same payment as pacs.008 (from MT103) or MT103 (from pacs.008)',
+    ],
+    faq: [
+      ['Can I use the converted message in production?', 'Use it for testing, investigations and to understand the mapping. Your bank or payment system does the production conversion.'],
+      PRIVATE,
+      FREE,
+    ],
+  },
+  {
     slug: 'duplicate-payment-finder',
     name: 'Duplicate Payment Finder',
     group: 'find',
@@ -153,6 +212,36 @@ export const TOOLS: ToolPage[] = [
     samples: [{ file: 'vendor-master.csv', label: 'sample vendor master' }],
     checks: ['Suppliers that exist more than once under different spellings', 'One IBAN used by unrelated suppliers', 'VAT numbers in the wrong format for their country', 'Missing bank details, country or tax ID'],
     faq: [PRIVATE, FREE],
+  },
+  {
+    slug: 'bank-detail-change-check',
+    name: 'Bank Detail Change Check',
+    group: 'find',
+    status: 'live',
+    title: 'Check a payment run for changed bank details before you pay | Hyniqe',
+    h1: 'Before you release a payment run, find every payee whose bank account changed.',
+    lede: 'Payment fraud almost always arrives as a supplier "updating" their bank details. Compare your payment run with the accounts you already trust and see which payments to stop and verify by phone.',
+    short: 'Flags payments to changed, foreign or someone else’s bank accounts before you pay.',
+    keywords: ['payment fraud', 'bank details changed', 'business email compromise', 'bec', 'vendor fraud', 'payment run', 'invoice fraud', 'change of bank details', 'callback'],
+    inputLabel: 'Drop your payment run (.csv) here, or choose a file',
+    accept: '.csv,.txt,.tsv',
+    secondInput: { label: 'Drop your trusted bank details: vendor master or earlier payment runs (.csv)', accept: '.csv,.txt,.tsv' },
+    samples: [
+      { file: 'payment-run.csv', label: 'sample payment run' },
+      { file: 'payment-history.csv', label: 'sample payment history' },
+    ],
+    checks: [
+      'Payees whose account differs from every account they were paid to before',
+      'New accounts in a different country from the supplier',
+      'A supplier being paid into another supplier’s account',
+      'Large first payments to new payees, and amounts far above the usual',
+      'Bank details changed in the last 30 days, and invalid IBANs',
+    ],
+    faq: [
+      ['What should I do with a flagged payment?', 'Hold it and call the supplier on a phone number you already hold, not one from the email or invoice that asked for the change. Release it once they confirm.'],
+      PRIVATE,
+      FREE,
+    ],
   },
   {
     slug: 'payment-returns-triage',
