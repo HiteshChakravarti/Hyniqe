@@ -131,7 +131,7 @@ export function toolPage(t: ToolPage): string {
   <div class="tool-hero"><h1>${esc(t.h1)}</h1><p class="lede">${esc(t.lede)}</p></div>
   <div class="workspace" data-tool="${t.slug}">
     <div class="bench">
-      <label class="drop" id="drop-1"><input type="file" id="file-1" accept="${t.accept}">${FILE}<strong>${esc(t.inputLabel)}</strong><small id="file-1-name">No file chosen</small></label>
+      <label class="drop" id="drop-1"><input type="file" id="file-1" accept="${t.accept}">${FILE}<strong>${esc(t.inputLabel)}</strong><small id="file-1-name">No file chosen</small></label>${t.paste ? `\n      <label class="paste">Or paste it here<textarea id="paste" rows="8" spellcheck="false" placeholder="${esc(t.paste)}"></textarea></label>` : ''}
       ${second}${extra}
       <div class="row"><button class="btn primary" id="run" disabled>Check my file</button><button class="btn" id="run-sample">Try it with sample data</button></div>
       <p class="samples">Or download ${t.samples.map((s) => `<a href="${base}samples/${s.file}" download>${esc(s.label)}</a>`).join(' or ')} to see the format.</p>
