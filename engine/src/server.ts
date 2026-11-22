@@ -10,6 +10,11 @@ import { installPaymentDataOps, loadVendorMaster } from './skills/payment-data-o
 import { parseCsv, toCsv, allRecords, type SourceRow } from './records.ts';
 import { validateAtSource } from './rules.ts';
 import { snapshot } from './state.ts';
+import { renderHealthCheck } from './report/healthcheck.ts';
+import { useGeoNamesIfConfigured } from './address/geonames-env.ts';
+
+const geo = useGeoNamesIfConfigured();
+if (geo) console.log(geo);
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const PORT = Number(process.env.PORT ?? 4317);
@@ -100,6 +105,11 @@ const server = createServer(async (req, res) => {
       }));
       res.setHeader('content-disposition', 'attachment; filename="structured_addresses.csv"');
       return send(res, 200, toCsv(rows), 'text/csv; charset=utf-8');
+    }
+    if (req.method === 'GET' && url.pathname === '/api/healthcheck.html') {
+      if (engine.taskCount('ingest') === 0) return send(res, 409, { error: 'Load vendor data first' });
+      const client = (url.searchParams.get('client') || COMPANY).slice(0, 80);
+      return send(res, 200, renderHealthCheck(engine, { client }), 'text/html; charset=utf-8');
     }
     if (req.method === 'POST' && url.pathname === '/api/reset') {
       engine = boot();
