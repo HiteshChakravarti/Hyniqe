@@ -37,7 +37,7 @@ jobs:
         run: npm run build:site
       - name: Website loads every module
         run: |
-          node -e "for (const m of ['ssi-checker/src/ssi.js','duplicate-payments/src/duplicates.js','payment-data-repair/src/repair.js']) await import('./docs/lib/solutions/' + m); console.log('ok')" --input-type=module
+          node -e "for (const m of ['ssi-checker/src/ssi.js','duplicate-payments/src/duplicates.js','payment-data-repair/src/repair.js','payment-file-doctor/src/doctor.js','bank-statement-converter/src/statement.js','excel-to-payment-file/src/convert.js','corporate-actions-checker/src/events.js','vendor-master-cleanup/src/vendors.js','payment-returns-triage/src/triage.js','data-quality-scorecard/src/profile.js']) await import('./docs/lib/solutions/' + m); console.log('ok')" --input-type=module
       - name: Publish summary
         if: always()
         run: for f in out/benchmark-*.md; do [ -f "$f" ] && cat "$f" >> "$GITHUB_STEP_SUMMARY" && echo >> "$GITHUB_STEP_SUMMARY"; done

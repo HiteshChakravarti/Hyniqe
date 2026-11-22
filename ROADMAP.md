@@ -4,13 +4,11 @@ Planned solutions, in rough priority order. Open or upvote a GitHub issue to tel
 
 | Solution | Problem | Status |
 |---|---|---|
-| Corporate actions notice checker | Event details differ between custodian and vendor notices; manual cleansing and interpretation is a large share of processing cost | Planned |
 | Settlement fail predictor | Score pending instructions for fail risk on the intended settlement date and estimate the CSDR cash penalty | Planned |
-| Vendor master cleanup | Suppliers that exist twice, missing tax IDs, bank accounts shared across unrelated vendors | Planned |
-| Payment exception triage | Group returns and rejects by root cause and draft the fix | Planned |
-| Verification of Payee readiness | Predict which beneficiary names will return a close match or no match | Planned |
-| KYC document checker | List missing and expiring documents for each client file | Planned |
-| Data quality rule builder | Turn recurring defects into validation rules at the point of entry | Planned |
+| CSDR penalty estimator | Estimate cash penalties for failing settlement instructions from the official ESMA reference rates | Needs the official rate tables first |
+| LEI status checker | Lapsed or retired LEIs in counterparty data | Needs a live GLEIF lookup, which conflicts with nothing-uploaded; planned as an optional download |
+| Verification of Payee readiness | Predict which beneficiary names will return a close match or no match | Later: many banks already offer this |
+| KYC document checker | List missing and expiring documents for each client file | Later |
 
 ## Principles for every new solution
 1. Explainable: every flag states its reason and a suggested fix.

@@ -5,5 +5,4 @@ engine/out-board/
 engine/data/
 *.log
 .env
-docs/lib/
-docs/samples/
+docs/

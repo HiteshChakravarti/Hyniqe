@@ -3,7 +3,7 @@
 Free, open-source solutions for the data problems that make trades fail and payments go wrong.
 Each solution is a set of explainable checks with a report and a published benchmark. Use them in your browser, from the command line, or on your own servers.
 
-**Use it now:** [hiteshchakravarti.github.io/Hyniqe](https://hiteshchakravarti.github.io/Hyniqe/). Drop in a CSV and get a report. Your file is processed in your browser and never uploaded.
+**Use it now:** [hiteshchakravarti.github.io/Hyniqe](https://hiteshchakravarti.github.io/Hyniqe/). Drop in a file and get a report or a fixed file. Your file is processed in your browser and never uploaded.
 
 ## Solutions
 
@@ -12,6 +12,13 @@ Each solution is a set of explainable checks with a report and a published bench
 | [SSI Checker](solutions/ssi-checker/) | Standing settlement instructions that will fail or go unmatched under T+1: wrong place of settlement, invalid BIC, LEI or IBAN, conflicting or stale SSIs, differences from the golden source | Live |
 | [Duplicate Payment Finder](solutions/duplicate-payments/) | The same invoice paid twice, including re-keyed invoice numbers, suppliers set up twice and second-channel payments | Live |
 | [Payment Data Repair](solutions/payment-data-repair/) | Free-text vendor and beneficiary addresses turned into structured fields, plus bank-detail consistency checks | Live |
+| [Payment File Doctor](solutions/payment-file-doctor/) | Why a bank rejected a pain.001 payment file, and a corrected file (version upgrade, totals, characters, structured addresses, IBANs, dates) | Live |
+| [Bank Statement Converter](solutions/bank-statement-converter/) | camt.052/053/054 and MT940/942 statements turned into a spreadsheet, with a balance check | Live |
+| [Excel to Payment File](solutions/excel-to-payment-file/) | A valid pain.001 payment file built from a spreadsheet of payments, self-checked before download | Live |
+| [Corporate Actions Checker](solutions/corporate-actions-checker/) | Dates, rates, ratios and options that differ between custodian and vendor notices, and election deadlines too close to act on | Live |
+| [Vendor Master Cleanup](solutions/vendor-master-cleanup/) | Suppliers set up more than once, bank accounts shared by unrelated suppliers, invalid VAT numbers, missing details | Live |
+| [Returns and Rejects Triage](solutions/payment-returns-triage/) | Every rejected or returned payment (pain.002, pacs.002, pacs.004 or CSV) explained and grouped by root cause | Live |
+| [Data Quality Scorecard](solutions/data-quality-scorecard/) | Completeness, validity, uniqueness and consistency for any table, with finance formats checked properly | Live |
 
 See [CATALOG.md](CATALOG.md) for inputs, outputs and accuracy, and [ROADMAP.md](ROADMAP.md) for what comes next.
 
@@ -26,9 +33,16 @@ git clone https://github.com/HiteshChakravarti/Hyniqe.git && cd Hyniqe
 npm run ssi -- my-ssis.csv --golden golden-source.csv --client "My Bank"
 npm run duplicates -- payments.csv
 npm run repair -- vendors.csv
+npm run doctor -- rejected-file.xml
+npm run statement -- statement.mt940
+npm run excel-to-payment -- payments.csv --name "My Company" --iban DE89370400440532013000 --date 2026-12-01
+npm run corporate-actions -- notices.csv
+npm run vendors -- vendors.csv
+npm run returns -- status-report.xml
+npm run scorecard -- any-table.csv
 ```
 
-Each command writes an HTML report (prints cleanly to PDF) and a CSV of findings to `out/`. Add `--sample` to the first two to try them on generated data.
+Each command writes an HTML report (prints cleanly to PDF) and a CSV or corrected file to `out/`. Most accept `--sample` to try them on generated data.
 
 **3. Inside your own systems.** The solutions are plain TypeScript modules with no dependencies. Import `checkSsis`, `findDuplicates` or `repairRecords` directly, or run the full agent team in [`engine/`](engine/), which adds task queues, budgets, human approvals and a tamper-evident audit trail.
 
@@ -40,7 +54,11 @@ solutions/
   ssi-checker/       T+1 standing settlement instruction checks                       (AGPL-3.0)
   duplicate-payments/ duplicate and near-duplicate payment detection                  (AGPL-3.0)
   payment-data-repair/ address structuring and bank-detail controls                   (AGPL-3.0)
-  shared/            CSV and report helpers
+  payment-file-doctor/, bank-statement-converter/, excel-to-payment-file/,
+  corporate-actions-checker/, vendor-master-cleanup/, payment-returns-triage/,
+  data-quality-scorecard/                                                              (AGPL-3.0)
+  shared/            CSV, XML and report helpers
+site/                website pages, styles and the browser adapter for each tool
 docs/                the website; scripts/build-site.ts adds the browser modules and samples, GitHub Pages serves it
 ```
 
@@ -50,6 +68,11 @@ Every solution has a benchmark that runs in CI on every change and fails the bui
 
 - SSI Checker: 2000 SSIs, 100.0% of injected defects found, 0.00% of clean SSIs flagged.
 - Duplicate Payment Finder: 9264 payments, 94.7% of injected duplicates found, 100.0% of high-confidence flags correct.
+- Payment File Doctor: 60 files, 100% of injected defects reported, 100% of fixable ones repaired, 0 false alarms on 60 clean files.
+- Corporate Actions Checker: 887 notices, 100% of injected disagreements and deadline problems found, 0 of 201 clean events flagged.
+- Vendor Master Cleanup: 1908 supplier records, 100% of injected problems found, 0 of 1440 clean records flagged.
+- Returns and Rejects Triage: 748 returns in five formats, 100% read correctly.
+- Data Quality Scorecard: 3060 rows, every injected defect counted exactly in 60 of 60 columns.
 - Payment Data Repair: on a held-out set of 840 addresses, 57.6% repaired automatically with no wrong automatic repairs; the first blind run, before fixes, was 96.3% precise.
 
 These are synthetic, labelled test sets. They show the rules catch known defects; they are not a promise about your data. A Health Check on real data is the real test.
