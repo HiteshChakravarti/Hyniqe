@@ -76,6 +76,7 @@ const rows = [
   b.corporateActions && ['Corporate Actions Checker', `${n(b.corporateActions.notices)} notices`, `${pc(b.corporateActions.detect)} found`, `${b.corporateActions.falseFlags} of ${b.corporateActions.clean} clean events`],
   b.einvoice && ['E-invoice Checker', `${n(b.einvoice.invoices)} UBL and CII invoices, ${b.einvoice.pdfs} PDFs`, `${pc(b.einvoice.detect)} of broken rules found`, `${b.einvoice.falseFlags} of ${b.einvoice.clean} correct invoices`],
   b.explainer && ['Payment Message Explainer', `${n(b.explainer.messages)} MT103 / pacs.008 pairs`, `${b.explainer.roundOk} of ${b.explainer.messages} converted and read back unchanged`, `${b.explainer.addrSuggested - b.explainer.addrRight} wrong addresses`],
+  b.recon && ['Bank Reconciliation', `${n(b.recon.bankLines)} bank lines in 4 statement formats`, `${pc(b.recon.correct)} reconciled exactly right`, `${b.recon.wrongMatches} wrong matches`],
   b.bankDetail && ['Bank Detail Change Check', `${n(b.bankDetail.payments)} payments`, `${pc(b.bankDetail.detect)} of redirection patterns found`, `${b.bankDetail.falseFlags} of ${n(b.bankDetail.clean)} normal payments`],
   b.dataQuality && ['Data Quality Scorecard', `${n(b.dataQuality.rows)} rows`, `${b.dataQuality.exactColumns} of ${b.dataQuality.columns} columns counted exactly`, 'none'],
 ].filter(Boolean);
