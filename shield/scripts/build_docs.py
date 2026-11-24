@@ -27,9 +27,9 @@ def main():
     for k, r in d["structural_rules"].items():
         out.append(f"### {k} {r['title']}\n\n{r['explain']}\n\n**Fix:** {r['fix']}\n")
     out += ["## Scoring", "",
-            "Each rule adds its severity weight once per file (critical 40, high 20, medium 8, low 2, info 0); "
+            "Each rule adds its severity weight once per scan (critical 40, high 20, medium 8, low 2, info 0); "
             "repeats add a quarter of the weight, up to four more times. The score is capped at 100.", "",
-            "- **Dangerous**: any critical finding, or a score of 50 or more",
+            "- **Dangerous**: any critical finding, or two or more different high-severity rules",
             "- **Caution**: any high finding, or a score of 10 or more",
             "- **No known risks found**: everything else. This is not a guarantee of safety.", ""]
     (ROOT / "RULES.md").write_text("\n".join(out), encoding="utf-8")
