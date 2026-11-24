@@ -1,0 +1,434 @@
+{
+  "version": "0.1.0",
+  "owasp": {
+    "ASI01": "Agent Goal Hijack",
+    "ASI02": "Tool Misuse and Exploitation",
+    "ASI03": "Identity and Privilege Abuse",
+    "ASI04": "Agentic Supply Chain Vulnerabilities",
+    "ASI05": "Unexpected Code Execution",
+    "ASI06": "Memory and Context Poisoning",
+    "ASI07": "Insecure Inter-Agent Communication",
+    "ASI08": "Cascading Failures",
+    "ASI09": "Human-Agent Trust Exploitation",
+    "ASI10": "Rogue Agents"
+  },
+  "severity_weights": {"critical": 40, "high": 20, "medium": 8, "low": 2, "info": 0},
+  "rules": [
+    {
+      "id": "HS-INJ-001",
+      "title": "Tries to override the AI's instructions",
+      "severity": "critical",
+      "category": "injection",
+      "owasp": ["ASI01"],
+      "applies_to": ["skill", "markdown", "text", "mcp_config", "n8n", "code"],
+      "pattern": "\\b(ignore|disregard|forget|override)\\s+(all\\s+|any\\s+)?(of\\s+)?(the\\s+|your\\s+)?(previous|prior|above|earlier|original|system)\\s+(instructions|prompts?|rules|directions|guidelines)",
+      "flags": "i",
+      "explain": "Text that tells the AI to ignore its earlier instructions is the classic prompt-injection pattern. A legitimate add-on has no reason to do this.",
+      "fix": "Do not install this. If you wrote it, remove the sentence."
+    },
+    {
+      "id": "HS-INJ-002",
+      "title": "Tells the AI to hide things from you",
+      "severity": "high",
+      "category": "injection",
+      "owasp": ["ASI01", "ASI09"],
+      "applies_to": ["skill", "markdown", "text", "mcp_config", "n8n", "code"],
+      "pattern": "\\b(do\\s+not|don'?t|never|must\\s+not)\\s+(tell|inform|mention|reveal|show|notify|alert|disclose)\\s+(this\\s+|it\\s+|anything\\s+)?(to\\s+)?(the\\s+)?(user|human|operator|owner)",
+      "flags": "i",
+      "explain": "Instructions to keep the user in the dark are a strong sign that the add-on wants the AI to do something you would not approve.",
+      "fix": "Treat as malicious unless you can see a clear, harmless reason."
+    },
+    {
+      "id": "HS-INJ-003",
+      "title": "Fake priority or system tags",
+      "severity": "medium",
+      "category": "injection",
+      "owasp": ["ASI01"],
+      "applies_to": ["skill", "markdown", "text", "mcp_config", "n8n", "code"],
+      "pattern": "<\\s*/?\\s*(IMPORTANT|SYSTEM|system_prompt|admin|ADMIN|instructions?|INSTRUCTIONS?|hidden)\\s*>",
+      "flags": "",
+      "explain": "Tags like <IMPORTANT> or <SYSTEM> inside a tool description are a known trick to make injected text look authoritative to the AI.",
+      "fix": "Read the text inside the tag. If it gives the AI orders unrelated to the tool's job, do not install."
+    },
+    {
+      "id": "HS-INJ-004",
+      "title": "Asks the AI to act silently or without consent",
+      "severity": "high",
+      "category": "injection",
+      "owasp": ["ASI01", "ASI09"],
+      "applies_to": ["skill", "markdown", "text", "mcp_config", "n8n", "code"],
+      "pattern": "\\b(silently|secretly|covertly|without\\s+(asking|telling|informing|notifying|confirmation|confirming|the\\s+user'?s?\\s+(knowledge|consent|permission)))\\b",
+      "flags": "i",
+      "explain": "Actions taken silently or without your consent remove you from the loop - exactly what an attacker wants.",
+      "fix": "Require confirmation for any action this add-on takes."
+    },
+    {
+      "id": "HS-INJ-005",
+      "title": "Tries to change the AI's identity or safety mode",
+      "severity": "medium",
+      "category": "injection",
+      "owasp": ["ASI01"],
+      "applies_to": ["skill", "markdown", "text", "mcp_config", "n8n", "code"],
+      "pattern": "\\b(you\\s+are\\s+now\\s+(an?\\s+)?(unrestricted|jailbroken|uncensored|DAN)|developer\\s+mode\\s+enabled|act\\s+as\\s+(an?\\s+)?(unrestricted|jailbroken|uncensored))",
+      "flags": "i",
+      "explain": "Jailbreak-style text tries to switch off the AI's safeguards.",
+      "fix": "Do not install."
+    },
+    {
+      "id": "HS-INJ-006",
+      "title": "Gives orders about other tools (tool shadowing)",
+      "severity": "medium",
+      "category": "injection",
+      "owasp": ["ASI01", "ASI02"],
+      "applies_to": ["skill", "mcp_config", "code", "text"],
+      "pattern": "\\b(when|whenever|before|after)\\s+(using|calling|invoking|you\\s+use|you\\s+call)\\s+(any|another|other|the\\s+\\w+)\\s+(tools?|functions?)\\b",
+      "flags": "i",
+      "explain": "A tool that tells the AI how to use *other* tools can hijack them - for example silently changing who an email is sent to.",
+      "fix": "A tool's description should only describe itself. Review carefully."
+    },
+    {
+      "id": "HS-INJ-007",
+      "title": "Claims to be an official instruction",
+      "severity": "medium",
+      "category": "injection",
+      "owasp": ["ASI09"],
+      "applies_to": ["skill", "markdown", "text", "mcp_config", "n8n", "code"],
+      "pattern": "\\b(this\\s+is\\s+(an?\\s+)?(official|authori[sz]ed|mandatory)\\s+(instruction|request|directive|update)\\s+from\\s+(anthropic|openai|google|microsoft|the\\s+system|the\\s+administrator|admin|security))",
+      "flags": "i",
+      "explain": "Fake authority is used to pressure the AI (or you) into trusting injected instructions.",
+      "fix": "Real platform instructions never arrive inside a third-party add-on."
+    },
+    {
+      "id": "HS-EXF-001",
+      "title": "Sends data to a known data-collection service",
+      "severity": "high",
+      "category": "exfiltration",
+      "owasp": ["ASI02"],
+      "applies_to": ["skill", "markdown", "text", "mcp_config", "n8n", "code"],
+      "pattern": "(webhook\\.site|requestbin\\.|pipedream\\.net|ngrok(-free)?\\.(io|app|dev)|burpcollaborator\\.net|interact\\.sh|\\.oast\\.(fun|me|pro|live|site|online)|discord(app)?\\.com/api/webhooks|api\\.telegram\\.org/bot|pastebin\\.com/api|transfer\\.sh|requestcatcher\\.com|beeceptor\\.com)",
+      "flags": "i",
+      "explain": "These services are commonly used to receive stolen data. Legitimate add-ons rarely send your data to them.",
+      "fix": "Find out exactly what is sent there. If it is your data, do not install."
+    },
+    {
+      "id": "HS-EXF-002",
+      "title": "Instructs sending your data somewhere",
+      "severity": "high",
+      "category": "exfiltration",
+      "owasp": ["ASI02", "ASI01"],
+      "applies_to": ["skill", "markdown", "text", "mcp_config", "n8n", "code"],
+      "pattern": "\\b(send|upload|post|forward|transmit|exfiltrate|copy|email)\\s+(\\w+\\s+){0,4}(contents?|data|files?|credentials?|keys?|tokens?|secrets?|passwords?|history|conversations?|messages?|emails?|documents?)\\s+(\\w+\\s+){0,3}(to|into)\\s+(https?://|the\\s+(following|url|endpoint|server|webhook|address)|this\\s+(url|endpoint|server|address))",
+      "flags": "i",
+      "explain": "Natural-language instructions to move your files, keys or messages to an outside address are how agent data theft usually works.",
+      "fix": "Check the destination. Never let an add-on send private data to an address you don't control."
+    },
+    {
+      "id": "HS-EXF-003",
+      "title": "Uploads data with curl/wget",
+      "severity": "medium",
+      "category": "exfiltration",
+      "owasp": ["ASI02"],
+      "applies_to": ["skill", "markdown", "text", "mcp_config", "n8n", "code"],
+      "pattern": "\\b(curl|wget)\\b[^\\n]{0,200}\\s(-d|--data(-binary|-raw|-urlencode)?|-F|--form|--upload-file|-T|--post-file|--post-data)\\b",
+      "flags": "",
+      "explain": "Command-line uploads can quietly push local data to a server.",
+      "fix": "Check what file or data is being uploaded and where to."
+    },
+    {
+      "id": "HS-EXF-004",
+      "title": "Encodes data before sending it",
+      "severity": "medium",
+      "category": "exfiltration",
+      "owasp": ["ASI02"],
+      "applies_to": ["skill", "markdown", "text", "code", "n8n"],
+      "pattern": "(base64|btoa\\(|b64encode)[^\\n]{0,120}(curl|wget|fetch\\(|requests\\.(post|get)|http\\.request|axios)",
+      "flags": "i",
+      "explain": "Encoding data right before a network call is a common way to hide what is being sent.",
+      "fix": "Review the code path; there should be a clear, harmless reason."
+    },
+    {
+      "id": "HS-SENS-001",
+      "title": "Accesses passwords, keys or private files",
+      "severity": "high",
+      "category": "sensitive-access",
+      "owasp": ["ASI03"],
+      "applies_to": ["skill", "markdown", "text", "mcp_config", "n8n", "code"],
+      "pattern": "((~|\\$HOME|%USERPROFILE%)?[/\\\\]\\.(ssh|aws|gnupg|kube|docker|azure|config/gcloud)[/\\\\]|\\bid_(rsa|ed25519|ecdsa|dsa)\\b|(?<![\\w.])\\.env(\\.(local|production|prod))?(?![\\w.])|\\bcredentials\\.json\\b|\\.git-credentials\\b|\\.npmrc\\b|\\.pypirc\\b|\\bLogin Data\\b|Cookies\\.binarycookies|\\bwallet\\.dat\\b|\\bkeychain\\b|/etc/(passwd|shadow)\\b|[/\\\\]\\.cursor[/\\\\]mcp\\.json|[/\\\\]Claude[/\\\\]claude_desktop_config\\.json)",
+      "flags": "i",
+      "explain": "These locations hold SSH keys, cloud credentials, passwords, browser logins or crypto wallets. An add-on reading them can take over your accounts.",
+      "fix": "Only allow if the add-on's purpose genuinely requires it, and never combined with network access."
+    },
+    {
+      "id": "HS-SECR-001",
+      "title": "Contains a hard-coded secret or API key",
+      "severity": "high",
+      "category": "secrets",
+      "owasp": ["ASI03"],
+      "applies_to": ["skill", "markdown", "text", "mcp_config", "n8n", "code"],
+      "pattern": "(\\bsk-(proj-|ant-(api\\d{2}-)?)?[A-Za-z0-9_-]{24,}|\\bAKIA[0-9A-Z]{16}\\b|\\bgh[pousr]_[A-Za-z0-9]{36,}\\b|\\bgithub_pat_[A-Za-z0-9_]{40,}|\\bxox[baprs]-[A-Za-z0-9-]{10,}|\\bAIza[0-9A-Za-z_-]{35}\\b|-----BEGIN (RSA |EC |OPENSSH |DSA |PGP )?PRIVATE KEY-----|\\bsk_live_[0-9a-zA-Z]{24,})",
+      "flags": "",
+      "explain": "A real key is written directly into the file. Anyone who sees the file can use it, and the add-on author may be using your account or theirs in ways you can't see.",
+      "fix": "Remove the key, rotate it immediately, and load secrets from environment variables or a secret manager.",
+      "mask": true
+    },
+    {
+      "id": "HS-CMD-001",
+      "title": "Downloads and runs a script from the internet",
+      "severity": "high",
+      "category": "code-execution",
+      "owasp": ["ASI05", "ASI04"],
+      "applies_to": ["skill", "markdown", "text", "mcp_config", "n8n", "code"],
+      "pattern": "\\b(curl|wget|iwr|Invoke-WebRequest)\\b[^\\n|]{0,200}\\|\\s*(sudo\\s+)?(ba|z|da)?sh\\b|\\b(iex|Invoke-Expression)\\s*\\(",
+      "flags": "i",
+      "explain": "Piping a downloaded script straight into a shell runs whatever the server sends - today or after it changes.",
+      "fix": "Download, read and pin the script instead of piping it into a shell."
+    },
+    {
+      "id": "HS-CMD-002",
+      "title": "Opens a remote control connection (reverse shell)",
+      "severity": "critical",
+      "category": "code-execution",
+      "owasp": ["ASI05", "ASI10"],
+      "applies_to": ["skill", "markdown", "text", "mcp_config", "n8n", "code"],
+      "pattern": "(/dev/tcp/[\\w.\\-]+/\\d+|\\bnc(at)?\\s+(-\\w+\\s+)*-e\\s|\\bbash\\s+-i\\s*>&|\\bsocat\\s+[^\\n]*exec:|\\bpowershell[^\\n]*Net\\.Sockets\\.TCPClient)",
+      "flags": "i",
+      "explain": "This pattern gives a remote attacker a live command line on your computer.",
+      "fix": "Do not install. If found on your machine, disconnect and investigate."
+    },
+    {
+      "id": "HS-CMD-003",
+      "title": "Destructive delete command",
+      "severity": "high",
+      "category": "destructive",
+      "owasp": ["ASI02"],
+      "applies_to": ["skill", "markdown", "text", "mcp_config", "n8n", "code"],
+      "pattern": "\\brm\\s+-(rf|fr|r\\s+-f|f\\s+-r)\\s+(--no-preserve-root\\s+)?(/|~|\\$HOME|\\*|/\\*)(\\s|$|\"|')|\\bformat\\s+[a-z]:|\\bdel\\s+/[sfq]\\s+/[sfq]",
+      "flags": "i",
+      "explain": "Commands like this can wipe your home folder or whole disk.",
+      "fix": "Never let an agent run broad delete commands without confirmation."
+    },
+    {
+      "id": "HS-CMD-004",
+      "title": "Runs dynamic or shell code",
+      "severity": "medium",
+      "category": "code-execution",
+      "owasp": ["ASI05"],
+      "applies_to": ["code", "n8n"],
+      "pattern": "\\b(eval|exec)\\s*\\(|require\\(\\s*['\"]child_process['\"]\\s*\\)|from\\s+['\"]child_process['\"]|subprocess\\.[A-Za-z_]+\\([^)]*shell\\s*=\\s*True|\\bos\\.(system|popen)\\(",
+      "flags": "",
+      "explain": "Running shell commands or dynamically built code means the add-on can do anything your user account can do.",
+      "fix": "Confirm the commands are fixed and safe, not built from untrusted input."
+    },
+    {
+      "id": "HS-CMD-005",
+      "title": "Changes permissions or installs persistence",
+      "severity": "medium",
+      "category": "persistence",
+      "owasp": ["ASI10", "ASI05"],
+      "applies_to": ["skill", "markdown", "text", "mcp_config", "n8n", "code"],
+      "pattern": "\\bchmod\\s+(-R\\s+)?(777|\\+s)\\b|\\bcrontab\\s+-|>>?\\s*~?/?\\.(bashrc|zshrc|profile|bash_profile)\\b|LaunchAgents/|\\bauthorized_keys\\b|\\bschtasks\\s+/create",
+      "flags": "i",
+      "explain": "Editing startup files, scheduled tasks or SSH authorized keys lets something keep running or keep access after you stop using it.",
+      "fix": "An add-on should not modify system startup or access settings."
+    },
+    {
+      "id": "HS-PERM-001",
+      "title": "Turns off safety confirmations",
+      "severity": "high",
+      "category": "privilege",
+      "owasp": ["ASI03", "ASI09"],
+      "applies_to": ["skill", "markdown", "text", "mcp_config", "n8n", "code"],
+      "pattern": "(--dangerously-skip-permissions|--yolo\\b|bypassPermissions|\"alwaysAllow\"\\s*:\\s*\\[\\s*\"|\\bauto[-_ ]?approve\\s*[:=]\\s*(true|\"?all)|--no-sandbox\\b|--allow-all-tools\\b)",
+      "flags": "i",
+      "explain": "Disabling permission prompts or sandboxes means the AI can take any action without asking you first.",
+      "fix": "Keep confirmations on, especially for tools that write, delete, pay or send."
+    },
+    {
+      "id": "HS-MEM-001",
+      "title": "Tries to plant long-term memory",
+      "severity": "medium",
+      "category": "memory",
+      "owasp": ["ASI06"],
+      "applies_to": ["skill", "markdown", "text", "mcp_config", "n8n", "code"],
+      "pattern": "\\b(remember|save|store|memori[sz]e)\\s+(this|the\\s+following|these\\s+instructions)\\s+(in|to|into)\\s+(your\\s+)?(memory|long[- ]term|persistent|permanent)|\\b(in|for)\\s+all\\s+future\\s+(conversations|sessions|chats|responses)\\b",
+      "flags": "i",
+      "explain": "Planting instructions in the AI's memory makes an attack survive into future conversations.",
+      "fix": "Review and clear the AI's saved memory after using untrusted add-ons."
+    },
+    {
+      "id": "HS-NET-001",
+      "title": "Talks to a raw IP address",
+      "severity": "medium",
+      "category": "network",
+      "owasp": ["ASI04"],
+      "applies_to": ["skill", "markdown", "text", "mcp_config", "n8n", "code"],
+      "pattern": "\\bhttps?://(?!(127\\.|0\\.0\\.0\\.0|10\\.|192\\.168\\.|172\\.(1[6-9]|2\\d|3[01])\\.))(\\d{1,3}\\.){3}\\d{1,3}",
+      "flags": "i",
+      "explain": "Connecting to a bare IP address instead of a named service is unusual for legitimate tools and common in malware.",
+      "fix": "Find out who owns that server."
+    },
+    {
+      "id": "HS-NET-002",
+      "title": "Uses unencrypted http:// for a remote address",
+      "severity": "low",
+      "category": "network",
+      "owasp": ["ASI04"],
+      "applies_to": ["mcp_config", "n8n", "code", "skill"],
+      "pattern": "\\bhttp://(?!(localhost|127\\.0\\.0\\.1|0\\.0\\.0\\.0|\\[::1\\]|host\\.docker\\.internal|www\\.w3\\.org|schemas\\.|json-schema\\.org))[A-Za-z0-9.-]+\\.[A-Za-z]{2,}",
+      "flags": "i",
+      "explain": "Data sent over plain http can be read or changed by anyone on the network path.",
+      "fix": "Use https://."
+    },
+    {
+      "id": "HS-OBF-001",
+      "title": "Large encoded blob",
+      "severity": "low",
+      "category": "obfuscation",
+      "owasp": ["ASI04"],
+      "applies_to": ["skill", "markdown", "text", "mcp_config", "n8n", "code"],
+      "pattern": "[A-Za-z0-9+/]{300,}={0,2}",
+      "flags": "",
+      "explain": "Long encoded strings can hide code or instructions from human reviewers.",
+      "fix": "Decode it and check what it contains."
+    }
+  ],
+  "structural_rules": {
+    "HS-UNI-001": {
+      "title": "Hidden invisible text (Unicode tag characters)",
+      "severity": "critical",
+      "category": "hidden-text",
+      "owasp": ["ASI01", "ASI04"],
+      "explain": "The file contains invisible characters that spell out hidden text. People can't see it, but the AI can read it - a known way to smuggle instructions past reviewers.",
+      "fix": "Do not install. The decoded hidden text is shown in the finding."
+    },
+    "HS-UNI-002": {
+      "title": "Invisible zero-width characters",
+      "severity": "medium",
+      "category": "hidden-text",
+      "owasp": ["ASI01"],
+      "explain": "Zero-width characters are invisible. They are sometimes harmless, but can be used to hide or split words so filters miss them.",
+      "fix": "Remove them unless you know why they are there."
+    },
+    "HS-UNI-003": {
+      "title": "Text-direction override characters (Trojan Source)",
+      "severity": "high",
+      "category": "hidden-text",
+      "owasp": ["ASI04"],
+      "explain": "Bidirectional override characters make text display differently from how it is actually read by machines, hiding malicious content in plain sight.",
+      "fix": "Remove them; legitimate code and instructions don't need them."
+    },
+    "HS-COMBO-001": {
+      "title": "Reads private data AND can send data out",
+      "severity": "critical",
+      "category": "combo",
+      "owasp": ["ASI02", "ASI03"],
+      "explain": "The same add-on both touches sensitive data and contains a way to send data out. This combination is exactly what data theft looks like.",
+      "fix": "Do not install unless you fully understand and trust both parts."
+    },
+    "HS-MCP-001": {
+      "title": "Package version not pinned",
+      "severity": "medium",
+      "category": "supply-chain",
+      "owasp": ["ASI04"],
+      "explain": "This server is downloaded fresh each time without a fixed version. If the package is later hijacked or changes behaviour, you get the new version automatically - a 'rug pull'.",
+      "fix": "Pin an exact version, e.g. package@1.2.3."
+    },
+    "HS-MCP-002": {
+      "title": "Secret written directly in the config",
+      "severity": "high",
+      "category": "secrets",
+      "owasp": ["ASI03"],
+      "explain": "A token or key is stored in plain text in the config file, where other tools, backups or repos can leak it.",
+      "fix": "Move it to an environment variable or secret manager and rotate the key.",
+      "mask": true
+    },
+    "HS-MCP-003": {
+      "title": "Remote server over unencrypted http",
+      "severity": "high",
+      "category": "network",
+      "owasp": ["ASI04", "ASI07"],
+      "explain": "Your AI's tool calls and results travel unencrypted to a remote server.",
+      "fix": "Use an https:// URL."
+    },
+    "HS-MCP-004": {
+      "title": "Gives access to your whole disk or home folder",
+      "severity": "medium",
+      "category": "privilege",
+      "owasp": ["ASI03"],
+      "explain": "The server is pointed at a very broad location, so the AI can read (and maybe change) far more than the task needs.",
+      "fix": "Point it at only the specific project folder it needs."
+    },
+    "HS-MCP-005": {
+      "title": "Container runs with dangerous host access",
+      "severity": "high",
+      "category": "privilege",
+      "owasp": ["ASI05", "ASI03"],
+      "explain": "Privileged containers, host networking or mounting the whole host filesystem remove most of the protection a container gives.",
+      "fix": "Drop --privileged / --network host and mount only what is needed, read-only where possible."
+    },
+    "HS-MCP-006": {
+      "title": "Uses mcp-remote bridge",
+      "severity": "low",
+      "category": "supply-chain",
+      "owasp": ["ASI04"],
+      "explain": "mcp-remote bridges to a remote server. Older versions had a serious command-injection flaw (CVE-2025-6514) triggerable by a malicious server.",
+      "fix": "Pin to the latest mcp-remote version and only connect to servers you trust."
+    },
+    "HS-MCP-007": {
+      "title": "Connects to a third-party remote server",
+      "severity": "info",
+      "category": "network",
+      "owasp": ["ASI04"],
+      "explain": "Your AI's requests and the data in them will be sent to this remote service.",
+      "fix": "Make sure you trust the operator and understand what data it receives."
+    },
+    "HS-MCP-008": {
+      "title": "Tools auto-approved without confirmation",
+      "severity": "high",
+      "category": "privilege",
+      "owasp": ["ASI03", "ASI09"],
+      "explain": "Tools listed here run without asking you first.",
+      "fix": "Only auto-approve read-only, low-risk tools."
+    },
+    "HS-N8N-001": {
+      "title": "Workflow runs shell commands",
+      "severity": "high",
+      "category": "code-execution",
+      "owasp": ["ASI05"],
+      "explain": "An Execute Command node runs commands directly on the n8n server.",
+      "fix": "Make sure the command is fixed and never built from incoming data."
+    },
+    "HS-N8N-002": {
+      "title": "Code node uses system access",
+      "severity": "high",
+      "category": "code-execution",
+      "owasp": ["ASI05", "ASI03"],
+      "explain": "A Code node loads system modules (shell, filesystem) or reads server environment variables, which can expose secrets or run commands.",
+      "fix": "Review the code; remove system access unless essential."
+    },
+    "HS-N8N-003": {
+      "title": "Public webhook with no authentication",
+      "severity": "medium",
+      "category": "privilege",
+      "owasp": ["ASI03"],
+      "explain": "Anyone who finds this webhook URL can trigger the workflow.",
+      "fix": "Add header or basic authentication to the webhook node."
+    },
+    "HS-N8N-004": {
+      "title": "AI agent mixes untrusted input, private data and outbound actions",
+      "severity": "high",
+      "category": "combo",
+      "owasp": ["ASI01", "ASI02"],
+      "explain": "This workflow's AI agent receives outside content (emails, webhooks, web pages), can reach private data, and can send data out. Together these let an attacker steer the agent into leaking data - the 'lethal trifecta'.",
+      "fix": "Remove one of the three, or require human approval before outbound actions."
+    },
+    "HS-SKILL-001": {
+      "title": "Skill can run any shell command",
+      "severity": "low",
+      "category": "privilege",
+      "owasp": ["ASI03", "ASI05"],
+      "explain": "The skill allows the Bash tool without restricting which commands it may run.",
+      "fix": "Restrict it, e.g. Bash(git status:*), to only what the skill needs."
+    }
+  }
+}
