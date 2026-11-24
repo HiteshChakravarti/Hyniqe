@@ -56,8 +56,9 @@
       "severity": "high",
       "category": "injection",
       "owasp": ["ASI01", "ASI09"],
-      "applies_to": ["skill", "markdown", "text", "mcp_config", "n8n", "code"],
-      "pattern": "\\b(silently|secretly|covertly|without\\s+(asking|telling|informing|notifying|confirmation|confirming|the\\s+user'?s?\\s+(knowledge|consent|permission)))\\b",
+      "applies_to": ["skill", "markdown", "text", "mcp_config", "n8n"],
+      "not_if_line": "\\b(never|must\\s+not|should\\s+not|shouldn'?t|avoid|prevents?|would|could|might|otherwise|doesn'?t|won'?t|so\\s+it\\s+doesn'?t)\\b[^.]*\\b(silently|secretly|covertly|quietly|without)\\b",
+      "pattern": "\\b(silently|secretly|covertly|quietly)\\s+(send|upload|forward|copy|exfiltrate|share|post|transmit|e-?mail|bcc|delete|remove|modify|change|replace|add|run|execute|install|read|access|collect|include|attach|append)\\b|\\bwithout\\s+(asking|telling|informing|notifying|alerting)\\s+(the\\s+)?user\\b(?!\\s+(to|for|whether|if|about)\\b)|\\bwithout\\s+the\\s+user'?s?\\s+(knowledge|consent|permission)\\b|\\b(do\\s+not|don'?t|never)\\s+(tell|inform|notify|alert|mention\\s+(this|it)\\s+to)\\s+the\\s+user\\b",
       "flags": "i",
       "explain": "Actions taken silently or without your consent remove you from the loop - exactly what an attacker wants.",
       "fix": "Require confirmation for any action this add-on takes."
@@ -129,7 +130,7 @@
       "category": "exfiltration",
       "owasp": ["ASI02"],
       "applies_to": ["skill", "markdown", "text", "mcp_config", "n8n", "code"],
-      "pattern": "\\b(curl|wget)\\b[^\\n]{0,200}\\s(-d|--data(-binary|-raw|-urlencode)?|-F|--form|--upload-file|-T|--post-file|--post-data)\\b",
+      "pattern": "\\b(curl|wget)\\b(?![^\\n]*\\b(localhost|127\\.0\\.0\\.1|0\\.0\\.0\\.0)\\b)[^\\n]{0,200}\\s(-d|--data(-binary|-raw|-urlencode)?|-F|--form|--upload-file|-T|--post-file|--post-data)\\b",
       "flags": "",
       "explain": "Command-line uploads can quietly push local data to a server.",
       "fix": "Check what file or data is being uploaded and where to."
@@ -153,7 +154,7 @@
       "category": "sensitive-access",
       "owasp": ["ASI03"],
       "applies_to": ["skill", "markdown", "text", "mcp_config", "n8n", "code"],
-      "pattern": "((~|\\$HOME|%USERPROFILE%)?[/\\\\]\\.(ssh|aws|gnupg|kube|docker|azure|config/gcloud)[/\\\\]|\\bid_(rsa|ed25519|ecdsa|dsa)\\b|(?<![\\w.])\\.env(\\.(local|production|prod))?(?![\\w.])|\\bcredentials\\.json\\b|\\.git-credentials\\b|\\.npmrc\\b|\\.pypirc\\b|\\bLogin Data\\b|Cookies\\.binarycookies|\\bwallet\\.dat\\b|\\bkeychain\\b|/etc/(passwd|shadow)\\b|[/\\\\]\\.cursor[/\\\\]mcp\\.json|[/\\\\]Claude[/\\\\]claude_desktop_config\\.json)",
+      "pattern": "((~|\\$HOME|%USERPROFILE%)?[/\\\\]\\.(ssh|aws|gnupg|kube|azure|config/gcloud)[/\\\\]|\\bid_(rsa|ed25519|ecdsa|dsa)\\b|\\b(read|cat|open|send|upload|exfiltrate|steal|dump|leak|readFileSync|readFile|read_text)\\b[^\\n]{0,40}((?<![\\w.])\\.env(\\.(local|production|prod))?(?![\\w.])|[/\\\\]\\.cursor[/\\\\]mcp\\.json|[/\\\\]Claude[/\\\\]claude_desktop_config\\.json|[/\\\\]\\.docker[/\\\\]config\\.json|\\bcredentials\\.json\\b|\\.git-credentials\\b)|\\bLogin Data\\b|Cookies\\.binarycookies|\\bwallet\\.dat\\b|\\blogin\\.keychain|\\bsecurity\\s+find-(generic|internet)-password\\b|/etc/shadow\\b)",
       "flags": "i",
       "explain": "These locations hold SSH keys, cloud credentials, passwords, browser logins or crypto wallets. An add-on reading them can take over your accounts.",
       "fix": "Only allow if the add-on's purpose genuinely requires it, and never combined with network access."
@@ -165,7 +166,7 @@
       "category": "secrets",
       "owasp": ["ASI03"],
       "applies_to": ["skill", "markdown", "text", "mcp_config", "n8n", "code"],
-      "pattern": "(\\bsk-(proj-|ant-(api\\d{2}-)?)?[A-Za-z0-9_-]{24,}|\\bAKIA[0-9A-Z]{16}\\b|\\bgh[pousr]_[A-Za-z0-9]{36,}\\b|\\bgithub_pat_[A-Za-z0-9_]{40,}|\\bxox[baprs]-[A-Za-z0-9-]{10,}|\\bAIza[0-9A-Za-z_-]{35}\\b|-----BEGIN (RSA |EC |OPENSSH |DSA |PGP )?PRIVATE KEY-----|\\bsk_live_[0-9a-zA-Z]{24,})",
+      "pattern": "(\\bsk-(proj-|ant-(api\\d{2}-)?)?[A-Za-z0-9_-]{24,}|\\bAKIA[0-9A-Z]{16}\\b|\\bgh[pousr]_[A-Za-z0-9]{36,}\\b|\\bgithub_pat_[A-Za-z0-9_]{40,}|\\bxox[baprs]-[A-Za-z0-9-]{10,}|\\bAIza[0-9A-Za-z_-]{35}\\b|-----BEGIN (RSA |EC |OPENSSH |DSA |PGP )?PRIVATE KEY-----(\\s|\\\\n)*[A-Za-z0-9+/]{40,}|\\bsk_live_[0-9a-zA-Z]{24,})",
       "flags": "",
       "explain": "A real key is written directly into the file. Anyone who sees the file can use it, and the add-on author may be using your account or theirs in ways you can't see.",
       "fix": "Remove the key, rotate it immediately, and load secrets from environment variables or a secret manager.",
@@ -174,7 +175,7 @@
     {
       "id": "HS-CMD-001",
       "title": "Downloads and runs a script from the internet",
-      "severity": "high",
+      "severity": "medium",
       "category": "code-execution",
       "owasp": ["ASI05", "ASI04"],
       "applies_to": ["skill", "markdown", "text", "mcp_config", "n8n", "code"],
@@ -190,7 +191,7 @@
       "category": "code-execution",
       "owasp": ["ASI05", "ASI10"],
       "applies_to": ["skill", "markdown", "text", "mcp_config", "n8n", "code"],
-      "pattern": "(/dev/tcp/[\\w.\\-]+/\\d+|\\bnc(at)?\\s+(-\\w+\\s+)*-e\\s|\\bbash\\s+-i\\s*>&|\\bsocat\\s+[^\\n]*exec:|\\bpowershell[^\\n]*Net\\.Sockets\\.TCPClient)",
+      "pattern": "(/dev/tcp/(?!localhost/|127\\.0\\.0\\.1/)[\\w.\\-]+/\\d+|\\bnc(at)?\\s+(-\\w+\\s+)*-e\\s|\\bbash\\s+-i\\s*>&|\\bsocat\\s+[^\\n]*exec:|\\bpowershell[^\\n]*Net\\.Sockets\\.TCPClient)",
       "flags": "i",
       "explain": "This pattern gives a remote attacker a live command line on your computer.",
       "fix": "Do not install. If found on your machine, disconnect and investigate."
@@ -210,11 +211,11 @@
     {
       "id": "HS-CMD-004",
       "title": "Runs dynamic or shell code",
-      "severity": "medium",
+      "severity": "low",
       "category": "code-execution",
       "owasp": ["ASI05"],
       "applies_to": ["code", "n8n"],
-      "pattern": "\\b(eval|exec)\\s*\\(|require\\(\\s*['\"]child_process['\"]\\s*\\)|from\\s+['\"]child_process['\"]|subprocess\\.[A-Za-z_]+\\([^)]*shell\\s*=\\s*True|\\bos\\.(system|popen)\\(",
+      "pattern": "(?<![.\\w$])(eval|exec)\\s*\\(\\s*(?!\\))|require\\(\\s*['\\\"]child_process['\\\"]\\s*\\)|from\\s+['\\\"](node:)?child_process['\\\"]|subprocess\\.[A-Za-z_]+\\([^)]*shell\\s*=\\s*True|\\bos\\.(system|popen)\\(",
       "flags": "",
       "explain": "Running shell commands or dynamically built code means the add-on can do anything your user account can do.",
       "fix": "Confirm the commands are fixed and safe, not built from untrusted input."
@@ -238,7 +239,7 @@
       "category": "privilege",
       "owasp": ["ASI03", "ASI09"],
       "applies_to": ["skill", "markdown", "text", "mcp_config", "n8n", "code"],
-      "pattern": "(--dangerously-skip-permissions|--yolo\\b|bypassPermissions|\"alwaysAllow\"\\s*:\\s*\\[\\s*\"|\\bauto[-_ ]?approve\\s*[:=]\\s*(true|\"?all)|--no-sandbox\\b|--allow-all-tools\\b)",
+      "pattern": "(--dangerously-skip-permissions|--yolo\\b|bypassPermissions|\\\"alwaysAllow\\\"\\s*:\\s*\\[\\s*\\\"|\\bauto[-_ ]?approve\\s*[:=]\\s*(true|\\\"?all)|--allow-all-tools\\b)",
       "flags": "i",
       "explain": "Disabling permission prompts or sandboxes means the AI can take any action without asking you first.",
       "fix": "Keep confirmations on, especially for tools that write, delete, pay or send."
@@ -274,7 +275,7 @@
       "category": "network",
       "owasp": ["ASI04"],
       "applies_to": ["mcp_config", "n8n", "code", "skill"],
-      "pattern": "\\bhttp://(?!(localhost|127\\.0\\.0\\.1|0\\.0\\.0\\.0|\\[::1\\]|host\\.docker\\.internal|www\\.w3\\.org|schemas\\.|json-schema\\.org))[A-Za-z0-9.-]+\\.[A-Za-z]{2,}",
+      "pattern": "\\bhttp://(?!(localhost|127\\.0\\.0\\.1|0\\.0\\.0\\.0|\\[::1\\]|host\\.docker\\.internal|www\\.w3\\.org|schemas\\.|json-schema\\.org|www\\.apache\\.org|opensource\\.org|www\\.opensource\\.org|www\\.gnu\\.org|gnu\\.org|creativecommons\\.org|purl\\.org|(www\\.)?openoffice\\.org|ns\\.adobe\\.com|xmlns\\.|example\\.(com|org|net)|www\\.example\\.))[A-Za-z0-9.-]+\\.[A-Za-z]{2,}",
       "flags": "i",
       "explain": "Data sent over plain http can be read or changed by anyone on the network path.",
       "fix": "Use https://."
@@ -286,7 +287,7 @@
       "category": "obfuscation",
       "owasp": ["ASI04"],
       "applies_to": ["skill", "markdown", "text", "mcp_config", "n8n", "code"],
-      "pattern": "[A-Za-z0-9+/]{300,}={0,2}",
+      "pattern": "(?<![A-Za-z0-9+/%=,])(?!MII|iVBORw0KGgo|/9j/|R0lGOD|PHN2Zy|PD94bWw|UklGR|AAABAA|d09GM|AAEAAA|T1RUTw)[A-Za-z0-9+/]{300,}={0,2}",
       "flags": "",
       "explain": "Long encoded strings can hide code or instructions from human reviewers.",
       "fix": "Decode it and check what it contains."
@@ -303,7 +304,7 @@
     },
     "HS-UNI-002": {
       "title": "Invisible zero-width characters",
-      "severity": "medium",
+      "severity": "low",
       "category": "hidden-text",
       "owasp": ["ASI01"],
       "explain": "Zero-width characters are invisible. They are sometimes harmless, but can be used to hide or split words so filters miss them.",

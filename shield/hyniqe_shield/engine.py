@@ -29,7 +29,7 @@ INLINE_IGNORE = re.compile(r"hyniqe-shield:\s*ignore(?:\s+(HS-[A-Z0-9-]+(?:\s*,\
 SEVERITY_ORDER = ["info", "low", "medium", "high", "critical"]
 
 SECRET_NAME = re.compile(r"(token|secret|password|passwd|api[_-]?key|apikey|access[_-]?key|private[_-]?key|auth|bearer|credential)", re.I)
-PLACEHOLDER = re.compile(r"^\s*$|^\$\{?[A-Za-z_][A-Za-z0-9_]*\}?$|^\$\{\{.*\}\}$|^<.*>$|^(your|xxx|changeme|replace|example|placeholder|todo|\*+)", re.I)
+PLACEHOLDER = re.compile(r"\$\{[^}]+\}|\$[A-Z_][A-Z0-9_]{2,}\b|\$env:|\{\{.*\}\}|^\s*$|^\$\{?[A-Za-z_][A-Za-z0-9_]*\}?$|^\$\{\{.*\}\}$|^<.*>$|^(your|xxx|changeme|replace|example|placeholder|todo|\*+)", re.I)
 
 
 @dataclass
@@ -97,6 +97,7 @@ def load_rules(path: Path = RULES_PATH) -> dict:
         if "i" in rule.get("flags", ""):
             flags |= re.I
         rule["_re"] = re.compile(rule["pattern"], flags)
+        rule["_not"] = re.compile(rule["not_if_line"], re.I) if rule.get("not_if_line") else None
     return data
 
 
@@ -235,10 +236,10 @@ class Scanner:
 
     # ---- scoring
     def _score(self, findings: list[Finding]) -> tuple[int, str]:
-        seen: dict[tuple[str, str], int] = {}
+        seen: dict[str, int] = {}
         total = 0
         for f in findings:
-            key = (f.file, f.rule_id)
+            key = f.rule_id  # repeats of a rule anywhere in the target add less
             n = seen.get(key, 0)
             w = self.weights[f.severity]
             if w:
@@ -246,7 +247,8 @@ class Scanner:
             seen[key] = n + 1
         score = min(100, total)
         sev = {f.severity for f in findings}
-        if "critical" in sev or score >= 50:
+        high_rules = {f.rule_id for f in findings if f.severity == "high"}
+        if "critical" in sev or len(high_rules) >= 2:
             verdict = "DANGEROUS"
         elif "high" in sev or score >= 10:
             verdict = "CAUTION"
@@ -272,6 +274,8 @@ class Scanner:
                 continue
             hits = 0
             for m in rule["_re"].finditer(text):
+                if rule["_not"] is not None and rule["_not"].search(_line_text(text, _line_of(text, m.start()))):
+                    continue  # the line negates or explains the pattern, e.g. "never ... without consent"
                 hits += 1
                 if hits > 20:
                     break
@@ -296,7 +300,7 @@ class Scanner:
             if cur_start is not None:
                 tag_runs.append((cur_start, "".join(cur)))
                 cur_start, cur = None, []
-            if cp in (0x200B, 0x200C, 0x200D, 0x2060, 0x2061, 0x2062, 0x2063, 0x2064) or (cp == 0xFEFF and i > 0):
+            if cp in (0x200B, 0x200C, 0x2060, 0x2061, 0x2062, 0x2063, 0x2064) or (cp == 0xFEFF and i > 0):
                 zw_lines.add(_line_of(text, i))
             elif 0x202A <= cp <= 0x202E or 0x2066 <= cp <= 0x2069:
                 bidi_lines.add(_line_of(text, i))
