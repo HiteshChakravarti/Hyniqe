@@ -6,8 +6,10 @@ Run from anywhere: python3 site/build_site.py
 """
 from __future__ import annotations
 
+import datetime as dt
 import html
 import json
+import urllib.parse
 import os
 import runpy
 import shutil
@@ -34,6 +36,63 @@ VERDICT = {"NO_KNOWN_RISKS": ("No known risks", "clear"), "CAUTION": ("Caution",
            "DANGEROUS": ("Dangerous", "danger")}
 KIND = {"skill": "Skill", "mcp": "MCP server"}
 e = html.escape
+q = urllib.parse.quote
+_d = dt.date.fromisoformat(DATA["scanned_on"])
+SCANNED_ON = f"{_d.day} {_d.strftime('%B %Y')}"
+
+# The six areas every report is checked against, each made of rule categories.
+AREAS = [
+    {"key": "hidden", "title": "Hidden instructions", "blurb": "Prompt injection, invisible text, fake system tags, planted memories",
+     "categories": ["injection", "hidden-text", "memory"]},
+    {"key": "theft", "title": "Data theft", "blurb": "Sending your data out, reading keys and private files",
+     "categories": ["exfiltration", "sensitive-access", "combo"]},
+    {"key": "secrets", "title": "Exposed secrets", "blurb": "API keys and tokens written into files",
+     "categories": ["secrets"]},
+    {"key": "exec", "title": "Code execution", "blurb": "Shell commands, remote shells, destructive deletes, startup changes",
+     "categories": ["code-execution", "destructive", "persistence"]},
+    {"key": "supply", "title": "Supply chain", "blurb": "Unpinned packages, remote servers, encoded blobs, plain http",
+     "categories": ["supply-chain", "network", "obfuscation"]},
+    {"key": "perms", "title": "Permissions", "blurb": "Auto-approved tools, whole-disk access, privileged containers",
+     "categories": ["privilege"]},
+]
+# GitHub owners that are the company or project behind the product they publish.
+OFFICIAL = {"anthropics": "Anthropic", "modelcontextprotocol": "MCP project", "github": "GitHub", "stripe": "Stripe",
+            "getsentry": "Sentry", "microsoft": "Microsoft", "cloudflare": "Cloudflare", "makenotion": "Notion",
+            "mongodb-js": "MongoDB", "grafana": "Grafana", "hashicorp": "HashiCorp", "heroku": "Heroku",
+            "elastic": "Elastic", "redis": "Redis", "neondatabase": "Neon", "upstash": "Upstash",
+            "firecrawl": "Firecrawl", "exa-labs": "Exa", "tavily-ai": "Tavily", "browserbase": "Browserbase"}
+SUBMIT_URL = (REPO_URL + "/issues/new?title=" + q("Scan request: ") + "&body="
+              + q("Link to the repository or folder:\n\nWhat it is (skill, MCP server, n8n workflow):\n\nAre you the maintainer? (yes or no):\n"))
+TEAMS_URL = (REPO_URL + "/issues/new?title=" + q("Shield for Teams: early access") + "&body="
+             + q("Company:\n\nRoughly how many people use AI agents:\n\nWhat you'd want Shield to do for your team:\n"))
+
+
+def publisher(a: dict) -> str:
+    return OFFICIAL.get(a["repo"].split("/")[0], "")
+
+
+def area_status(sevs: list[str]) -> tuple[str, str]:
+    sev = [s for s in sevs if s != "info"]
+    if "critical" in sev:
+        return "fail", "Failed"
+    if "high" in sev or "medium" in sev:
+        return "review", "Review"
+    if sev:
+        return "note", "Notes only"
+    return "pass", "Passed"
+
+
+def checklist(a: dict) -> str:
+    items = []
+    for ar in AREAS:
+        groups = [g for g in a["groups"] if RULE_INFO[g["rule_id"]]["category"] in ar["categories"]]
+        cls, word = area_status([g["severity"] for g in groups])
+        n = sum(g["count"] for g in groups if g["severity"] != "info")
+        n_rules = sum(1 for r in RULE_INFO.values() if r["category"] in ar["categories"])
+        items.append(f'<li class="area a-{cls}"><span class="mark" aria-hidden="true"></span><div><b>{e(ar["title"])}</b>'
+                     f'<span class="muted small">{e(ar["blurb"])}. {n_rules} checks.</span></div>'
+                     f'<span class="astatus">{word}{f" ({n})" if n else ""}</span></li>')
+    return f'<ul class="areas">{"".join(items)}</ul>'
 
 
 def label(a: dict) -> str:
@@ -65,7 +124,7 @@ def findings_total(a: dict) -> int:
 LOGO = ('<svg width="26" height="30" viewBox="0 0 26 30" aria-hidden="true"><path d="M13 1 2 5v9c0 7 4.6 12.6 11 15 '
         '6.4-2.4 11-8 11-15V5z" fill="#08303d"/><circle cx="13" cy="9.5" r="2.6" fill="#e7f2f5"/><path d="m8 16 3.6 3.6L18.5 13" '
         'fill="none" stroke="#e7f2f5" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>')
-NAV = [("/directory/", "Directory"), ("/check/", "Check a file"), ("/rules/", "Rules"), ("/about/", "How it works"),
+NAV = [("/directory/", "Directory"), ("/check/", "Check an add-on"), ("/rules/", "Rules"), ("/about/", "How it works"),
        (REPO_URL, "GitHub")]
 FONTS = ('<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>'
          '<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@100..125,400..900&family=Atkinson+Hyperlegible+Next:wght@400;700&display=swap" rel="stylesheet">')
@@ -95,7 +154,7 @@ def page(path: str, title: str, desc: str, body: str, current: str = "", scripts
 <a class="skip" href="#main">Skip to content</a>
 <header class="site-head"><div class="wrap">
 <a class="brand" href="/">{LOGO}Hyniqe Shield</a>
-<nav class="nav" aria-label="Main">{nav}</nav>
+<nav class="nav" aria-label="Main">{nav}<a class="btn small" href="{e(SUBMIT_URL)}">Submit an add-on</a></nav>
 </div></header>
 <main id="main">
 {body}
@@ -103,7 +162,7 @@ def page(path: str, title: str, desc: str, body: str, current: str = "", scripts
 <footer class="site-foot"><div class="wrap">
 <p>Hyniqe Shield is free and open source (AGPL-3.0), part of <a href="{REPO_URL}">Hyniqe</a>.<br>
 Rules mapped to the OWASP Top 10 for Agentic Applications 2026.</p>
-<nav aria-label="Footer"><a href="/directory/">Directory</a><a href="/check/">Check a file</a><a href="/rules/">Rules</a><a href="/about/">How it works</a><a href="/about/#badges">Badges</a><a href="{REPO_URL}/issues/new?title=Shield%20scan%20request">Request a scan</a></nav>
+<nav aria-label="Footer"><a href="/directory/">Directory</a><a href="/check/">Check an add-on</a><a href="/rules/">Rules</a><a href="/about/">How it works</a><a href="/about/#badges">Badges</a><a href="{REPO_URL}/issues/new?title=Shield%20scan%20request">Request a scan</a></nav>
 </div></footer>
 {scripts}
 </body>
@@ -122,6 +181,7 @@ def tag(a: dict, tilt: bool = False, heading: str = "p") -> str:
 <dl>
 <dt>Add-on</dt><dd>{e(label(a))}</dd>
 <dt>Type</dt><dd>{KIND[a['kind']]}</dd>
+<dt>Publisher</dt><dd>{e(publisher(a)) + ' <span class="official">Official</span>' if publisher(a) else e(a['repo'].split('/')[0])}</dd>
 <dt>Source</dt><dd><a href="{gh_tree(a)}">{e(source(a))}</a></dd>
 <dt>Commit</dt><dd><code>{a['commit'][:7]}</code></dd>
 <dt>Files read</dt><dd>{a['files']:,}</dd>
@@ -180,12 +240,12 @@ def home() -> None:
 <div>
 <h1>Know what an AI add-on will do before you install it.</h1>
 <p class="lede">Skills, MCP servers and agent workflows get access to your files, email and accounts. Hyniqe Shield reads them first and tells you, in plain English, what they could do with that access.</p>
-<form class="find" action="/directory/" method="get" role="search">
-<label class="sr" for="q">Search checked add-ons</label>
-<input id="q" name="q" type="search" placeholder="Search {len(ADDONS)} checked skills and MCP servers" autocomplete="off">
-<button class="btn" type="submit">Search</button>
+<form class="find" action="/check/" method="get">
+<label class="sr" for="url">GitHub link to a skill or MCP server</label>
+<input id="url" name="url" type="text" inputmode="url" spellcheck="false" placeholder="Paste a GitHub link, e.g. github.com/owner/repo" autocomplete="off" required>
+<button class="btn" type="submit">Check it</button>
 </form>
-<p class="tally-line">So far: <b>{clear}</b> with no known risks, <b>{caution}</b> to review, <b>{danger}</b> dangerous. Or <a href="/check/">check your own file</a> in your browser.</p>
+<p class="tally-line">Free, runs in your browser, and nothing is uploaded. Or <a href="/directory/">browse {len(ADDONS)} add-ons we've already checked</a>: <b>{clear}</b> with no known risks, <b>{caution}</b> to review, <b>{danger}</b> dangerous.</p>
 </div>
 {tag(hero_addon, tilt=True)}
 </div></section>
@@ -209,17 +269,19 @@ def home() -> None:
 </div></section>
 
 <section class="band"><div class="wrap">
-<h2>Use it where you already work</h2>
+<h2>Made for three kinds of people</h2>
 <div class="ways">
-<div><h3>In your browser</h3><p>Paste a skill, a config or a whole folder. The check runs on your device and nothing is uploaded.</p><p><a href="/check/">Open the checker</a></p></div>
-<div><h3>In the terminal</h3><p>One command, no dependencies, Python 3.</p>
-<pre class="cmd"><code>git clone {REPO_URL}
-cd Hyniqe/shield
-python3 -m hyniqe_shield scan ~/.cursor/mcp.json</code></pre></div>
-<div><h3>On every pull request</h3><p>The GitHub Action blocks risky add-ons and shows findings in code scanning.</p>
+<div class="way"><h3>You install add-ons</h3><p>Before you add a skill or MCP server to Claude, Cursor or your own agent, paste its link and read the verdict. Check the servers you already use from the terminal too.</p>
+<pre class="cmd"><code>python3 -m hyniqe_shield scan ~/.cursor/mcp.json</code></pre>
+<p class="way-cta"><a class="btn ghost small" href="/check/">Check a link</a></p></div>
+<div class="way"><h3>You build add-ons</h3><p>Show users your add-on is safe. Run Shield on every pull request, then put the badge on your README so people can see the full report.</p>
 <pre class="cmd"><code>- uses: HiteshChakravarti/Hyniqe/shield@main
   with:
-    fail-on: dangerous</code></pre></div>
+    fail-on: dangerous</code></pre>
+<p class="way-cta"><a class="btn ghost small" href="{e(SUBMIT_URL)}">Get your add-on listed</a></p></div>
+<div class="way"><h3>You run a team</h3><p>Decide which add-ons your company's AI agents may use. Shield for Teams adds an approved list, checks on every new install, and alerts when an approved add-on changes.</p>
+<p class="muted small">In development. Early teams help shape it.</p>
+<p class="way-cta"><a class="btn ghost small" href="{e(TEAMS_URL)}">Join the early list</a></p></div>
 </div>
 </div></section>
 
@@ -235,30 +297,45 @@ python3 -m hyniqe_shield scan ~/.cursor/mcp.json</code></pre></div>
 
 
 def directory() -> None:
+    rank = {"DANGEROUS": 0, "CAUTION": 1, "NO_KNOWN_RISKS": 2}
     rows = []
-    for a in sorted(ADDONS, key=lambda a: (["DANGEROUS", "CAUTION", "NO_KNOWN_RISKS"].index(a["verdict"]), label(a).lower())):
-        word, _ = VERDICT[a["verdict"]]
-        search = " ".join([a["name"], a["repo"], a["sub"], a["description"], KIND[a["kind"]]]).lower()
-        rows.append(f'<tr data-kind="{a["kind"]}" data-verdict="{a["verdict"]}" data-s="{e(search)}">'
-                    f'<td><a class="name" href="/a/{a["slug"]}/">{e(label(a))}</a>'
+    for a in sorted(ADDONS, key=lambda a: (rank[a["verdict"]], -findings_total(a), label(a).lower())):
+        pub = publisher(a)
+        search = " ".join([a["name"], a["repo"], a["sub"], a["description"], KIND[a["kind"]], pub]).lower()
+        badge_html = f' <span class="official" title="Published by {e(pub)}">Official</span>' if pub else ""
+        rows.append(f'<tr data-kind="{a["kind"]}" data-verdict="{a["verdict"]}" data-pub="{"official" if pub else "other"}" '
+                    f'data-rank="{rank[a["verdict"]]}" data-findings="{findings_total(a)}" data-files="{a["files"]}" '
+                    f'data-name="{e(label(a).lower())}" data-s="{e(search)}">'
+                    f'<td><a class="name" href="/a/{a["slug"]}/">{e(label(a))}</a>{badge_html}'
                     f'<span class="desc">{e(a["description"]) if a["description"] else e(source(a))}</span></td>'
                     f'<td class="hide-sm"><a href="{gh_tree(a)}">{e(a["repo"])}</a></td>'
                     f'<td class="hide-sm">{KIND[a["kind"]]}</td><td>{chip(a["verdict"])}</td>'
                     f'<td class="num">{findings_total(a) or "None"}</td></tr>')
+
+    def chips(field: str, label_text: str, options: list) -> str:
+        btns = "".join(f'<button type="button" data-f="{field}" data-v="{v}" aria-pressed="false">{e(t)} <span class="n"></span></button>'
+                       for v, t in options)
+        return f'<div class="chip-row" role="group" aria-label="{e(label_text)}"><span class="chip-label">{e(label_text)}</span>{btns}</div>'
+
     body = f"""
 <section class="band"><div class="wrap">
 <h1>Directory</h1>
-<p class="lede">{len(ADDONS)} skills and MCP servers, each checked at a recorded commit on {e(DATA['scanned_on'])}. Open one to see every finding and the exact line it came from.</p>
-<div class="filters" role="search">
-<label>Search<input id="fq" type="search" placeholder="Name, repo or purpose" autocomplete="off"></label>
-<label>Type<select id="fk"><option value="">All types</option><option value="skill">Skills</option><option value="mcp">MCP servers</option></select></label>
-<label>Result<select id="fv"><option value="">All results</option><option value="NO_KNOWN_RISKS">No known risks</option><option value="CAUTION">Caution</option><option value="DANGEROUS">Dangerous</option></select></label>
-<p class="count" id="fc" aria-live="polite">{len(ADDONS)} add-ons</p>
+<p class="lede">{len(ADDONS)} skills and MCP servers, each checked at a recorded commit. Open one to see its safety checklist, every finding, and the exact line each came from.</p>
+<p class="small muted">Last checked on {SCANNED_ON} with rules version {e(DATA['rules_version'])}. <a href="{e(SUBMIT_URL)}">Submit an add-on</a> to have it checked.</p>
+<div class="filters">
+<label>Search<input id="fq" type="search" placeholder="Name, repo, publisher or purpose" autocomplete="off"></label>
+<label>Sort by<select id="fs"><option value="risk">Riskiest first</option><option value="name">Name, A to Z</option><option value="findings">Most findings</option><option value="files">Largest (files read)</option></select></label>
 </div>
+<div class="chips">
+{chips("verdict", "Result", [("", "All"), ("NO_KNOWN_RISKS", "No known risks"), ("CAUTION", "Caution"), ("DANGEROUS", "Dangerous")])}
+{chips("kind", "Type", [("", "All"), ("skill", "Skills"), ("mcp", "MCP servers")])}
+{chips("pub", "Publisher", [("", "Anyone"), ("official", "Official only")])}
+</div>
+<p class="count" id="fc" aria-live="polite">{len(ADDONS)} add-ons</p>
 <div class="table-wrap"><table>
 <thead><tr><th scope="col">Add-on</th><th scope="col" class="hide-sm">Repository</th><th scope="col" class="hide-sm">Type</th><th scope="col">Result</th><th scope="col" class="num">Findings</th></tr></thead>
 <tbody id="rows">{''.join(rows)}</tbody></table></div>
-<p class="muted small" style="margin-top:16px">Want an add-on checked, or maintain one listed here? <a href="{REPO_URL}/issues/new?title=Shield%20scan%20request">Open an issue</a> to request a scan or a re-check.</p>
+<p class="muted small" style="margin-top:16px">"Official" means the add-on is published by the company or project behind the product. Maintain an add-on listed here? <a href="{REPO_URL}/issues/new?title=Shield%20re-check%20request">Request a re-check</a>.</p>
 </div></section>"""
     page("/directory/", "Directory of checked add-ons",
          f"Safety results for {len(ADDONS)} popular Claude skills and MCP servers, with every finding linked to its source line.",
@@ -320,6 +397,9 @@ def report(a: dict) -> None:
 <h1>{e(label(a))}</h1>
 <p class="lede">{e(a['description']) if a['description'] else e(source(a))}</p>
 <p><b>{e(summary)}</b></p>
+<h2 style="margin-top:32px">Safety checklist</h2>
+{checklist(a)}
+<h2 style="margin-top:40px">Findings</h2>
 {findings}
 {info_html}
 <div class="note"><p><b>About this result.</b> Shield read {a['files']:,} text files at commit <a href="{gh_tree(a)}"><code>{a['commit'][:7]}</code></a> and skipped tests, examples, demos and docs. It never ran any code. A finding is a pattern worth looking at, not proof of bad intent. The code may have changed since then.</p>
@@ -407,15 +487,24 @@ def check() -> None:
         ("Risky n8n workflow", "workflow.json", ROOT / "tests/fixtures/malicious/n8n-workflow.json"),
         ("Clean MCP config", "mcp.json", ROOT / "tests/fixtures/benign/mcp.json"),
     ]
-    payload = {"rules": RULES, "examples": [{"label": l, "name": n, "text": p.read_text("utf-8")} for l, n, p in examples]}
+    directory_index = [{"slug": a["slug"], "match": (a["repo"] + ("/" + a["sub"] if a["sub"] else "")).lower()} for a in ADDONS]
+    payload = {"rules": RULES, "areas": AREAS, "excludes": DATA["excludes"], "directory": directory_index,
+               "examples": [{"label": l, "name": n, "text": p.read_text("utf-8")} for l, n, p in examples]}
     (DIST / "assets" / "check-data.js").write_text(
         "window.SHIELD_DATA=" + json.dumps(payload, ensure_ascii=True).replace("</", "<\\/") + ";\n", "utf-8")
     body = f"""
 <section class="band"><div class="wrap">
-<h1>Check a file</h1>
-<p class="lede">Paste a skill, an MCP server's code, your MCP config or an n8n workflow. The check runs in your browser and nothing is uploaded.</p>
+<h1>Check an add-on</h1>
+<p class="lede">Paste a GitHub link to a skill or MCP server, or paste a file. The check runs in your browser: files come straight from GitHub to you, and nothing is uploaded to us.</p>
+<form class="find" id="gh-form" style="max-width:760px">
+<label class="sr" for="gh">GitHub link</label>
+<input id="gh" name="url" type="text" inputmode="url" spellcheck="false" placeholder="github.com/owner/repo, or a folder or file inside it" autocomplete="off" required>
+<button class="btn" type="submit">Check link</button>
+</form>
+<p class="status" id="gh-status" aria-live="polite"></p>
 <div class="checker">
 <div>
+<h2 class="or">Or paste a file</h2>
 <div class="examples" id="examples" role="group" aria-label="Load an example"></div>
 <div class="drop" id="drop">Drop files or a folder here, or <label for="files" style="text-decoration:underline;cursor:pointer">choose files</label>
 <input class="sr" type="file" id="files" multiple></div>
@@ -429,7 +518,7 @@ def check() -> None:
 </div>
 <div id="findings" style="margin-top:36px"></div>
 </div></section>"""
-    page("/check/", "Check a file", "Check a Claude skill, MCP server, MCP config or n8n workflow in your browser. Nothing is uploaded.",
+    page("/check/", "Check an add-on", "Check a Claude skill, MCP server, MCP config or n8n workflow from a GitHub link or a file, in your browser. Nothing is uploaded.",
          body, "/check/",
          '<script src="/assets/engine.js"></script><script src="/assets/check-data.js"></script><script src="/assets/check.js"></script>')
 
