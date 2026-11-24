@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Document xmlns="urn:iso:std:iso:20022:tech:xsd:pacs.008.001.08">
+ <FIToFICstmrCdtTrf>
+  <GrpHdr><MsgId>MSGe8b2c1d4</MsgId><CreDtTm>2026-11-24T09:00:00Z</CreDtTm><NbOfTxs>1</NbOfTxs><SttlmInf><SttlmMtd>INDA</SttlmMtd></SttlmInf></GrpHdr>
+  <CdtTrfTxInf>
+   <PmtId><InstrId>INSe8b2c1</InstrId><EndToEndId>E2E-e8b2c1d4</EndToEndId><UETR>e8b2c1d4-5f6a-4b7c-8d9e-0a1b2c3d4e5f</UETR></PmtId>
+   <IntrBkSttlmAmt Ccy="EUR">184250.00</IntrBkSttlmAmt><IntrBkSttlmDt>2026-11-24</IntrBkSttlmDt><ChrgBr>SHAR</ChrgBr>
+   <UltmtDbtr><Nm>Chennai Exports Holding Pvt Ltd</Nm></UltmtDbtr>
+   <Dbtr><Nm>Sivasubramanian Chandrasegarampillai Trading Solutions Private Limited</Nm><PstlAdr><StrtNm>Anna Salai 412</StrtNm><TwnNm>Chennai</TwnNm><Ctry>IN</Ctry></PstlAdr><Id><OrgId><LEI>335800HYNIQEDEMO0119</LEI></OrgId></Id></Dbtr>
+   <DbtrAcct><Id><IBAN>DE89370400440532013000</IBAN></Id></DbtrAcct>
+   <DbtrAgt><FinInstnId><BICFI>DEUTDEFFXXX</BICFI></FinInstnId></DbtrAgt>
+   <CdtrAgt><FinInstnId><BICFI>ESSESESSXXX</BICFI></FinInstnId></CdtrAgt>
+   <Cdtr><Nm>Nordic Timber AB</Nm><PstlAdr><StrtNm>Sveavagen 44</StrtNm><TwnNm>Stockholm</TwnNm><Ctry>SE</Ctry></PstlAdr></Cdtr>
+   <CdtrAcct><Id><IBAN>SE4550000000058398257466</IBAN></Id></CdtrAcct>
+   
+   <Purp><Cd>GDDS</Cd></Purp>
+   <RmtInf><Ustrd>Invoices 2026-0441, 2026-0442, 2026-0443 and 2026-0447 for timber deliveries October and November 2026 per contract NT-IN-2025-118 incl. freight and insurance</Ustrd></RmtInf>
+  </CdtTrfTxInf>
+ </FIToFICstmrCdtTrf>
+</Document>

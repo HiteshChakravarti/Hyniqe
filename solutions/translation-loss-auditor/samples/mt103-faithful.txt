@@ -1,0 +1,23 @@
+{1:F01DEUTDEFFAXXX0000000000}{2:I103ESSESESSXXXXN}{3:{121:e8b2c1d4-5f6a-4b7c-8d9e-0a1b2c3d4e5f}}{4:
+:20:REFE8B2C1D4
+:23B:CRED
+:32A:261124EUR184250,00
+:50F:/DE89370400440532013000
+1/Sivasubramanian Chandrasegarampil
+1/lai Trading Solutions Private Limited
+2/Anna Salai 412
+3/IN/Chennai
+:57A:ESSESESSXXX
+:59:/SE4550000000058398257466
+Nordic Timber AB
+Sveavagen 44
+SE/Stockholm
+:70:/LEI/335800HYNIQEDEMO0119 /ULTD/Che
+nnai Exports Holding Pvt Ltd /PURP/
+GDDS Invoices 2026-0441, 2026-0442,
+ 2026-0443 and 2026-0447 for timber
+ deliveries October and November 20
+26 per contract NT-IN-2025-118 incl
+. freight and insurance
+:71A:SHA
+-}
