@@ -1,5 +1,7 @@
 // HTML for the Hyniqe Hub website. Pages are generated, so each tool gets its own address and title.
-import { GROUPS, TOOLS, type Group, type ToolPage } from './tools.ts';
+import { GROUPS, STANDALONE, TOOLS, type Group, type ToolPage } from './tools.ts';
+
+type ToolLinkInfo = Pick<ToolPage, 'slug' | 'name' | 'status' | 'short'>;
 
 const REPO = 'https://github.com/HiteshChakravarti/Hyniqe';
 const HEALTH = `${REPO}/issues/new?title=Health%20Check%20request&body=Organisation%3A%0ATool%3A%0ARough%20data%20volume%3A%0ABest%20way%20to%20contact%20you%3A`;
@@ -51,13 +53,13 @@ ${opts.body}
 `;
 }
 
-function toolLink(t: ToolPage, base: string): string {
+function toolLink(t: ToolLinkInfo, base: string): string {
   return `<a class="tool-link" href="${base}tools/${t.slug}/"><b>${esc(t.name)}<span class="tag ${t.status}">${t.status === 'live' ? 'Live' : 'In progress'}</span></b><span>${esc(t.short)}</span></a>`;
 }
 
 export function homePage(): string {
   const groups = (Object.keys(GROUPS) as Group[])
-    .map((g) => `<div class="group"><div><h3>${esc(GROUPS[g].title)}</h3><p>${esc(GROUPS[g].blurb)}</p></div><div class="tool-list">${TOOLS.filter((t) => t.group === g).map((t) => toolLink(t, '')).join('')}</div></div>`)
+    .map((g) => `<div class="group"><div><h3>${esc(GROUPS[g].title)}</h3><p>${esc(GROUPS[g].blurb)}</p></div><div class="tool-list">${[...TOOLS, ...STANDALONE].filter((t) => t.group === g).map((t) => toolLink(t, '')).join('')}</div></div>`)
     .join('');
   const body = `
 <section class="hero"><div class="wrap">
@@ -117,7 +119,7 @@ export function toolPage(t: ToolPage): string {
   const columns = t.columns
     ? `<section><h3>Columns it understands</h3><table>${t.columns.map(([f, n, r]) => `<tr><td>${esc(f)}${r ? '' : ' <span class="note">(optional)</span>'}</td><td><code>${esc(n)}</code></td></tr>`).join('')}</table><p class="note">Headers are matched without regard to case or punctuation. Save Excel files as CSV first.</p></section>`
     : '';
-  const others = TOOLS.filter((o) => o.slug !== t.slug && o.group === t.group);
+  const others = [...TOOLS, ...STANDALONE].filter((o) => o.slug !== t.slug && o.group === t.group);
   const second = t.secondInput
     ? `<label class="drop second" id="drop-2"><input type="file" id="file-2" accept="${t.secondInput.accept}">${FILE}<strong>${esc(t.secondInput.label)}</strong><small id="file-2-name">No file chosen</small></label>`
     : '';
@@ -165,5 +167,5 @@ ${others.length ? `<section class="band"><div class="wrap"><h2>${esc(GROUPS[t.gr
 }
 
 export function searchIndex(): string {
-  return `export const TOOL_INDEX = ${JSON.stringify(TOOLS.map((t) => ({ slug: t.slug, name: t.name, short: t.short, keywords: t.keywords, status: t.status })), null, 1)};\n`;
+  return `export const TOOL_INDEX = ${JSON.stringify([...TOOLS, ...STANDALONE].map((t) => ({ slug: t.slug, name: t.name, short: t.short, keywords: t.keywords, status: t.status })), null, 1)};\n`;
 }

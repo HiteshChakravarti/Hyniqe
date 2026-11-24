@@ -23,6 +23,22 @@ Each solution is a set of explainable checks with a report and a published bench
 | [Bank Reconciliation](solutions/bank-reconciliation/) | A bank statement (camt.053, MT940 or CSV) matched to your ledger by reference, combined and part payments, charges, amount, date and name, with every difference explained | Live |
 | [Bank Detail Change Check](solutions/bank-detail-change-check/) | Payments in a run going to changed, foreign or another supplier's bank account, before you release them | Live |
 | [Data Quality Scorecard](solutions/data-quality-scorecard/) | Completeness, validity, uniqueness and consistency for any table, with finance formats checked properly | Live |
+| [T+1 Settlement Fail Predictor](solutions/t1-settlement-predictor/) | Trades that will fail to settle under T+1 and why: missing or stale SSIs, late allocation, affirmation or instruction, FX funding gaps | Live |
+| [VoP Pre-Checker](solutions/vop-precheck/) | The Verification of Payee result each payment in a bulk file is likely to get (match, close match, no match), and the fix | Live |
+| [Payment Investigation Assistant](solutions/payment-investigation-assistant/) | A pasted payment query or MT199 turned into a case: type, references, missing information, next steps and a draft reply | Live |
+| [Translation Data-Loss Auditor](solutions/translation-loss-auditor/) | Data truncated, dropped or changed when a pacs.008 is translated to an MT103 | Live |
+| [Agent Payment Mandate Checker](solutions/agent-payment-mandate-checker/) | Payments by AI agents that break their mandate (limits, payees, categories) or lack an audit trail | Live |
+| [Verify-Before-You-Pay](solutions/verify-before-you-pay/) | Deepfake and impersonation fraud signals in payment requests, with a callback script and skipped controls | Live |
+| [Sanctions False-Positive Analyser](solutions/sanctions-fp-analyser/) | What drives sanctions screening false positives, analyst hours lost, and tuning changes that are safe to test | Live |
+| ["Valid but Wrong" Report Checker](solutions/report-sanity-checker/) | Regulatory report rows that pass validation but are wrong: check digits, dates, duplicates, outliers, placeholders | Live |
+| [DORA Register Pre-Check](solutions/dora-register-precheck/) | Errors that get a DORA Register of Information rejected, including gaps for critical or important functions | Live |
+| [AI Use Register](solutions/ai-use-register/) | An AI inventory turned into an EU AI Act register with indicative risk tiers, obligations and evidence gaps | Live |
+| [Post-Quantum Crypto Inventory](solutions/pqc-crypto-inventory/) | Cryptography in code that is broken today or vulnerable to quantum computers, with a CycloneDX CBOM | Live |
+| [Copybook Decoder](solutions/copybook-decoder/) | A COBOL copybook as a data dictionary, and mainframe data (EBCDIC, packed decimal) decoded to CSV | Live |
+| [Migration Reconciler](solutions/migration-reconciler/) | Records lost, truncated or changed between source and target in a data migration, with control totals and sign-off | Live |
+| [Spreadsheet (EUC) Risk Scanner](solutions/euc-risk-scanner/) | Macros, external links, hidden sheets, errors and hard-coded values across a folder of workbooks, as an EUC register | Live |
+| [Batch Dependency Mapper](solutions/batch-dependency-mapper/) | How JCL, Control-M, cron and scripts depend on each other: run order, missing conditions, risks and a diagram | Live |
+| [Legacy Runbook Builder](solutions/legacy-runbook-builder/) | Handover notes and scripts turned into a runbook, with knowledge gaps and questions for the owner | Live |
 
 See [CATALOG.md](CATALOG.md) for inputs, outputs and accuracy, and [ROADMAP.md](ROADMAP.md) for what comes next.
 
