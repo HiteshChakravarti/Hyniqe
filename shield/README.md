@@ -12,6 +12,8 @@ Skills, MCP servers and automation workflows give AI agents access to your files
 
 ## Use it in your browser
 
+The website at **https://hyniqe-shield.vercel.app** has a public directory of popular skills and MCP servers already checked, a report for each one, README badges, and the in-browser checker. Its source is in [`site/`](site/): `site/scan_directory.py` scans the add-ons listed in `site/data/sources.json`, and `site/build_site.py` builds the static pages.
+
 Open the web checker, paste a skill or config (or drop a folder), and get a verdict. Nothing is uploaded. Build the single self-contained page with `python3 scripts/build_web.py`; it is written to `web/index.html` and can be opened directly or hosted anywhere.
 
 ## Use it from the terminal
@@ -93,7 +95,7 @@ Rules live in one file, [`hyniqe_shield/rules.json`](hyniqe_shield/rules.json), 
 
 | Verdict | When |
 |---|---|
-| **Dangerous** | any critical finding, or a risk score of 50+ |
+| **Dangerous** | any critical finding, or two or more different high-severity problems |
 | **Caution** | any high finding, or a risk score of 10+ |
 | **No known risks found** | none of the rules matched enough to raise a concern |
 
