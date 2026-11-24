@@ -1,0 +1,5 @@
+Hi Payments team,
+URGENT - our client Northwind Ltd has just realised the payment they sent yesterday (GBP 125,000, ref NWL-445201)
+was the result of an invoice fraud: the supplier's email was compromised and the bank details were changed.
+UETR is 8f2d1c3b-4a5e-4f60-9b7c-1a2b3c4d5e6f. Please recall immediately.
+Thanks, Sam (Relationship Manager)

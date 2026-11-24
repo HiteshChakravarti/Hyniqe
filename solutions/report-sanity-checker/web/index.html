@@ -1,0 +1,887 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>"Valid but Wrong" Report Checker · Hyniqe Hub</title>
+<style>:root { --ink:#14213d; --muted:#5b6475; --line:#e3e7ef; --bg:#f7f8fb; --card:#fff; --accent:#1f5eff; --accent-ink:#fff; --ok:#137a3f; --warn:#b26a00; --bad:#b3261e; }
+* { box-sizing: border-box; }
+body { margin:0; font:15px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; color:var(--ink); background:var(--bg); }
+header { padding:28px clamp(16px,5vw,56px) 18px; background:var(--card); border-bottom:1px solid var(--line); }
+.brand { font-weight:700; letter-spacing:.2px; color:var(--muted); font-size:13px; text-transform:uppercase; }
+.brand span { color:var(--accent); }
+h1 { margin:6px 0 4px; font-size:clamp(22px,3vw,30px); }
+.tagline { margin:0; color:var(--muted); max-width:760px; }
+.local { margin:10px 0 0; font-size:13px; color:var(--ok); }
+main { padding:20px clamp(16px,5vw,56px) 40px; display:grid; gap:18px; max-width:1180px; }
+.card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:18px; }
+.card h2 { margin:0 0 10px; font-size:17px; }
+label { display:block; font-weight:600; margin:10px 0 4px; font-size:14px; }
+.hint { color:var(--muted); font-size:13px; font-weight:400; }
+textarea, input[type=text], select { width:100%; font:13px/1.45 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; border:1px solid var(--line); border-radius:8px; padding:9px; background:#fbfcfe; color:var(--ink); }
+input[type=text], select { font-family:inherit; font-size:14px; }
+textarea { min-height:140px; resize:vertical; }
+.row { display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:12px; }
+.actions { display:flex; flex-wrap:wrap; gap:8px; margin-top:14px; }
+button { font:inherit; font-weight:600; border-radius:8px; padding:9px 14px; border:1px solid var(--line); background:#fff; color:var(--ink); cursor:pointer; }
+button.primary { background:var(--accent); border-color:var(--accent); color:var(--accent-ink); }
+button:disabled { opacity:.5; cursor:default; }
+.tabs { display:flex; gap:6px; margin-bottom:6px; }
+.tabs button[aria-selected=true] { background:var(--ink); color:#fff; border-color:var(--ink); }
+#report { overflow-wrap:anywhere; }
+#report h2 { font-size:22px; margin:4px 0 8px; } #report h3 { font-size:18px; margin:22px 0 8px; } #report h4, #report h5 { font-size:15px; margin:18px 0 6px; }
+#report p { margin:8px 0; }
+.tablewrap { overflow-x:auto; margin:10px 0; }
+table { border-collapse:collapse; width:100%; font-size:13.5px; }
+th, td { border:1px solid var(--line); padding:6px 8px; text-align:left; vertical-align:top; }
+th { background:#f1f4f9; }
+code { background:#f1f4f9; padding:1px 4px; border-radius:4px; font-size:12.5px; }
+.error { color:var(--bad); font-weight:600; white-space:pre-wrap; }
+.empty { color:var(--muted); }
+footer { padding:20px clamp(16px,5vw,56px) 36px; color:var(--muted); font-size:12.5px; }
+@media (prefers-color-scheme: dark) {
+  :root { --ink:#e8ecf5; --muted:#a3acbf; --line:#2b3345; --bg:#10141d; --card:#171c27; --accent:#5b8cff; }
+  textarea, input[type=text], select { background:#121722; }
+  th, code { background:#1f2634; } button { background:#1d2330; } .tabs button[aria-selected=true] { background:#e8ecf5; color:#10141d; }
+}
+</style>
+</head>
+<body data-solution="report-sanity-checker">
+<header><div class="brand">Hyniqe <span>Hub</span></div><h1>"Valid but Wrong" Report Checker</h1><p class="tagline">Your report passed validation. Is it actually right?</p><p class="local">🔒 Runs entirely in your browser. Nothing you load here is uploaded.</p></header>
+<main id="app"></main>
+<footer>Hyniqe Hub · open-source tools for financial operations. Outputs support your judgement; they are not legal, audit or security advice.</footer>
+<script>
+const __m = {};
+__m["shared/table.js"] = (() => {
+// Small, dependency-free table helpers shared by the Hyniqe Hub solutions in this batch.
+// Runs unchanged in Node (22+, type stripping) and in the browser after `tsc`.
+/** Parse CSV text into rows keyed by lower-cased, trimmed headers (spaces → underscores).
+ *  Handles quoted fields, escaped quotes, BOM, CRLF, and comma / semicolon / tab separators. */
+function parseCsv(text) {
+    const clean = text.replace(/^﻿/, "");
+    const firstLine = clean.split(/\r?\n/, 1)[0] ?? "";
+    const sep = pickSeparator(firstLine);
+    const records = [];
+    let field = "";
+    let record = [];
+    let inQuotes = false;
+    for (let i = 0; i < clean.length; i++) {
+        const ch = clean[i];
+        if (inQuotes) {
+            if (ch === '"') {
+                if (clean[i + 1] === '"') {
+                    field += '"';
+                    i++;
+                }
+                else {
+                    inQuotes = false;
+                }
+            }
+            else {
+                field += ch;
+            }
+            continue;
+        }
+        if (ch === '"') {
+            inQuotes = true;
+            continue;
+        }
+        if (ch === sep) {
+            record.push(field);
+            field = "";
+            continue;
+        }
+        if (ch === "\n" || ch === "\r") {
+            if (ch === "\r" && clean[i + 1] === "\n")
+                i++;
+            record.push(field);
+            field = "";
+            if (record.some((f) => f.trim() !== ""))
+                records.push(record);
+            record = [];
+            continue;
+        }
+        field += ch;
+    }
+    record.push(field);
+    if (record.some((f) => f.trim() !== ""))
+        records.push(record);
+    if (records.length === 0)
+        return [];
+    const headers = records[0].map(normaliseHeader);
+    return records.slice(1).map((r) => {
+        const row = {};
+        headers.forEach((h, idx) => { row[h] = (r[idx] ?? "").trim(); });
+        return row;
+    });
+}
+function normaliseHeader(h) {
+    return h.trim().toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_|_$/g, "");
+}
+function pickSeparator(line) {
+    const counts = [",", ";", "\t"].map((s) => [s, line.split(s).length - 1]);
+    counts.sort((a, b) => b[1] - a[1]);
+    return counts[0][1] > 0 ? counts[0][0] : ",";
+}
+/** Serialise rows to CSV with a fixed column order. */
+function toCsv(rows, columns) {
+    const esc = (v) => {
+        const s = v === undefined || v === null ? "" : String(v);
+        return /[",\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+    };
+    return [columns.join(","), ...rows.map((r) => columns.map((c) => esc(r[c])).join(","))].join("\n") + "\n";
+}
+/** Render a simple Markdown table. */
+function mdTable(headers, rows) {
+    const cell = (v) => String(v).replace(/\|/g, "\\|").replace(/\n/g, " ");
+    return [
+        `| ${headers.map(cell).join(" | ")} |`,
+        `| ${headers.map(() => "---").join(" | ")} |`,
+        ...rows.map((r) => `| ${r.map(cell).join(" | ")} |`),
+    ].join("\n");
+}
+/** Read the first non-empty value among several possible column names. */
+function pick(row, ...names) {
+    for (const n of names) {
+        const v = row[normaliseHeader(n)];
+        if (v !== undefined && v !== "")
+            return v;
+    }
+    return "";
+}
+function parseAmount(raw) {
+    if (!raw)
+        return null;
+    let s = raw.replace(/[^\d.,\-]/g, "");
+    if (s.includes(",") && s.includes(".")) {
+        s = s.lastIndexOf(",") > s.lastIndexOf(".") ? s.replace(/\./g, "").replace(",", ".") : s.replace(/,/g, "");
+    }
+    else if (s.includes(",")) {
+        const parts = s.split(",");
+        s = parts.length === 2 && parts[1].length !== 3 ? s.replace(",", ".") : s.replace(/,/g, "");
+    }
+    const n = Number(s);
+    return Number.isFinite(n) ? n : null;
+}
+function parseBool(raw) {
+    const s = raw.trim().toLowerCase();
+    if (["y", "yes", "true", "1", "done", "passed", "pass"].includes(s))
+        return true;
+    if (["n", "no", "false", "0", "not done", "failed", "fail", ""].includes(s))
+        return s === "" ? null : false;
+    return null;
+}
+/** Parse ISO-ish timestamps ("2026-11-24 14:05", "2026-11-24T14:05:00Z", "24/11/2026 14:05"). */
+function parseTimestamp(raw) {
+    const s = raw.trim();
+    if (!s)
+        return null;
+    const dmy = s.match(/^(\d{1,2})[\/.](\d{1,2})[\/.](\d{4})(?:[ T](\d{1,2}):(\d{2})(?::(\d{2}))?)?$/);
+    if (dmy) {
+        const [, d, m, y, hh = "0", mm = "0", ss = "0"] = dmy;
+        return new Date(Date.UTC(+y, +m - 1, +d, +hh, +mm, +ss));
+    }
+    const iso = s.includes("T") ? s : s.replace(" ", "T");
+    const withZone = /[zZ]|[+\-]\d{2}:?\d{2}$/.test(iso) ? iso : iso + (iso.length > 10 ? "Z" : "T00:00:00Z");
+    const d = new Date(withZone);
+    return Number.isNaN(d.getTime()) ? null : d;
+}
+
+return { parseCsv, normaliseHeader, toCsv, mdTable, pick, parseAmount, parseBool, parseTimestamp };
+})();
+__m["shared/ids.js"] = (() => {
+// Identifier validators used across Hub solutions: IBAN, BIC, LEI, ISIN, currency and country codes.
+// Pure functions; run in Node and the browser.
+const COUNTRIES = new Set(("AD AE AF AG AI AL AM AO AQ AR AS AT AU AW AX AZ BA BB BD BE BF BG BH BI BJ BL BM BN BO BQ BR BS BT BV BW BY BZ CA CC CD CF CG CH CI CK CL CM CN CO CR CU CV CW CX CY CZ " +
+    "DE DJ DK DM DO DZ EC EE EG EH ER ES ET FI FJ FK FM FO FR GA GB GD GE GF GG GH GI GL GM GN GP GQ GR GS GT GU GW GY HK HM HN HR HT HU ID IE IL IM IN IO IQ IR IS IT JE JM JO JP " +
+    "KE KG KH KI KM KN KP KR KW KY KZ LA LB LC LI LK LR LS LT LU LV LY MA MC MD ME MF MG MH MK ML MM MN MO MP MQ MR MS MT MU MV MW MX MY MZ NA NC NE NF NG NI NL NO NP NR NU NZ " +
+    "OM PA PE PF PG PH PK PL PM PN PR PS PT PW PY QA RE RO RS RU RW SA SB SC SD SE SG SH SI SJ SK SL SM SN SO SR SS ST SV SX SY SZ TC TD TF TG TH TJ TK TL TM TN TO TR TT TV TW TZ " +
+    "UA UG UM US UY UZ VA VC VE VG VI VN VU WF WS XK YE YT ZA ZM ZW").split(" "));
+const CURRENCIES = new Set(("AED AFN ALL AMD ANG AOA ARS AUD AWG AZN BAM BBD BDT BGN BHD BIF BMD BND BOB BRL BSD BTN BWP BYN BZD CAD CDF CHF CLP CNY COP CRC CUP CVE CZK DJF DKK DOP DZD EGP ERN ETB EUR " +
+    "FJD FKP GBP GEL GHS GIP GMD GNF GTQ GYD HKD HNL HTG HUF IDR ILS INR IQD IRR ISK JMD JOD JPY KES KGS KHR KMF KPW KRW KWD KYD KZT LAK LBP LKR LRD LSL LYD MAD MDL MGA MKD MMK " +
+    "MNT MOP MRU MUR MVR MWK MXN MYR MZN NAD NGN NIO NOK NPR NZD OMR PAB PEN PGK PHP PKR PLN PYG QAR RON RSD RUB RWF SAR SBD SCR SDG SEK SGD SHP SLE SOS SRD SSP STN SVC SYP SZL " +
+    "THB TJS TMT TND TOP TRY TTD TWD TZS UAH UGX USD UYU UZS VES VND VUV WST XAF XAG XAU XCD XOF XPD XPF XPT YER ZAR ZMW ZWG").split(" "));
+/** IBAN lengths for common countries (SWIFT IBAN registry). Unknown countries are checked by checksum only. */
+const IBAN_LEN = {
+    AD: 24, AE: 23, AT: 20, BE: 16, BG: 22, BH: 22, CH: 21, CY: 28, CZ: 24, DE: 22, DK: 18, EE: 20, ES: 24, FI: 18, FR: 27, GB: 22, GI: 23, GR: 27, HR: 21, HU: 28,
+    IE: 22, IL: 23, IS: 26, IT: 27, KW: 30, KZ: 20, LI: 21, LT: 20, LU: 20, LV: 21, MC: 27, MT: 31, NL: 18, NO: 15, PL: 28, PT: 25, QA: 29, RO: 24, SA: 24, SE: 24,
+    SI: 19, SK: 24, SM: 27, TR: 26, UA: 29, VA: 22,
+};
+const SEPA_COUNTRIES = new Set("AD AT BE BG CH CY CZ DE DK EE ES FI FR GB GI GR HR HU IE IS IT LI LT LU LV MC MT NL NO PL PT RO SE SI SK SM VA".split(" "));
+function mod97(numeric) {
+    let rem = 0;
+    for (let i = 0; i < numeric.length; i += 7)
+        rem = Number(String(rem) + numeric.slice(i, i + 7)) % 97;
+    return rem;
+}
+const lettersToDigits = (s) => s.replace(/[A-Z]/g, (c) => String(c.charCodeAt(0) - 55));
+function cleanIban(raw) {
+    return raw.replace(/\s+/g, "").toUpperCase();
+}
+function checkIban(raw) {
+    const iban = cleanIban(raw);
+    if (!iban)
+        return { ok: false, reason: "empty" };
+    if (!/^[A-Z]{2}\d{2}[A-Z0-9]{8,30}$/.test(iban))
+        return { ok: false, reason: "wrong format" };
+    const cc = iban.slice(0, 2);
+    if (!COUNTRIES.has(cc))
+        return { ok: false, reason: `unknown country ${cc}` };
+    if (IBAN_LEN[cc] && iban.length !== IBAN_LEN[cc])
+        return { ok: false, reason: `${cc} IBANs have ${IBAN_LEN[cc]} characters, this has ${iban.length}` };
+    if (mod97(lettersToDigits(iban.slice(4) + iban.slice(0, 4))) !== 1)
+        return { ok: false, reason: "check digits wrong (typo?)" };
+    return { ok: true };
+}
+function checkBic(raw) {
+    const b = raw.trim().toUpperCase();
+    if (!b)
+        return { ok: false, reason: "empty" };
+    if (!/^[A-Z]{4}[A-Z]{2}[A-Z0-9]{2}([A-Z0-9]{3})?$/.test(b))
+        return { ok: false, reason: "must be 8 or 11 characters: 4 letters, country, location (+ branch)" };
+    if (!COUNTRIES.has(b.slice(4, 6)))
+        return { ok: false, reason: `unknown country ${b.slice(4, 6)}` };
+    if (b[7] === "0")
+        return { ok: true, reason: "test BIC (location ends in 0)" };
+    return { ok: true };
+}
+/** LEI: ISO 17442, 18 alphanumerics + 2 check digits, mod 97 = 1. */
+function checkLei(raw) {
+    const l = raw.trim().toUpperCase();
+    if (!l)
+        return { ok: false, reason: "empty" };
+    if (!/^[A-Z0-9]{18}\d{2}$/.test(l))
+        return { ok: false, reason: "must be 20 characters (18 letters/digits + 2 check digits)" };
+    if (mod97(lettersToDigits(l)) !== 1)
+        return { ok: false, reason: "check digits wrong (typo?)" };
+    return { ok: true };
+}
+/** ISIN: ISO 6166, 2-letter country + 9 alphanumerics + Luhn check digit. */
+function checkIsin(raw) {
+    const s = raw.trim().toUpperCase();
+    if (!s)
+        return { ok: false, reason: "empty" };
+    if (!/^[A-Z]{2}[A-Z0-9]{9}\d$/.test(s))
+        return { ok: false, reason: "must be 12 characters: country + 9 + check digit" };
+    if (!COUNTRIES.has(s.slice(0, 2)) && !["XS", "EU", "QS", "QT"].includes(s.slice(0, 2)))
+        return { ok: false, reason: `unknown prefix ${s.slice(0, 2)}` };
+    const digits = lettersToDigits(s.slice(0, 11));
+    let sum = 0;
+    for (let i = 0; i < digits.length; i++) {
+        let d = Number(digits[digits.length - 1 - i]);
+        if (i % 2 === 0) {
+            d *= 2;
+            if (d > 9)
+                d -= 9;
+        }
+        sum += d;
+    }
+    const check = (10 - (sum % 10)) % 10;
+    return check === Number(s[11]) ? { ok: true } : { ok: false, reason: "check digit wrong (typo?)" };
+}
+function checkCurrency(raw) {
+    const c = raw.trim().toUpperCase();
+    return CURRENCIES.has(c) ? { ok: true } : { ok: false, reason: c ? `${c} is not an ISO 4217 currency` : "empty" };
+}
+function checkCountry(raw) {
+    const c = raw.trim().toUpperCase();
+    return COUNTRIES.has(c) ? { ok: true } : { ok: false, reason: c ? `${c} is not an ISO 3166 country code` : "empty" };
+}
+const UUID_RE = /\b[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\b/i;
+/** Build a valid LEI / IBAN check pair for tests and samples. */
+function leiWithCheck(base18) {
+    const r = 98 - mod97(lettersToDigits(base18.toUpperCase() + "00"));
+    return base18.toUpperCase() + String(r).padStart(2, "0");
+}
+function ibanWithCheck(country, bban) {
+    const r = 98 - mod97(lettersToDigits(bban.toUpperCase() + country.toUpperCase() + "00"));
+    return country.toUpperCase() + String(r).padStart(2, "0") + bban.toUpperCase();
+}
+
+return { COUNTRIES, CURRENCIES, SEPA_COUNTRIES, cleanIban, checkIban, checkBic, checkLei, checkIsin, checkCurrency, checkCountry, UUID_RE, leiWithCheck, ibanWithCheck };
+})();
+__m["report-sanity-checker/src/check.js"] = (() => {
+// "Valid but Wrong" Report Checker
+// Regulatory and transaction reports can pass the regulator's format validation and still be wrong. This checks a
+// report extract (CSV) for errors that format checks miss: identifiers with bad check digits (LEI, ISIN, BIC, IBAN),
+// unknown currency/country codes, impossible date orders, duplicate trade identifiers, a firm reporting itself as its
+// own counterparty, negative or zero notionals, placeholder values and outliers. Columns are recognised by their names.
+const { normaliseHeader, parseAmount, parseTimestamp } = __m["shared/table.js"];
+const { checkBic, checkCountry, checkCurrency, checkIban, checkIsin, checkLei } = __m["shared/ids.js"];
+const RULE_TITLES = {
+    INVALID_LEI: "LEI fails ISO 17442 check", INVALID_ISIN: "ISIN fails check digit", INVALID_BIC: "BIC malformed", INVALID_IBAN: "IBAN fails check", INVALID_CURRENCY: "Not an ISO 4217 currency",
+    INVALID_COUNTRY: "Not an ISO 3166 country", BAD_DATE: "Date unreadable", DATE_ORDER: "Dates in an impossible order", FUTURE_DATE: "Date after the report date", DUPLICATE_ID: "Duplicate trade/transaction identifier",
+    SELF_COUNTERPARTY: "Reporting party is its own counterparty", NEGATIVE: "Negative amount or quantity", ZERO: "Zero amount or quantity", PLACEHOLDER: "Placeholder value", OUTLIER: "Amount far outside the usual range",
+    MISSING: "Required value missing", CURRENCY_DECIMALS: "Too many decimals for the currency",
+};
+/** Guess what each column holds from its header. */
+function classifyColumns(headers) {
+    const out = {};
+    for (const h of headers) {
+        const n = normaliseHeader(h);
+        out[h] =
+            /(^|_)lei($|_)|legal_entity_identifier/.test(n) ? "lei"
+                : /(^|_)isin($|_)/.test(n) ? "isin"
+                    : /(^|_)(bic|swift|bic_code)($|_)/.test(n) ? "bic"
+                        : /(^|_)iban($|_)/.test(n) ? "iban"
+                            : /(^|_)(ccy|currency)($|_)|_ccy$|currency_\d/.test(n) ? "currency"
+                                : /(^|_)(country|ctry|jurisdiction|domicile)($|_)/.test(n) ? "country"
+                                    : /(^|_)(uti|usi|trade_id|transaction_id|tx_id|report_id|reference|trn|unique_.*identifier)($|_)/.test(n) ? "id"
+                                        : /(^|_)(date|dt)($|_)|_date$|date_|timestamp|_time$|^time/.test(n) ? "date"
+                                            : /(notional|amount|value|consideration|principal|market_value|exposure|nominal)/.test(n) ? "amount"
+                                                : /(quantity|qty|units|volume)/.test(n) ? "quantity"
+                                                    : /(price|rate|strike|yield)/.test(n) ? "price" : "other";
+    }
+    return out;
+}
+const PLACEHOLDERS = /^(n\/?a|na|tbd|tba|unknown|xxx+|x+|test|dummy|default|0{4,}|9{6,}|1900-01-01|9999-12-31|01\/01\/1900|31\/12\/9999|-|\?+|null|none)$/i;
+const ZERO_DEC = new Set(["JPY", "KRW", "CLP", "ISK", "VND", "XOF", "XAF", "UGX", "PYG", "KMF", "GNF", "RWF", "DJF", "VUV", "XPF", "BIF"]);
+const THREE_DEC = new Set(["BHD", "KWD", "OMR", "JOD", "TND", "LYD", "IQD"]);
+function dateRank(col) {
+    const n = normaliseHeader(col);
+    if (/(trade|execution|exec|transaction|deal)/.test(n))
+        return 1;
+    if (/(effective|start|value|settlement|settle|clearing)/.test(n))
+        return 2;
+    if (/(maturity|expir|end|termination)/.test(n))
+        return 3;
+    return 0;
+}
+function checkReport(rows, opts = {}) {
+    const issues = [];
+    if (!rows.length)
+        return { issues, roles: {}, rows: 0 };
+    const headers = Object.keys(rows[0]);
+    const roles = classifyColumns(headers);
+    const add = (row, column, value, rule, severity, message) => issues.push({ row, column, value, rule, severity, message });
+    const reportDateCol = headers.find((h) => /report(ing)?_?(date|timestamp)|submission/.test(normaliseHeader(h)));
+    const fixedReportDate = opts.reportDate ? parseTimestamp(opts.reportDate) : null;
+    const ccyCol = headers.find((h) => roles[h] === "currency");
+    const idCols = headers.filter((h) => roles[h] === "id");
+    const leiCols = headers.filter((h) => roles[h] === "lei");
+    const amountCols = headers.filter((h) => roles[h] === "amount" || roles[h] === "quantity");
+    const dateCols = headers.filter((h) => roles[h] === "date" && dateRank(h) > 0);
+    rows.forEach((r, i) => {
+        const rowNo = i + 2;
+        for (const h of headers) {
+            const v = (r[h] ?? "").trim();
+            const role = roles[h];
+            if ((opts.required ?? []).map(normaliseHeader).includes(normaliseHeader(h)) && !v)
+                add(rowNo, h, v, "MISSING", "error", "Required value is empty.");
+            if (!v)
+                continue;
+            if (PLACEHOLDERS.test(v) && role !== "other") {
+                add(rowNo, h, v, "PLACEHOLDER", "error", "Looks like a placeholder, not real data.");
+                continue;
+            }
+            const check = role === "lei" ? checkLei(v) : role === "isin" ? checkIsin(v) : role === "bic" ? checkBic(v) : role === "iban" ? checkIban(v) : role === "currency" ? checkCurrency(v) : role === "country" ? checkCountry(v) : null;
+            if (check && !check.ok)
+                add(rowNo, h, v, `INVALID_${role.toUpperCase()}`, "error", check.reason ?? "invalid");
+            if (role === "date" && !parseTimestamp(v))
+                add(rowNo, h, v, "BAD_DATE", "error", "Can't read this date.");
+            if (role === "amount" || role === "quantity") {
+                const n = parseAmount(v);
+                if (n !== null && n < 0 && !/(mtm|market_value|valuation|pnl|p_l|exposure)/.test(normaliseHeader(h)))
+                    add(rowNo, h, v, "NEGATIVE", "error", "Negative value where a positive one is expected (direction should be a separate field).");
+                if (n === 0 && /(notional|quantity|qty|nominal|principal)/.test(normaliseHeader(h)))
+                    add(rowNo, h, v, "ZERO", "warning", "Zero notional/quantity.");
+                const ccy = ccyCol ? (r[ccyCol] ?? "").toUpperCase() : "";
+                const dec = v.includes(".") ? v.split(".").pop().length : 0;
+                if (ccy && role === "amount" && ((ZERO_DEC.has(ccy) && dec > 0 && Number(v.split(".")[1]) !== 0) || (!ZERO_DEC.has(ccy) && !THREE_DEC.has(ccy) && dec > 2 && /(amount|consideration|principal)/.test(normaliseHeader(h)))))
+                    add(rowNo, h, v, "CURRENCY_DECIMALS", "warning", `${ccy} amounts normally have ${ZERO_DEC.has(ccy) ? 0 : 2} decimals.`);
+            }
+        }
+        // date order
+        const dated = dateCols.map((h) => ({ h, rank: dateRank(h), d: parseTimestamp(r[h] ?? "") })).filter((x) => x.d);
+        for (const a of dated)
+            for (const b of dated) {
+                if (a.rank < b.rank && a.d.getTime() > b.d.getTime() + 86400000 - 1)
+                    add(rowNo, `${a.h} > ${b.h}`, `${r[a.h]} > ${r[b.h]}`, "DATE_ORDER", "error", `${a.h} is after ${b.h}.`);
+            }
+        const rep = fixedReportDate ?? (reportDateCol ? parseTimestamp(r[reportDateCol] ?? "") : null);
+        if (rep)
+            for (const x of dated)
+                if (x.rank === 1 && x.d.getTime() > rep.getTime() + 86400000)
+                    add(rowNo, x.h, r[x.h], "FUTURE_DATE", "error", "Trade/execution date is after the report date.");
+        // self counterparty
+        if (leiCols.length >= 2) {
+            const rep1 = leiCols.find((c) => /(report|submit|own|entity|firm)/.test(normaliseHeader(c))) ?? leiCols[0];
+            for (const c of leiCols)
+                if (c !== rep1 && /(counterparty|other|cpty|client|issuer|beneficiary)/.test(normaliseHeader(c)) && r[c] && r[c].trim().toUpperCase() === (r[rep1] ?? "").trim().toUpperCase())
+                    add(rowNo, c, r[c], "SELF_COUNTERPARTY", "error", `Same LEI as ${rep1}.`);
+        }
+    });
+    // duplicates
+    for (const c of idCols) {
+        const seen = new Map();
+        rows.forEach((r, i) => { const v = (r[c] ?? "").trim(); if (!v)
+            return; if (seen.has(v))
+            add(i + 2, c, v, "DUPLICATE_ID", "error", `Same identifier as row ${seen.get(v)}.`);
+        else
+            seen.set(v, i + 2); });
+    }
+    // outliers: per amount column (and currency), value > 100× median or < median/1000
+    for (const c of amountCols) {
+        const groups = new Map();
+        rows.forEach((r, i) => { const n = parseAmount(r[c] ?? ""); if (n && n > 0) {
+            const k = ccyCol ? (r[ccyCol] ?? "") : "";
+            groups.set(k, [...(groups.get(k) ?? []), { i, v: n }]);
+        } });
+        for (const [, list] of groups) {
+            if (list.length < 20)
+                continue;
+            const sorted = list.map((x) => x.v).sort((a, b) => a - b);
+            const med = sorted[Math.floor(sorted.length / 2)];
+            for (const x of list)
+                if (x.v > med * 100 || x.v < med / 1000)
+                    add(x.i + 2, c, rows[x.i][c], "OUTLIER", "warning", `${x.v > med ? "Over 100×" : "Under 1/1000 of"} the typical value (${med.toLocaleString("en-US")}). Check for a missing decimal point or wrong unit.`);
+        }
+    }
+    return { issues, roles, rows: rows.length };
+}
+
+return { RULE_TITLES, classifyColumns, checkReport };
+})();
+__m["report-sanity-checker/src/report.js"] = (() => {
+const { mdTable, toCsv } = __m["shared/table.js"];
+const { RULE_TITLES } = __m["report-sanity-checker/src/check.js"];
+function toMarkdown(res, title = "\"Valid but wrong\" report check") {
+    const { issues, roles, rows } = res;
+    const errors = issues.filter((i) => i.severity === "error");
+    const badRows = new Set(errors.map((i) => i.row)).size;
+    const byRule = {};
+    for (const i of issues)
+        (byRule[i.rule] ??= []).push(i);
+    const out = [
+        `# ${title}`, "",
+        `**${rows.toLocaleString("en-US")} rows checked:** ${errors.length} errors on ${badRows} row(s) (${rows ? ((badRows / rows) * 100).toFixed(1) : 0}%), ${issues.length - errors.length} warnings.`, "",
+        "**Columns recognised:** " + Object.entries(roles).filter(([, r]) => r !== "other").map(([c, r]) => `${c} → ${r}`).join(", "), "",
+    ];
+    if (Object.keys(byRule).length) {
+        out.push("## Summary", "", mdTable(["Issue", "Severity", "Count", "Example"], Object.entries(byRule).sort((a, b) => b[1].length - a[1].length).map(([r, l]) => [RULE_TITLES[r] ?? r, l[0].severity, l.length, `row ${l[0].row}, ${l[0].column}: ${l[0].value}`])), "");
+        out.push("## First 50 issues", "", mdTable(["Row", "Column", "Value", "Issue", "Detail"], issues.sort((a, b) => a.row - b.row).slice(0, 50).map((i) => [i.row, i.column, i.value, RULE_TITLES[i.rule] ?? i.rule, i.message])), "");
+    }
+    else
+        out.push("No issues found by these checks.", "");
+    out.push("_Generated by Hyniqe Hub · \"Valid but wrong\" Report Checker. Runs locally. These are plausibility checks on top of, not instead of, the regulator's validation rules._");
+    return out.join("\n") + "\n";
+}
+function toIssuesCsv(issues) {
+    return toCsv(issues, ["row", "column", "value", "rule", "severity", "message"]);
+}
+
+return { toMarkdown, toIssuesCsv };
+})();
+const SAMPLES = {"report":"uti,reporting_lei,counterparty_lei,isin,notional,notional_currency,execution_date,effective_date,maturity_date,reporting_date,counterparty_country\n529900HYNIQEDEMO0185R0PV8LWFCUMA,529900HYNIQEDEMO0185,529900HYNIQEDEMO0185,GB0002634946,40833917,EUR,2026-10-21,2026-10-23,2034-04-24,2026-10-22,GB\n529900HYNIQEDEMO0185LUDL5Z6PQKJM,529900HYNIQEDEMO0185,1KJGHGFK0Q0P6CQX9M63,US0378331005,1005787,EUR,2026-11-09,2026-11-11,2031-06-02,2026-11-10,DE\n529900HYNIQEDEMO0185H1RM0DUB6RN1,529900HYNIQEDEMO0185,9YG9MSRQ6UWJG2GWNE95,GB0002634946,35041137,USD,2026-10-01,2026-10-03,2028-01-12,2026-10-02,GB\n529900HYNIQEDEMO018564QQ9XYELBNZ,529900HYNIQEDEMO0185,1KJGHGFK0Q0P6CQX9M63,US0378331005,14734194,GBP,2026-10-21,2026-10-23,2032-08-26,2026-10-22,GB\n529900HYNIQEDEMO0185AZHZ0NLZ8Y7Y,529900HYNIQEDEMO0185,5PA4A1K7GCQXTE5VHU27,GB0002634946,16593530,EUR,2026-10-12,2026-10-14,2029-01-06,2026-10-13,FR\n529900HYNIQEDEMO0185HCF5KWNJWKVF,529900HYNIQEDEMO0185,9YG9MSRQ6UWJG2GWNE95,NL0010273215,24522655,USD,2026-11-01,2026-11-03,2030-06-05,2026-11-02,US\n529900HYNIQEDEMO0185QCB04N91FP4Q,529900HYNIQEDEMO0185,5NB7MWBSD4VC0RMVW717,FR0000120271,25826667,USD,2026-10-09,2026-10-11,2027-10-25,2026-10-10,FR\n529900HYNIQEDEMO018526BWVYF5NLRX,529900HYNIQEDEMO0185,02NQYVFQ49419EKQSS37,NL0010273215,7495248,GBP,2026-10-24,2026-10-26,2034-07-06,2026-10-25,GB\n529900HYNIQEDEMO0185JHLZHNHWW27X,529900HYNIQEDEMO0185,RZTMUVLBFVPBXMBU5C22,US0378331005,22447566,USD,2026-11-12,2026-11-14,2026-10-13,2026-11-13,FR\n529900HYNIQEDEMO0185V8LGHQKDZ7E1,529900HYNIQEDEMO0185,HT4ZKXEKBLAQAFUPZW88,DE0007164600,5848350,USD,2026-11-02,2026-11-04,2034-12-29,2026-11-03,US\n529900HYNIQEDEMO0185ZQEBR9K83UC4,529900HYNIQEDEMO0185,GPJLUNZZYTYT53Z1GV02,DE0007164600,31093169,USD,2026-10-23,2026-10-25,2030-12-03,2026-10-24,DE\n529900HYNIQEDEMO0185U7ZFE0D1DGD0,529900HYNIQEDEMO0185,GPJLUNZZYTYT53Z1GV02,US0378331005,10189767,EUR,2026-11-13,2026-11-15,2029-06-04,2026-11-14,DE\n529900HYNIQEDEMO0185UW8QHT70UWX7,529900HYNIQEDEMO0185,529900HYNIQEDEMO0185,DE0007164600,39158458,GBP,2026-11-09,2026-11-11,2035-11-14,2026-11-10,US\n529900HYNIQEDEMO01850U7HC29WZJ61,529900HYNIQEDEMO0185,H6U24Z7GHMGN5ZUB6H50,DE0007164600,38046757,USD,2026-11-04,2026-11-06,2034-05-11,2026-11-05,NL\n529900HYNIQEDEMO0185C92MJLNL2WPM,529900HYNIQEDEMO0185,02NQYVFQ49419EKQSS36,US0378331005,9974725,USD,2026-11-08,2026-11-10,2029-01-23,2026-11-09,DE\n529900HYNIQEDEMO0185LLJEDBEQ2MNN,529900HYNIQEDEMO0185,1KJGHGFK0Q0P6CQX9M63,CH0012005267,20423526,GBP,2026-10-10,2026-10-12,2029-09-01,2026-10-11,DE\n529900HYNIQEDEMO01856ZXEXW3GV9GT,529900HYNIQEDEMO0185,WF4MT7DJZGVUR125HP20,US0378331005,15212921,GBP,2026-11-02,2026-11-04,2031-02-14,2026-11-03,DE\n529900HYNIQEDEMO0185A9C971Q581T3,529900HYNIQEDEMO0185,42SEVSGY54JN7S84NL58,GB0002634946,19119853,USD,2026-11-07,2026-11-09,2031-08-17,2026-11-08,US\n529900HYNIQEDEMO0185VRNGCLZADD9P,529900HYNIQEDEMO0185,WF4MT7DJZGVUR125HP20,FR0000120271,26781092,GBP,2026-10-16,2026-10-18,2034-03-18,2026-10-17,GB\n529900HYNIQEDEMO0185LHDV82L04Q58,529900HYNIQEDEMO0185,EJA3PASW3GT4Z6QP7E32,NL0010273215,39758909,USD,2026-11-13,2026-11-15,2035-04-22,2026-11-14,US\n529900HYNIQEDEMO0185UC81QRWG8LM9,529900HYNIQEDEMO0185,1KJGHGFK0Q0P6CQX9M63,US0378331005,26090966,USD,2026-11-10,2026-11-12,2030-01-15,2026-11-11,GB\n529900HYNIQEDEMO0185T2VQU84UDKVD,529900HYNIQEDEMO0185,RZTMUVLBFVPBXMBU5C22,GB0002634946,2776180,EUR,2026-10-21,2026-10-23,2035-09-03,2026-10-22,NL\n529900HYNIQEDEMO018562V99ZN8A77W,529900HYNIQEDEMO0185,PSBUFXN85CQ148MCMZ82,GB0002634946,16461134,GBP,2026-10-29,2026-10-31,2032-03-10,2026-10-30,DE\n529900HYNIQEDEMO0185CGGGN7PTM4B5,529900HYNIQEDEMO0185,1KJGHGFK0Q0P6CQX9M63,DE0007164600,22244126,GBP,2026-11-03,2026-11-05,2032-09-05,2026-10-25,FR\n529900HYNIQEDEMO0185G8MKHUZ50USH,529900HYNIQEDEMO0185,11JL8M7ARVH6992NPP38,FR0000120271,10493651,GBP,2026-10-04,2026-10-06,2034-04-05,2026-10-05,EN\n529900HYNIQEDEMO0185YGVXPVC62HM9,529900HYNIQEDEMO0185,PSBUFXN85CQ148MCMZ82,CH0012005267,29923418,GBP,2026-11-06,2026-11-08,2033-11-14,2026-11-07,FR\n529900HYNIQEDEMO0185HMZRRTZTVLWC,529900HYNIQEDEMO0185,6YY9HVXPKTAGRJPJJY70,DE0007164600,-15733493,EUR,2026-10-04,2026-10-06,2030-03-22,2026-10-05,US\n529900HYNIQEDEMO0185A046YYBBWR7B,529900HYNIQEDEMO0185,EJA3PASW3GT4Z6QP7E32,GB0002634946,36939217,GBP,2026-10-12,2026-10-14,2034-03-05,2026-10-13,NL\n529900HYNIQEDEMO018588E7Y5KTBWYQ,529900HYNIQEDEMO0185,EJA3PASW3GT4Z6QP7E32,FR0000120271,21321629,GBP,2026-11-04,2026-11-06,2033-09-30,2026-11-05,GB\n529900HYNIQEDEMO0185LD4MV62168XW,529900HYNIQEDEMO0185,RZTMUVLBFVPBXMBU5C22,NL0010273215,-14317405,USD,2026-10-04,2026-10-06,2028-02-01,2026-10-05,FR\n529900HYNIQEDEMO0185ZJ2WHN34JZB7,529900HYNIQEDEMO0185,5NB7MWBSD4VC0RMVW717,NL0010273215,17139077,USD,2026-10-24,2026-10-26,2031-10-05,2026-10-25,GB\n529900HYNIQEDEMO0185R4097EXVMEM7,529900HYNIQEDEMO0185,WF1KGFFR4QLYUG0W2H04,FR0000120271,28875866,GBP,2026-10-04,2026-10-06,2031-10-28,2026-10-05,GB\n529900HYNIQEDEMO0185K8G7CF4GB8CA,529900HYNIQEDEMO0185,LG61PQ99B07ZKZ55K955,US0378331005,2730687,USD,2026-10-18,2026-10-20,2033-03-09,2026-10-19,NL\n529900HYNIQEDEMO0185K46U7KDSKGUM,529900HYNIQEDEMO0185,RZTMUVLBFVPBXMBU5C22,FR0000120271,28508550,GBP,2026-10-23,2026-10-25,2028-07-13,2026-10-24,NL\n529900HYNIQEDEMO0185664XQGJ9LVAE,529900HYNIQEDEMO0185,PSBUFXN85CQ148MCMZ82,CH0012005267,30346329,EUR,2026-11-10,2026-11-12,2033-02-16,2026-11-11,GB\n529900HYNIQEDEMO01851E9UVL1XBLBG,529900HYNIQEDEMO0185,J6XHR1YK91BQR8VF6M66,US0378331005,34970227,EUR,2026-10-22,2026-10-24,2028-08-26,2026-10-13,DE\n529900HYNIQEDEMO0185JLXMR9510S21,529900HYNIQEDEMO0185,11JL8M7ARVH6992NPP38,FR0000120271,20604729,USD,2026-10-11,2026-10-13,2034-02-23,2026-10-12,DE\n529900HYNIQEDEMO0185GC2ZK25216QQ,529900HYNIQEDEMO0185,RZTMUVLBFVPBXMBU5C22,FR0000120271,17208773,GBP,2026-11-28,2026-11-30,2031-10-27,2026-11-19,DE\n529900HYNIQEDEMO018523YKZFEE3TN6,529900HYNIQEDEMO0185,WF1KGFFR4QLYUG0W2H04,CH0012005267,25306278,USD,2026-11-17,2026-11-19,2031-03-14,2026-11-18,FR\n529900HYNIQEDEMO0185NXCX6WCDDCHZ,529900HYNIQEDEMO0185,42SEVSGY54JN7S84NL58,NL0010273215,2747304,EUR,2026-10-11,2026-10-13,2029-04-18,2026-10-12,DE\n529900HYNIQEDEMO0185RRRFNQV5TEHY,529900HYNIQEDEMO0185,J6XHR1YK91BQR8VF6M66,GB0002634946,8589369,USD,2026-10-26,2026-10-28,2028-01-22,2026-10-27,DE\n529900HYNIQEDEMO0185Y95QK35J4ZYJ,529900HYNIQEDEMO0185,5PA4A1K7GCQXTE5VHU27,NL0010273218,19082124,EUR,2026-11-17,2026-11-19,2032-07-18,2026-11-18,FR\n529900HYNIQEDEMO0185G25XEJNXDRJF,529900HYNIQEDEMO0185,0GU1L1926SJ05UGTAF72,FR0000120271,5711393,GBP,2026-11-19,2026-11-21,2028-12-29,2026-11-20,US\n529900HYNIQEDEMO0185AKR6YX1BVJ71,529900HYNIQEDEMO0185,H6U24Z7GHMGN5ZUB6H50,CH0012005267,31429301,EUD,2026-10-26,2026-10-28,2030-01-02,2026-10-27,FR\n529900HYNIQEDEMO0185C4668Y8AQ7WH,529900HYNIQEDEMO0185,MWWB3M8G98QHGL3SPX19,DE0007164600,36661531,USD,2026-11-19,2026-11-21,2028-08-31,2026-11-20,DE\n529900HYNIQEDEMO018523ZPCR5A4UAA,529900HYNIQEDEMO0185,MWWB3M8G98QHGL3SPX19,NL0010273215,14863023,EUR,2026-11-02,2026-11-04,2028-06-11,2026-11-03,US\n529900HYNIQEDEMO01850AGP3VLSLJY6,529900HYNIQEDEMO0185,LFUN5H9MVG8VRA6HPL40,US0378331005,5520964,GBP,2026-11-05,2026-11-07,2033-09-09,2026-11-06,NL\n529900HYNIQEDEMO0185V62XE5NDB6XW,529900HYNIQEDEMO0185,0GU1L1926SJ05UGTAF72,CH0012005267,14987689,EUR,2026-10-01,2026-10-03,2035-02-10,2026-10-02,US\n529900HYNIQEDEMO01855UZQ8TWHJ93U,529900HYNIQEDEMO0185,GPJLUNZZYTYT53Z1GV02,DE0007164600,30398231,USD,2026-10-26,2026-10-28,2035-05-22,2026-10-27,GB\n529900HYNIQEDEMO0185CM532F4BT3M0,529900HYNIQEDEMO0185,X2YEY430CGLW2QX9Q637,CH0012005267,2752325,GBP,2026-10-07,2026-10-09,2033-03-09,2026-10-08,EN\n529900HYNIQEDEMO0185NPDMF2MY51XT,529900HYNIQEDEMO0185,5NB7MWBSD4VC0RMVW717,DE0007164600,23064786,GBP,2026-10-28,2026-10-30,2035-12-07,2026-10-29,GB\n529900HYNIQEDEMO0185E4YZPQME09T8,529900HYNIQEDEMO0185,MWWB3M8G98QHGL3SPX19,US0378331005,27568990,EUR,2026-10-04,2026-10-06,2034-08-04,2026-10-05,NL\n529900HYNIQEDEMO01858VK16MW9JAM2,529900HYNIQEDEMO0185,DEEPDBWBGLJL8BAAN723,GB0002634946,4872024,EUR,2026-11-10,2026-11-12,2034-02-04,2026-11-11,DE\n529900HYNIQEDEMO0185RFA1LNQ4LT4S,529900HYNIQEDEMO0185,0GU1L1926SJ05UGTAF72,NL0010273215,15610851,USD,2026-10-18,2026-10-20,2029-03-05,2026-10-09,FR\n529900HYNIQEDEMO0185GZLSJXM5VW1D,529900HYNIQEDEMO0185,GPJLUNZZYTYT53Z1GV02,NL0010273215,22855693,USD,2026-10-21,2026-10-23,2033-10-01,2026-10-22,FR\n529900HYNIQEDEMO018598TJ6QBNMXE7,529900HYNIQEDEMO0185,WF4MT7DJZGVUR125HP20,FR0000120271,30981608,GBP,2026-10-18,2026-10-20,2035-03-08,2026-10-19,GB\n529900HYNIQEDEMO0185KWHNTNPFD9V3,529900HYNIQEDEMO0185,RZTMUVLBFVPBXMBU5C22,US0378331005,2984407,GBP,2026-10-13,2026-10-15,2028-02-21,2026-10-14,US\n529900HYNIQEDEMO0185DBXZ8T1WQM0Y,529900HYNIQEDEMO0185,EJA3PASW3GT4Z6QP7E32,DE0007164600,7826352,EUR,2026-10-25,2026-10-27,2028-10-04,2026-10-26,NL\n529900HYNIQEDEMO01850ZRVYCVYN6S2,529900HYNIQEDEMO0185,6YY9HVXPKTAGRJPJJY70,GB0002634946,13235955,USD,2026-10-13,2026-10-15,2028-03-05,2026-10-14,FR\n529900HYNIQEDEMO0185TNPHMJJ374A5,529900HYNIQEDEMO0185,LG61PQ99B07ZKZ55K955,DE0007164600,36982153,USD,2026-10-09,2026-10-11,2033-11-07,2026-10-10,US\n529900HYNIQEDEMO0185V3XYU6GBGNH9,529900HYNIQEDEMO0185,MWWB3M8G98QHGL3SPX19,NL0010273215,18939257,EUR,2026-11-03,2026-11-05,2034-10-14,2026-10-25,DE\n529900HYNIQEDEMO0185B8K1N448QNZC,529900HYNIQEDEMO0185,WF4MT7DJZGVUR125HP20,NL0010273218,6401354,GBP,2026-10-06,2026-10-08,2035-10-06,2026-10-07,FR\n529900HYNIQEDEMO0185KQ77B9WC666R,529900HYNIQEDEMO0185,5PA4A1K7GCQXTE5VHU27,CH0012005267,8154898,USD,2026-10-15,2026-10-17,2030-03-17,2026-10-16,NL\n529900HYNIQEDEMO0185W1MLPZWW7ZB9,529900HYNIQEDEMO0185,5NB7MWBSD4VC0RMVW717,DE0007164600,40221739,USD,2026-11-01,2026-11-03,2031-05-09,2026-11-02,DE\n529900HYNIQEDEMO0185UL6UVGKE55F2,529900HYNIQEDEMO0185,ZSAMNVDVAVEBJUMVP557,GB0002634946,1901552,GBP,2026-10-23,2026-10-25,31/02/2027x,2026-10-24,FR\n529900HYNIQEDEMO018549S0NXYK7M8J,529900HYNIQEDEMO0185,529900HYNIQEDEMO0185,FR0000120271,17096758,GBP,2026-10-07,2026-10-09,2029-09-15,2026-10-08,NL\n529900HYNIQEDEMO0185N3J0PFGYZRJ6,529900HYNIQEDEMO0185,1KJGHGFK0Q0P6CQX9M63,US0378331005,16837921,GBP,2026-10-08,2026-10-10,2028-07-30,2026-10-09,EN\n529900HYNIQEDEMO0185GJQ0304VHWD7,529900HYNIQEDEMO0185,J6XHR1YK91BQR8VF6M66,DE0007164600,18544202,EUR,2026-11-19,2026-11-21,2035-12-13,2026-11-20,NL\n529900HYNIQEDEMO0185G84THPZBU0R2,529900HYNIQEDEMO0185,WF1KGFFR4QLYUG0W2H04,FR0000120271,7138141000,GBP,2026-10-02,2026-10-04,2032-12-07,2026-10-03,GB\n529900HYNIQEDEMO0185SHML5FA2PY07,529900HYNIQEDEMO0185,42SEVSGY54JN7S84NL58,DE0007164600,38212094,GBP,2026-11-16,2026-11-18,31/02/2027x,2026-11-17,FR\n529900HYNIQEDEMO01851B6L1WJHBMJV,529900HYNIQEDEMO0185,MWWB3M8G98QHGL3SPX19,GB0002634946,20093205,USD,2026-10-19,2026-10-21,2035-11-14,2026-10-20,DE\n529900HYNIQEDEMO0185ZUJWQU28NJPF,529900HYNIQEDEMO0185,RFG8G1VCE8H1N2WRNT05,NL0010273215,8550160,USD,2026-11-05,2026-11-07,2032-05-05,2026-11-06,DE\n529900HYNIQEDEMO0185PPWG971J81VL,529900HYNIQEDEMO0185,RZTMUVLBFVPBXMBU5C22,NL0010273218,7038283,EUR,2026-10-03,2026-10-05,2032-12-17,2026-10-04,US\n529900HYNIQEDEMO018575Q1VDV30KEX,529900HYNIQEDEMO0185,5NB7MWBSD4VC0RMVW717,CH0012005267,36596577,EUR,2026-10-02,2026-10-04,2028-08-23,2026-10-03,DE\n529900HYNIQEDEMO018529LJTZAJ1X0P,529900HYNIQEDEMO0185,J6XHR1YK91BQR8VF6M66,GB0002634946,38728983,USD,2026-10-07,2026-10-09,2035-11-01,2026-10-08,DE\n529900HYNIQEDEMO018529LJTZAJ1X0P,529900HYNIQEDEMO0185,42SEVSGY54JN7S84NL58,US0378331005,36613695,USD,2026-10-29,2026-10-31,2028-04-21,2026-10-30,US\n529900HYNIQEDEMO0185UCLLYP0XVKTF,529900HYNIQEDEMO0185,6YY9HVXPKTAGRJPJJY70,GB0002634946,8992481,GBP,2026-10-11,2026-10-13,2029-05-01,2026-10-12,FR\n529900HYNIQEDEMO0185Y2G6TS9UALCQ,529900HYNIQEDEMO0185,529900HYNIQEDEMO0185,CH0012005267,26586484,GBP,2026-11-14,2026-11-16,2034-05-13,2026-11-15,US\n529900HYNIQEDEMO01853APNDPS2CZA3,529900HYNIQEDEMO0185,X2YEY430CGLW2QX9Q637,US0378331005,37522147,USD,2026-11-04,2026-11-06,2035-05-03,2026-11-05,FR\n529900HYNIQEDEMO0185PVZWN4JTE3UC,529900HYNIQEDEMO0185,5Y2VEH3T1C7PK3YRNT33,FR0000120271,29022392,EUR,2026-10-02,2026-10-04,2033-04-19,2026-10-03,DE\n529900HYNIQEDEMO01850TQNPA8B6UH4,529900HYNIQEDEMO0185,PSBUFXN85CQ148MCMZ82,NL0010273215,2115643,USD,2026-10-30,2026-11-01,2031-02-02,2026-10-31,DE\n529900HYNIQEDEMO0185ES2YWK219URL,529900HYNIQEDEMO0185,5PA4A1K7GCQXTE5VHU27,GB0002634946,-29630025,USD,2026-10-08,2026-10-10,2028-04-13,2026-10-09,NL\n529900HYNIQEDEMO0185PWMZ30LY1L5Y,529900HYNIQEDEMO0185,MWWB3M8G98QHGL3SPX19,NL0010273215,12886991,GBP,2026-10-16,2026-10-18,2035-11-25,2026-10-17,NL\n529900HYNIQEDEMO0185D8SHRN3SUMW4,529900HYNIQEDEMO0185,HT4ZKXEKBLAQAFUPZW88,NL0010273215,26836583,EUR,2026-11-17,2026-11-19,31/02/2027x,2026-11-18,GB\n529900HYNIQEDEMO018590VJ712VNEEA,529900HYNIQEDEMO0185,02NQYVFQ49419EKQSS36,GB0002634946,8162573,EUD,2026-10-28,2026-10-30,2033-09-17,2026-10-29,DE\n529900HYNIQEDEMO0185S5C9AZ3T6G89,529900HYNIQEDEMO0185,ZSAMNVDVAVEBJUMVP557,NL0010273215,33911534,USS,2026-10-10,2026-10-12,2030-12-18,2026-10-11,NL\n529900HYNIQEDEMO01857PWDV96QH2AV,529900HYNIQEDEMO0185,H6U24Z7GHMGN5ZUB6H50,FR0000120271,24983689,GBP,2026-11-05,2026-11-07,2033-09-26,2026-11-06,FR\n529900HYNIQEDEMO0185UTT21RRZL57T,529900HYNIQEDEMO0185,WF4MT7DJZGVUR125HP21,US0378331005,5463440,USD,2026-10-26,2026-10-28,2032-06-07,2026-10-27,GB\n529900HYNIQEDEMO0185N1PCK3H8XK4R,529900HYNIQEDEMO0185,5PA4A1K7GCQXTE5VHU27,NL0010273215,33642891,EUR,2026-11-05,2026-11-07,2031-02-28,2026-11-06,FR\n529900HYNIQEDEMO0185QC7Y47A2N8PF,529900HYNIQEDEMO0185,JTH62328NNKZ0DB9UJ25,FR0000120271,33737404,GBP,2026-10-03,2026-10-05,2035-03-14,2026-10-04,NL\n529900HYNIQEDEMO01859JH62FUKZ4UL,529900HYNIQEDEMO0185,HT4ZKXEKBLAQAFUPZW88,NL0010273215,13533710,EUR,2026-11-13,2026-11-15,2028-12-25,2026-11-14,GB\n529900HYNIQEDEMO01859JH62FUKZ4UL,529900HYNIQEDEMO0185,11JL8M7ARVH6992NPP38,GB0002634946,31373857,USD,2026-10-09,2026-10-11,2035-11-17,2026-10-10,NL\n529900HYNIQEDEMO0185ASKWWS87VCC1,529900HYNIQEDEMO0185,PSBUFXN85CQ148MCMZ82,FR0000120271,-17234198,EUR,2026-11-14,2026-11-16,2033-09-18,2026-11-15,FR\n529900HYNIQEDEMO0185MLVPR0UH8URL,529900HYNIQEDEMO0185,LFUN5H9MVG8VRA6HPL40,FR0000120271,28454550,USD,2026-11-02,2026-11-04,2030-05-28,2026-11-03,GB\n529900HYNIQEDEMO0185VEDH9T22HU8P,529900HYNIQEDEMO0185,H6U24Z7GHMGN5ZUB6H50,DE0007164600,20544694,EUD,2026-10-24,2026-10-26,2031-11-13,2026-10-25,DE\n529900HYNIQEDEMO0185UJS23C6VQ0GJ,529900HYNIQEDEMO0185,LG61PQ99B07ZKZ55K955,FR0000120271,8771803,GBP,2026-11-03,2026-11-05,31/02/2027x,2026-11-04,GB\n529900HYNIQEDEMO0185N5TVT02NUX3A,529900HYNIQEDEMO0185,42SEVSGY54JN7S84NL58,FR0000120271,-17886992,EUR,2026-10-02,2026-10-04,2029-05-05,2026-10-03,GB\n529900HYNIQEDEMO01853BYJH4NT45MA,529900HYNIQEDEMO0185,J6XHR1YK91BQR8VF6M66,US0378331005,10656076,EUR,2026-10-10,2026-10-12,31/02/2027x,2026-10-11,NL\n529900HYNIQEDEMO0185ZS796313Y4BU,529900HYNIQEDEMO0185,J6XHR1YK91BQR8VF6M66,CH0012005267,22270133,EUR,2026-11-16,2026-11-18,2029-11-27,2026-11-17,US\n529900HYNIQEDEMO0185BN2K4BPD5V8Y,529900HYNIQEDEMO0185,11JL8M7ARVH6992NPP38,GB0002634946,4573649,EUR,2026-11-14,2026-11-16,2032-05-29,2026-11-15,DE\n529900HYNIQEDEMO0185ZQLNS617LTYZ,529900HYNIQEDEMO0185,WF4MT7DJZGVUR125HP20,FR0000120271,27862311,USD,2026-10-16,2026-10-18,2027-11-14,2026-10-17,US\n529900HYNIQEDEMO018535LZD3R4172M,529900HYNIQEDEMO0185,5NB7MWBSD4VC0RMVW717,FR0000120271,21325472,GBP,2026-11-09,2026-11-11,2035-12-12,2026-11-10,GB\n529900HYNIQEDEMO0185ZCRJCPM3VAQX,529900HYNIQEDEMO0185,6NHFFFEBA5H9JJNE4050,GB0002634946,-32472708,GBP,2026-10-23,2026-10-25,2033-05-10,2026-10-24,FR\n529900HYNIQEDEMO0185UQAYMRLJ0C81,529900HYNIQEDEMO0185,MWWB3M8G98QHGL3SPX19,FR0000120271,38811166,USD,2026-10-26,2026-10-28,2030-12-14,2026-10-27,FR\n529900HYNIQEDEMO018578UCP8ZZFMU6,529900HYNIQEDEMO0185,5Y2VEH3T1C7PK3YRNT33,GB0002634946,34151746,EUR,2026-11-12,2026-11-14,2035-02-27,2026-11-13,DE\n529900HYNIQEDEMO0185B9R36BGV0RA8,529900HYNIQEDEMO0185,6NHFFFEBA5H9JJNE4050,GB0002634946,24078299,GBP,2026-10-22,2026-10-24,2032-10-05,2026-10-23,DE\n529900HYNIQEDEMO01859S8T8EWMWFFT,529900HYNIQEDEMO0185,9YG9MSRQ6UWJG2GWNE95,CH0012005267,6346508,EUR,2026-10-17,2026-10-19,2028-05-16,2026-10-18,DE\n529900HYNIQEDEMO0185YV1L2AC2HHUL,529900HYNIQEDEMO0185,5PA4A1K7GCQXTE5VHU27,NL0010273215,38599922,GBP,2026-11-07,2026-11-09,2030-11-21,2026-11-08,US\n529900HYNIQEDEMO0185H8TRGRSKTMFD,529900HYNIQEDEMO0185,LG61PQ99B07ZKZ55K955,US0378331005,24891527,USD,2026-11-06,2026-11-08,2033-05-13,2026-11-07,GB\n529900HYNIQEDEMO0185D6EE35YHGP0S,529900HYNIQEDEMO0185,WF4MT7DJZGVUR125HP20,CH0012005267,28516449,GBP,2026-10-17,2026-10-19,2030-12-19,2026-10-18,US\n529900HYNIQEDEMO0185LA9FGUY1ADUT,529900HYNIQEDEMO0185,LFUN5H9MVG8VRA6HPL40,GB0002634946,21986224,GBP,2026-11-03,2026-11-05,2029-11-24,2026-11-04,GB\n529900HYNIQEDEMO01856NFGEGAR6AT0,529900HYNIQEDEMO0185,EJA3PASW3GT4Z6QP7E33,GB0002634946,8825506,USD,2026-10-13,2026-10-15,2035-09-19,2026-10-14,GB\n529900HYNIQEDEMO0185SY4KWYHXVUGV,529900HYNIQEDEMO0185,5NB7MWBSD4VC0RMVW717,GB0002634946,39642174,USD,2026-10-03,2026-10-05,2033-10-22,2026-10-04,NL\n529900HYNIQEDEMO0185MXU2FX4RZG2R,529900HYNIQEDEMO0185,DEEPDBWBGLJL8BAAN723,US0378331005,39416983,GBP,2026-10-03,2026-10-05,2026-09-03,2026-10-04,FR\n529900HYNIQEDEMO0185LKC77MHXE9TX,529900HYNIQEDEMO0185,HT4ZKXEKBLAQAFUPZW88,FR0000120271,18329467,GBP,2026-10-06,2026-10-08,2032-10-17,2026-10-07,GB\n529900HYNIQEDEMO0185BATY4SGJLL59,529900HYNIQEDEMO0185,H6U24Z7GHMGN5ZUB6H50,GB0002634946,37993680,GBP,2026-10-16,2026-10-18,2031-02-11,2026-10-17,GB\n529900HYNIQEDEMO0185MEBDEJKDD9S3,529900HYNIQEDEMO0185,5PA4A1K7GCQXTE5VHU27,FR0000120271,9399996,EUR,2026-11-07,2026-11-09,31/02/2027x,2026-11-08,NL\n529900HYNIQEDEMO0185YAAD2SDT15GA,529900HYNIQEDEMO0185,FLQH1534CUUP219P9V21,CH0012005267,26723183,USD,2026-11-19,2026-11-21,31/02/2027x,2026-11-20,US\n529900HYNIQEDEMO018511XVFY7TV2NZ,529900HYNIQEDEMO0185,11JL8M7ARVH6992NPP38,GB0002634946,32200160,USD,2026-10-09,2026-10-11,2031-08-18,2026-10-10,NL\n529900HYNIQEDEMO0185M9T0XCCBSAS8,529900HYNIQEDEMO0185,02NQYVFQ49419EKQSS37,NL0010273215,22333451,EUR,2026-10-19,2026-10-21,2031-07-18,2026-10-20,FR\n"};
+// Minimal, safe Markdown → HTML for the reports these tools produce (headings, tables, lists, checkboxes,
+// bold/italic/code, line breaks). All text is HTML-escaped first.
+function renderMarkdown(md) {
+  const esc = (s) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  const inline = (s) => esc(s)
+    .replace(/`([^`]+)`/g, "<code>$1</code>")
+    .replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>")
+    .replace(/(^|[\s(])_([^_]+)_(?=[\s).,:;]|$)/g, "$1<em>$2</em>")
+    .replace(/ {2}$/g, "<br>");
+  const lines = md.replace(/\r/g, "").split("\n");
+  const html = [];
+  let i = 0;
+  while (i < lines.length) {
+    const l = lines[i];
+    if (/^#{1,4} /.test(l)) { const n = l.match(/^#+/)[0].length; html.push(`<h${n + 1}>${inline(l.slice(n + 1))}</h${n + 1}>`); i++; continue; }
+    if (/^\|.*\|$/.test(l) && /^\|\s*-+/.test(lines[i + 1] || "")) {
+      const cells = (row) => row.slice(1, -1).split(/(?<!\\)\|/).map((c) => inline(c.trim().replace(/\\\|/g, "|")));
+      const head = cells(l);
+      i += 2;
+      const body = [];
+      while (i < lines.length && /^\|.*\|$/.test(lines[i])) body.push(cells(lines[i++]));
+      html.push(`<div class="tablewrap"><table><thead><tr>${head.map((c) => `<th>${c}</th>`).join("")}</tr></thead><tbody>${body.map((r) => `<tr>${r.map((c) => `<td>${c}</td>`).join("")}</tr>`).join("")}</tbody></table></div>`);
+      continue;
+    }
+    if (/^(\d+\.|-) /.test(l)) {
+      const ordered = /^\d+\./.test(l);
+      const items = [];
+      while (i < lines.length && (/^(\d+\.|-) /.test(lines[i]) || /^ {2,}\S/.test(lines[i]))) {
+        if (/^ {2,}\S/.test(lines[i]) && items.length) items[items.length - 1] += "<br>" + inline(lines[i].trim());
+        else items.push(inline(lines[i].replace(/^(\d+\.|-) /, "")).replace(/^\[ \] /, '<input type="checkbox"> ').replace(/^\[x\] /i, '<input type="checkbox" checked> '));
+        // keep "  " line-break markers inside items
+        if (/ {2}$/.test(lines[i])) items[items.length - 1] = items[items.length - 1].replace(/<br>$/, "");
+        i++;
+      }
+      html.push(`<${ordered ? "ol" : "ul"}>${items.map((x) => `<li>${x}</li>`).join("")}</${ordered ? "ol" : "ul"}>`);
+      continue;
+    }
+    if (!l.trim()) { i++; continue; }
+    const para = [];
+    while (i < lines.length && lines[i].trim() && !/^(#|\||\d+\. |- )/.test(lines[i])) para.push(inline(lines[i++]));
+    html.push(`<p>${para.join(" ")}</p>`);
+  }
+  return html.join("\n");
+}
+
+// Page UI for each Hub solution. Expects: __m (bundled modules), SAMPLES, renderMarkdown.
+(function () {
+  const $ = (sel, el = document) => el.querySelector(sel);
+  const h = (html) => { const t = document.createElement("template"); t.innerHTML = html.trim(); return t.content.firstElementChild; };
+  const app = $("#app");
+  const table = __m["shared/table.js"];
+  const solution = document.body.dataset.solution;
+
+  function download(name, text, type = "text/plain") {
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(new Blob([text], { type }));
+    a.download = name;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+  }
+  async function readFiles(input) {
+    return Promise.all([...input.files].map(async (f) => ({ name: f.webkitRelativePath || f.name, text: await f.text() })));
+  }
+  function fileInto(input, textarea) {
+    input.addEventListener("change", async () => { const [f] = await readFiles(input); if (f) textarea.value = f.text; });
+  }
+  const resultCard = h(`<section class="card"><div id="downloads" class="actions" style="margin:0 0 8px"></div><div id="report" class="empty">Your report will appear here.</div></section>`);
+  function show(md, downloads = []) {
+    const r = $("#report", resultCard);
+    r.className = "";
+    r.innerHTML = renderMarkdown(md);
+    const d = $("#downloads", resultCard);
+    d.innerHTML = "";
+    for (const [label, name, text, type] of [["Download report (.md)", "report.md", md, "text/markdown"], ...downloads]) {
+      const b = h(`<button>${label}</button>`);
+      b.onclick = () => download(name, text, type);
+      d.append(b);
+    }
+    resultCard.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+  function showError(e) {
+    const r = $("#report", resultCard);
+    r.className = "error";
+    r.textContent = e && e.message ? e.message : String(e);
+  }
+  const safe = (fn) => () => { try { fn(); } catch (e) { console.error(e); showError(e); } };
+
+  // ------------------------------------------------------------------ Agent Payment Mandate Checker
+  if (solution === "agent-payment-mandate-checker") {
+    const c = __m["agent-payment-mandate-checker/src/checker.js"], rep = __m["agent-payment-mandate-checker/src/report.js"];
+    const card = h(`<section class="card"><h2>1 · Mandates <span class="hint">(JSON: what each agent may pay, to whom, up to what limit)</span></h2>
+      <input type="file" id="mf" accept=".json"><textarea id="m" placeholder='{"mandates":[{"id":"M-1","agent_id":"ap-agent","per_payment_limit":5000}]}'></textarea>
+      <h2 style="margin-top:16px">2 · Agent payment log <span class="hint">(CSV: payment_id, timestamp, agent_id, mandate_id, payee, amount, currency, category, approved_by, approval_time, purpose, status)</span></h2>
+      <input type="file" id="pf" accept=".csv,.txt"><textarea id="p"></textarea>
+      <div class="actions"><button class="primary" id="run">Check payments</button><button id="sample">Load sample data</button></div></section>`);
+    app.append(card, resultCard);
+    fileInto($("#mf", card), $("#m", card)); fileInto($("#pf", card), $("#p", card));
+    $("#sample", card).onclick = () => { $("#m", card).value = SAMPLES.mandates; $("#p", card).value = SAMPLES.payments; };
+    $("#run", card).onclick = safe(() => {
+      let raw;
+      try { raw = JSON.parse($("#m", card).value); } catch (e) { throw new Error("Mandates must be valid JSON: " + e.message); }
+      const { file, errors } = c.validateMandateFile(raw);
+      if (!file || errors.length) throw new Error(errors.join("\n"));
+      const res = c.checkPayments(file, c.readPayments(table.parseCsv($("#p", card).value)));
+      show(rep.toMarkdown(res), [["Download results (.csv)", "mandate-check.csv", rep.toResultCsv(res), "text/csv"]]);
+    });
+  }
+
+  // ------------------------------------------------------------------ Verify-Before-You-Pay
+  if (solution === "verify-before-you-pay") {
+    const a = __m["verify-before-you-pay/src/assess.js"], rep = __m["verify-before-you-pay/src/report.js"];
+    const card = h(`<section class="card"><div class="tabs"><button aria-selected="true" data-t="one">Check one request</button><button aria-selected="false" data-t="log">Audit an approval log</button></div>
+      <label>Your company's and key suppliers' email domains <span class="hint">(comma-separated, so look-alikes can be spotted)</span></label><input type="text" id="dom" placeholder="yourbank.com, mainsupplier.com">
+      <div data-p="one"><label>Paste the message, email or call notes</label><textarea id="txt" placeholder="Paste the payment request here…"></textarea>
+        <div class="row"><div><label>Who is asking?</label><input type="text" id="from" placeholder="e.g. Jane Smith"></div><div><label>Their title</label><input type="text" id="title" placeholder="e.g. CFO, Supplier"></div>
+        <div><label>How did it arrive?</label><select id="ch"><option value="">(not sure)</option><option>email</option><option>phone</option><option>voice note</option><option>video</option><option>teams</option><option>whatsapp</option><option>sms</option><option>in person</option></select></div></div>
+        <div class="row"><div><label>Amount</label><input type="text" id="amt" placeholder="e.g. 48500"></div><div><label>Currency</label><input type="text" id="ccy" placeholder="USD"></div>
+        <div><label>New payee?</label><select id="np"><option value="">(not sure)</option><option value="yes">Yes</option><option value="no">No</option></select></div><div><label>Bank details changed?</label><select id="bc"><option value="">(not sure)</option><option value="yes">Yes</option><option value="no">No</option></select></div></div>
+        <div class="actions"><button class="primary" id="go1">Check this request</button><button id="ex">Try an example</button></div></div>
+      <div data-p="log" hidden><label>Approval log CSV <span class="hint">(request_id, received_at, requested_by, requester_title, channel, sender, amount, currency, payee, payee_new, bank_details_changed, bank_change_at, message, callback_done, callback_source, challenge_passed, approver_1, approver_2, released_by, paid_at)</span></label>
+        <input type="file" id="lf" accept=".csv,.txt"><textarea id="log"></textarea><div class="actions"><button class="primary" id="go2">Audit log</button><button id="sl">Load sample log</button></div></div></section>`);
+    app.append(card, resultCard);
+    card.querySelectorAll(".tabs button").forEach((b) => b.onclick = () => {
+      card.querySelectorAll(".tabs button").forEach((x) => x.setAttribute("aria-selected", x === b));
+      card.querySelectorAll("[data-p]").forEach((p) => (p.hidden = p.dataset.p !== b.dataset.t));
+    });
+    fileInto($("#lf", card), $("#log", card));
+    const policy = () => ({ ...a.DEFAULT_POLICY, company_domains: $("#dom", card).value.split(",").map((s) => s.trim()).filter(Boolean) });
+    $("#ex", card).onclick = () => {
+      $("#txt", card).value = "From: d.chen@northwind-group.co\nHi, are you at your desk? I need a favour. Please wire $48,500 today to our new legal counsel for a confidential acquisition. Don't discuss this with anyone yet. I'm in a board meeting so can't talk, just email me when it's done.";
+      $("#dom", card).value = "northwind.com"; $("#from", card).value = "David Chen"; $("#title", card).value = "CEO"; $("#ch", card).value = "email"; $("#np", card).value = "yes";
+    };
+    $("#sl", card).onclick = () => { $("#log", card).value = SAMPLES.log; if (!$("#dom", card).value) $("#dom", card).value = "northwind-demo.com, globex-logistics.com"; };
+    $("#go1", card).onclick = safe(() => {
+      const text = $("#txt", card).value;
+      if (!text.trim()) throw new Error("Paste the request text first.");
+      const yn = (v) => (v === "yes" ? true : v === "no" ? false : null);
+      const extra = { requested_by: $("#from", card).value, requester_title: $("#title", card).value, payee_new: yn($("#np", card).value) };
+      if ($("#ch", card).value) extra.channel = $("#ch", card).value;
+      if ($("#amt", card).value) extra.amount = table.parseAmount($("#amt", card).value);
+      if ($("#ccy", card).value) extra.currency = $("#ccy", card).value.toUpperCase();
+      if (yn($("#bc", card).value) !== null) extra.bank_details_changed = yn($("#bc", card).value);
+      const req = a.requestFromText(text, extra);
+      show("# Verify-Before-You-Pay\n\n" + rep.oneToMarkdown(a.assess(req, policy())));
+    });
+    $("#go2", card).onclick = safe(() => {
+      const list = a.readRequests(table.parseCsv($("#log", card).value)).map((r) => a.assess(r, policy()));
+      if (!list.length) throw new Error("No rows found in the log.");
+      show(rep.toMarkdown(list), [["Download results (.csv)", "verify-report.csv", rep.toResultCsv(list), "text/csv"]]);
+    });
+  }
+
+  // ------------------------------------------------------------------ AI Use Register
+  if (solution === "ai-use-register") {
+    const c = __m["ai-use-register/src/classify.js"], rep = __m["ai-use-register/src/report.js"];
+    const card = h(`<section class="card"><h2>Your AI inventory <span class="hint">(CSV. Only name and description are required; every other column sharpens the register.)</span></h2>
+      <input type="file" id="f" accept=".csv,.txt"><textarea id="t"></textarea>
+      <div class="actions"><button class="primary" id="go">Build register</button><button id="tpl">Download blank template</button><button id="s">Load sample inventory</button></div></section>`);
+    app.append(card, resultCard);
+    fileInto($("#f", card), $("#t", card));
+    $("#tpl", card).onclick = () => download("ai-inventory-template.csv", rep.templateCsv(), "text/csv");
+    $("#s", card).onclick = () => ($("#t", card).value = SAMPLES.inventory);
+    $("#go", card).onclick = safe(() => {
+      const rows = table.parseCsv($("#t", card).value).filter((r) => !/^your reference/i.test(Object.values(r)[0] || ""));
+      if (!rows.length) throw new Error("No rows found. Load a CSV or the sample.");
+      const list = c.readUseCases(rows).map((u) => c.classify(u));
+      show(rep.toMarkdown(list), [["Download register (.csv)", "ai-register.csv", rep.toRegisterCsv(list), "text/csv"]]);
+    });
+  }
+
+  // ------------------------------------------------------------------ PQC Crypto Inventory
+  if (solution === "pqc-crypto-inventory") {
+    const sc = __m["pqc-crypto-inventory/src/scan.js"], rep = __m["pqc-crypto-inventory/src/report.js"];
+    const card = h(`<section class="card"><h2>Choose a code folder or files <span class="hint">(source, configs, scripts, certificates; read locally, never uploaded)</span></h2>
+      <div class="row"><div><label>Folder</label><input type="file" id="dir" webkitdirectory multiple></div><div><label>Or individual files</label><input type="file" id="files" multiple></div></div>
+      <label>Or paste code / config</label><textarea id="t" placeholder='KeyPairGenerator.getInstance("RSA") …'></textarea>
+      <div class="actions"><button class="primary" id="go">Scan</button><button id="s">Scan the demo repo</button></div><p class="hint" id="status"></p></section>`);
+    app.append(card, resultCard);
+    const SKIP = /(^|\/)(node_modules|\.git|dist|build|target|vendor|\.venv|venv|__pycache__)\//;
+    async function run(inputs) {
+      const findings = [];
+      let n = 0;
+      for (const f of inputs) {
+        if (SKIP.test(f.name) || (!sc.isScannable(f.name) && f.name !== "pasted.txt") || f.text.length > 2000000 || f.text.includes("\u0000")) continue;
+        n++;
+        findings.push(...sc.scanText(f.name, f.text));
+      }
+      const s = sc.summarise(findings, n);
+      $("#status", card).textContent = `Scanned ${n} file(s).`;
+      show(rep.toMarkdown(findings, s), [["Download findings (.csv)", "pqc-inventory.csv", rep.toResultCsv(findings), "text/csv"], ["Download CBOM (.json)", "cbom.json", JSON.stringify(sc.toCbom(findings), null, 2), "application/json"]]);
+    }
+    $("#go", card).onclick = async () => {
+      try {
+        const inputs = [...(await readFiles($("#dir", card))), ...(await readFiles($("#files", card)))];
+        if ($("#t", card).value.trim()) inputs.push({ name: "pasted.txt", text: $("#t", card).value });
+        if (!inputs.length) throw new Error("Choose a folder, some files, or paste code first.");
+        $("#status", card).textContent = `Reading ${inputs.length} file(s)…`;
+        await run(inputs);
+      } catch (e) { showError(e); }
+    };
+    $("#s", card).onclick = () => run(Object.entries(SAMPLES).map(([name, text]) => ({ name, text }))).catch(showError);
+  }
+
+  // ------------------------------------------------------------------ Legacy Runbook Builder
+  if (solution === "legacy-runbook-builder") {
+    const x = __m["legacy-runbook-builder/src/extract.js"], rep = __m["legacy-runbook-builder/src/report.js"];
+    const card = h(`<section class="card"><h2>Old procedures, handover notes and scripts <span class="hint">(text, shell/batch scripts, JCL, crontabs, SQL)</span></h2>
+      <input type="file" id="files" multiple><label>Or paste text</label><textarea id="t" placeholder="Paste a handover email, procedure or script…"></textarea>
+      <label>Runbook title <span class="hint">(optional)</span></label><input type="text" id="title" placeholder="e.g. USD nostro reconciliation">
+      <div class="actions"><button class="primary" id="go">Build runbook</button><button id="s">Load sample handover</button></div></section>`);
+    app.append(card, resultCard);
+    let sampleLoaded = false;
+    $("#s", card).onclick = () => { sampleLoaded = true; $("#t", card).value = "(sample: nostro recon handover email + SWIFT batch script + JCL + crontab will be used)"; $("#title", card).value = "Payments ops: SWIFT batch, GL extract & USD nostro recon"; };
+    $("#go", card).onclick = async () => {
+      try {
+        let inputs = await readFiles($("#files", card));
+        const pasted = $("#t", card).value;
+        if (sampleLoaded && pasted.startsWith("(sample")) inputs = inputs.concat(Object.entries(SAMPLES).map(([name, text]) => ({ name, text })));
+        else if (pasted.trim()) inputs.push({ name: "pasted.txt", text: pasted });
+        if (!inputs.length) throw new Error("Choose files or paste text first.");
+        const rb = x.buildRunbook(inputs, $("#title", card).value || undefined);
+        const prompt = rep.aiPrompt(rb, inputs);
+        show(rep.toMarkdown(rb), [["Download knowledge gaps (.csv)", "knowledge-gaps.csv", rep.gapsCsv(rb), "text/csv"], ["Download AI prompt (.txt)", "ai-prompt.txt", prompt, "text/plain"]]);
+      } catch (e) { showError(e); }
+    };
+  }
+
+  // ------------------------------------------------------------------ helpers for the second batch
+  const fromB64 = (s) => Uint8Array.from(atob(s.replace(/^base64:/, "")), (c) => c.charCodeAt(0));
+  async function readBytes(input) { return Promise.all([...input.files].map(async (f) => ({ name: f.webkitRelativePath || f.name, bytes: new Uint8Array(await f.arrayBuffer()) }))); }
+  function simpleCard(html) { const c = h(`<section class="card">${html}</section>`); app.append(c, resultCard); return c; }
+  const csvBox = (id, label, hint) => `<label>${label} <span class="hint">${hint || ""}</span></label><input type="file" id="${id}f" accept=".csv,.txt"><textarea id="${id}"></textarea>`;
+  const wire = (card, ids) => ids.forEach((id) => fileInto($(`#${id}f`, card), $(`#${id}`, card)));
+
+  if (solution === "t1-settlement-predictor") {
+    const m = __m["t1-settlement-predictor/src/predict.js"], rep = __m["t1-settlement-predictor/src/report.js"];
+    const card = simpleCard(`<h2>Trades and SSIs</h2>${csvBox("tr", "Trade blotter (CSV)", "trade_id, trade_date, trade_time, settlement_date, isin, counterparty, place_of_settlement, currency, account_currency, allocation_time, affirmation_time, instruction_time")}${csvBox("ss", "Standing settlement instructions (CSV)", "counterparty, place_of_settlement, currency, agent_bic, account, valid_from, valid_to, last_verified")}
+      <div class="row"><div><label><input type="checkbox" id="t1"> Treat all trades as T+1 (test today's blotter)</label></div><div><label>Holidays <span class="hint">(YYYY-MM-DD, comma-separated)</span></label><input type="text" id="hol"></div></div>
+      <div class="actions"><button class="primary" id="go">Check trades</button><button id="s">Load sample</button></div>`);
+    wire(card, ["tr", "ss"]);
+    $("#s", card).onclick = () => { $("#tr", card).value = SAMPLES.trades; $("#ss", card).value = SAMPLES.ssis; };
+    $("#go", card).onclick = safe(() => {
+      const cfg = { ...m.DEFAULT_CONFIG, assume_t1: $("#t1", card).checked, holidays: $("#hol", card).value.split(",").map((x) => x.trim()).filter(Boolean) };
+      const list = m.assessTrades(m.readTrades(table.parseCsv($("#tr", card).value)), m.readSsis(table.parseCsv($("#ss", card).value)), cfg);
+      if (!list.length) throw new Error("No trades found.");
+      show(rep.toMarkdown(list), [["Download results (.csv)", "t1-report.csv", rep.toResultCsv(list), "text/csv"]]);
+    });
+  }
+
+  if (solution === "vop-precheck") {
+    const m = __m["vop-precheck/src/precheck.js"], rep = __m["vop-precheck/src/report.js"];
+    const card = simpleCard(`<h2>Payment file and supplier master</h2>${csvBox("pa", "Payment file (CSV)", "payee_name, iban, amount")}${csvBox("ma", "Supplier master (CSV, optional but recommended)", "iban, account_holder_name, trading_names")}
+      <div class="actions"><button class="primary" id="go">Check payments</button><button id="s">Load sample</button></div>`);
+    wire(card, ["pa", "ma"]);
+    $("#s", card).onclick = () => { $("#pa", card).value = SAMPLES.payments; $("#ma", card).value = SAMPLES.master; };
+    $("#go", card).onclick = safe(() => {
+      const list = m.precheck(m.readPayments(table.parseCsv($("#pa", card).value)), $("#ma", card).value.trim() ? m.readMaster(table.parseCsv($("#ma", card).value)) : []);
+      if (!list.length) throw new Error("No payments found.");
+      show(rep.toMarkdown(list), [["Download results (.csv)", "vop-precheck.csv", rep.toResultCsv(list), "text/csv"]]);
+    });
+  }
+
+  if (solution === "payment-investigation-assistant") {
+    const m = __m["payment-investigation-assistant/src/investigate.js"], rep = __m["payment-investigation-assistant/src/report.js"];
+    const card = simpleCard(`<h2>Payment query</h2><label>Paste an MT199/n99, an email or call notes</label><textarea id="t" style="min-height:200px"></textarea>
+      <div class="actions"><button class="primary" id="go">Analyse</button><button id="s1">Sample: MT199 non-receipt</button><button id="s2">Sample: fraud recall email</button></div>`);
+    $("#s1", card).onclick = () => ($("#t", card).value = SAMPLES.mt199);
+    $("#s2", card).onclick = () => ($("#t", card).value = SAMPLES.fraud);
+    $("#go", card).onclick = safe(() => { const t = $("#t", card).value; if (!t.trim()) throw new Error("Paste a query first."); show(rep.toMarkdown(m.analyse(t))); });
+  }
+
+  if (solution === "translation-loss-auditor") {
+    const m = __m["translation-loss-auditor/src/audit.js"], rep = __m["translation-loss-auditor/src/report.js"];
+    const card = simpleCard(`<h2>The two versions of one payment</h2><div class="row"><div><label>ISO 20022 pacs.008 (XML)</label><input type="file" id="mxf" accept=".xml,.txt"><textarea id="mx" style="min-height:220px"></textarea></div>
+      <div><label>MT103 (FIN text)</label><input type="file" id="mtf" accept=".txt,.fin,.mt"><textarea id="mt" style="min-height:220px"></textarea></div></div>
+      <div class="actions"><button class="primary" id="go">Compare</button><button id="s">Load sample</button></div>`);
+    wire(card, ["mx", "mt"]);
+    $("#s", card).onclick = () => { $("#mx", card).value = SAMPLES.mx; $("#mt", card).value = SAMPLES.mt; };
+    $("#go", card).onclick = safe(() => {
+      const mx = m.parsePacs008($("#mx", card).value), mt = m.parseMt103($("#mt", card).value);
+      const pairs = [{ name: "payment", uetr: mx.uetr, findings: m.audit(mx, mt) }];
+      show(rep.toMarkdown(pairs), [["Download findings (.csv)", "translation-audit.csv", rep.toResultCsv(pairs), "text/csv"]]);
+    });
+  }
+
+  if (solution === "sanctions-fp-analyser") {
+    const m = __m["sanctions-fp-analyser/src/analyse.js"], rep = __m["sanctions-fp-analyser/src/report.js"];
+    const card = simpleCard(`<h2>Closed alerts export</h2>${csvBox("al", "Alerts (CSV)", "alert_id, created_at, screened_name, matched_name, list, match_score, matched_field, message_type, disposition, handling_minutes, customer_id")}
+      <div class="row"><div><label>Cleared at least … times to count as a repeat pair</label><input type="text" id="mc" value="3"></div><div><label>Minutes per alert when not recorded</label><input type="text" id="mn" value="30"></div></div>
+      <div class="actions"><button class="primary" id="go">Analyse</button><button id="s">Load sample (invented names)</button></div>`);
+    wire(card, ["al"]);
+    $("#s", card).onclick = () => ($("#al", card).value = SAMPLES.alerts);
+    $("#go", card).onclick = safe(() => {
+      const a = m.analyse(m.readAlerts(table.parseCsv($("#al", card).value)), { minClears: Number($("#mc", card).value) || 3, defaultMinutes: Number($("#mn", card).value) || 30 });
+      if (!a.total) throw new Error("No alerts found.");
+      show(rep.toMarkdown(a), [["Download good-guy candidates (.csv)", "good-guy-candidates.csv", rep.goodGuysCsv(a), "text/csv"]]);
+    });
+  }
+
+  if (solution === "report-sanity-checker") {
+    const m = __m["report-sanity-checker/src/check.js"], rep = __m["report-sanity-checker/src/report.js"];
+    const card = simpleCard(`<h2>Report extract</h2>${csvBox("rp", "Report (CSV)", "columns are recognised by name: uti, *_lei, isin, notional, currency, *_date, country…")}
+      <div class="row"><div><label>Required columns <span class="hint">(comma-separated, optional)</span></label><input type="text" id="req"></div><div><label>Report date <span class="hint">(optional)</span></label><input type="text" id="rd" placeholder="YYYY-MM-DD"></div></div>
+      <div class="actions"><button class="primary" id="go">Check report</button><button id="s">Load sample</button></div>`);
+    wire(card, ["rp"]);
+    $("#s", card).onclick = () => ($("#rp", card).value = SAMPLES.report);
+    $("#go", card).onclick = safe(() => {
+      const res = m.checkReport(table.parseCsv($("#rp", card).value), { required: $("#req", card).value.split(",").map((x) => x.trim()).filter(Boolean), reportDate: $("#rd", card).value || undefined });
+      if (!res.rows) throw new Error("No rows found.");
+      show(rep.toMarkdown(res), [["Download issues (.csv)", "report-issues.csv", rep.toIssuesCsv(res.issues), "text/csv"]]);
+    });
+  }
+
+  if (solution === "dora-register-precheck") {
+    const m = __m["dora-register-precheck/src/precheck.js"], rep = __m["dora-register-precheck/src/report.js"];
+    const card = simpleCard(`<h2>Working register</h2>${csvBox("rg", "Register (CSV, one row per contractual arrangement)", "")}
+      <label>Reference date <span class="hint">(end of the reporting year)</span></label><input type="text" id="rd" placeholder="e.g. 2026-12-31">
+      <div class="actions"><button class="primary" id="go">Check register</button><button id="s">Load sample</button></div>`);
+    wire(card, ["rg"]);
+    $("#s", card).onclick = () => { $("#rg", card).value = SAMPLES.register; $("#rd", card).value = "2026-12-31"; };
+    $("#go", card).onclick = safe(() => {
+      const list = m.readRegister(table.parseCsv($("#rg", card).value));
+      if (!list.length) throw new Error("No arrangements found.");
+      const issues = m.precheck(list, { referenceDate: $("#rd", card).value || undefined });
+      show(rep.toMarkdown(list, issues), [["Download fix list (.csv)", "dora-issues.csv", rep.toIssuesCsv(issues), "text/csv"]]);
+    });
+  }
+
+  if (solution === "copybook-decoder") {
+    const m = __m["copybook-decoder/src/copybook.js"], rep = __m["copybook-decoder/src/report.js"];
+    const card = simpleCard(`<h2>Copybook and data file</h2><label>COBOL copybook</label><input type="file" id="cbf" accept=".cpy,.cbl,.cob,.txt"><textarea id="cb" style="min-height:200px"></textarea>
+      <label>Data file <span class="hint">(optional: fixed-length records; read locally)</span></label><input type="file" id="df">
+      <div class="row"><div><label>Encoding</label><select id="enc"><option value="ebcdic">EBCDIC (mainframe)</option><option value="ascii">ASCII</option></select></div><div><label>Record format</label><select id="fmt"><option value="fixed">Fixed length</option><option value="rdw">Variable (RDW)</option><option value="lines">One record per line</option></select></div></div>
+      <div class="actions"><button class="primary" id="go">Decode</button><button id="s">Load sample</button></div><p class="hint" id="st"></p>`);
+    fileInto($("#cbf", card), $("#cb", card));
+    let sampleData = null;
+    $("#s", card).onclick = () => { $("#cb", card).value = SAMPLES.copybook; sampleData = fromB64(SAMPLES.data); $("#st", card).textContent = `Sample data loaded (${sampleData.length} bytes, EBCDIC).`; };
+    $("#go", card).onclick = async () => {
+      try {
+        const { root, warnings } = m.parseCopybook($("#cb", card).value);
+        const l = m.layout(root);
+        let md = rep.dictionaryMarkdown(l.fields, l.recordLength, [...warnings, ...l.warnings]);
+        const dl = [["Download data dictionary (.csv)", "data-dictionary.csv", rep.dictionaryCsv(l.fields), "text/csv"]];
+        const [f] = await readBytes($("#df", card));
+        const bytes = f ? f.bytes : sampleData;
+        if (bytes) {
+          const fmt = $("#fmt", card).value;
+          const d = m.decodeData(l.fields, bytes, { encoding: $("#enc", card).value, recordLength: l.recordLength, rdw: fmt === "rdw", lineSeparated: fmt === "lines" });
+          md += "\n" + rep.decodeSummary(d);
+          dl.push(["Download decoded data (.csv)", "decoded.csv", rep.dataCsv(d), "text/csv"]);
+        }
+        show(md, dl);
+      } catch (e) { showError(e); }
+    };
+  }
+
+  if (solution === "migration-reconciler") {
+    const m = __m["migration-reconciler/src/reconcile.js"], rep = __m["migration-reconciler/src/report.js"];
+    const card = simpleCard(`<h2>Source and target extracts</h2><div class="row"><div>${csvBox("src", "Source (legacy) CSV", "")}</div><div>${csvBox("tgt", "Target (new system) CSV", "")}</div></div>
+      <div class="row"><div><label>Key column(s) in source</label><input type="text" id="key" placeholder="customer_id"></div><div><label>Column mapping <span class="hint">source:target, comma-separated</span></label><input type="text" id="map"></div></div>
+      <div class="row"><div><label>Numeric tolerance</label><input type="text" id="tol" value="0"></div><div><label>Ignore columns</label><input type="text" id="ign"></div></div>
+      <label><input type="checkbox" id="lz" checked> Ignore leading zeros in keys</label> <label><input type="checkbox" id="ic" checked> Ignore case in keys</label>
+      <div class="actions"><button class="primary" id="go">Reconcile</button><button id="s">Load sample</button></div>`);
+    wire(card, ["src", "tgt"]);
+    $("#s", card).onclick = () => { $("#src", card).value = SAMPLES.source; $("#tgt", card).value = SAMPLES.target; $("#key", card).value = "customer_id"; $("#map", card).value = "customer_id:cust_no,full_name:customer_name,address_line:address,postcode:post_code,date_of_birth:dob,balance:balance_amt,marketing_consent:consent_marketing"; };
+    $("#go", card).onclick = safe(() => {
+      const map = Object.fromEntries($("#map", card).value.split(",").filter(Boolean).map((p) => p.split(":").map((x) => x.trim())));
+      const r = m.reconcile(table.parseCsv($("#src", card).value), table.parseCsv($("#tgt", card).value), { key: $("#key", card).value.split(",").map((x) => x.trim()).filter(Boolean), map, tolerance: Number($("#tol", card).value) || 0, ignoreLeadingZeros: $("#lz", card).checked, ignoreCase: $("#ic", card).checked, ignoreFields: $("#ign", card).value.split(",").map((x) => x.trim()).filter(Boolean) });
+      show(rep.toMarkdown(r), [["Download differences (.csv)", "differences.csv", rep.diffsCsv(r), "text/csv"]]);
+    });
+  }
+
+  if (solution === "euc-risk-scanner") {
+    const m = __m["euc-risk-scanner/src/scan.js"], rep = __m["euc-risk-scanner/src/report.js"], zip = __m["shared/zip.js"];
+    const card = simpleCard(`<h2>Spreadsheets to scan</h2><div class="row"><div><label>Folder</label><input type="file" id="dir" webkitdirectory multiple></div><div><label>Or files</label><input type="file" id="files" multiple accept=".xlsx,.xlsm,.xls,.xltx,.xltm"></div></div>
+      <div class="actions"><button class="primary" id="go">Scan</button><button id="s">Scan samples</button></div><p class="hint" id="st"></p>`);
+    async function run(items) {
+      const reports = [];
+      for (const it of items.filter((x) => /\.(xlsx|xlsm|xls|xltx|xltm)$/i.test(x.name) && !/(^|\/)~\$/.test(x.name))) {
+        try { reports.push(await m.scanWorkbook(it.name, it.bytes, zip.browserInflate)); } catch (e) { console.warn(it.name, e); }
+      }
+      if (!reports.length) throw new Error("No Excel workbooks found.");
+      $("#st", card).textContent = `Scanned ${reports.length} workbook(s).`;
+      show(rep.toMarkdown(reports), [["Download EUC register (.csv)", "euc-register.csv", rep.registerCsv(reports), "text/csv"]]);
+    }
+    $("#go", card).onclick = async () => { try { await run([...(await readBytes($("#dir", card))), ...(await readBytes($("#files", card)))]); } catch (e) { showError(e); } };
+    $("#s", card).onclick = () => run(Object.entries(SAMPLES).map(([name, v]) => ({ name, bytes: fromB64(v) }))).catch(showError);
+  }
+
+  if (solution === "batch-dependency-mapper") {
+    const m = __m["batch-dependency-mapper/src/map.js"], rep = __m["batch-dependency-mapper/src/report.js"];
+    const card = simpleCard(`<h2>Batch files</h2><p class="hint">JCL, Control-M XML exports, crontabs and shell scripts.</p><div class="row"><div><label>Folder</label><input type="file" id="dir" webkitdirectory multiple></div><div><label>Or files</label><input type="file" id="files" multiple></div></div>
+      <div class="actions"><button class="primary" id="go">Map</button><button id="s">Load sample</button></div>`);
+    const diagram = h(`<section class="card" hidden><h2>Diagram</h2><div id="svg" style="overflow:auto"></div></section>`);
+    app.insertBefore(diagram, resultCard);
+    function run(files) {
+      const { jobs, skipped } = m.parseAll(files);
+      if (!jobs.length) throw new Error("No jobs found in these files.");
+      const g = m.buildGraph(jobs);
+      const svgText = rep.svg(g);
+      diagram.hidden = false;
+      $("#svg", diagram).innerHTML = svgText;
+      show(rep.toMarkdown(g, skipped).replace(/```mermaid[\s\S]*?```\n/, ""), [["Download diagram (.svg)", "batch-map.svg", svgText, "image/svg+xml"], ["Download dependencies (.csv)", "dependencies.csv", rep.edgesCsv(g), "text/csv"], ["Download Mermaid (.mmd)", "batch-map.mmd", rep.mermaid(g), "text/plain"]]);
+    }
+    $("#go", card).onclick = async () => { try { run([...(await readFiles($("#dir", card))), ...(await readFiles($("#files", card)))]); } catch (e) { showError(e); } };
+    $("#s", card).onclick = safe(() => run(Object.entries(SAMPLES).map(([name, text]) => ({ name, text }))));
+  }
+})();
+
+</script>
+</body>
+</html>

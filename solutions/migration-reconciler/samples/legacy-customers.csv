@@ -1,0 +1,301 @@
+customer_id,full_name,address_line,postcode,date_of_birth,balance,marketing_consent,segment
+00100000,"Fatima Khan","119 Long Winding Countryside Lane",SW1A 5AB,1976-06-14,42176.03,Y,SME
+00100001,"Rahul Sharma","80 Station Road",SW1A 6AB,1974-06-24,40269.24,N,RETAIL
+00100002,"Maria Mueller","196 Station Road, Flat 23",EC2V 5AB,1974-11-05,42485.35,N,PREMIER
+00100003,"Anna Adeyemi","106 Station Road",M1 1AB,1978-01-13,31739.63,N,PREMIER
+00100004,"John Mueller","84 Hauptstrasse",M1 4AB,1990-02-04,31511.33,N,RETAIL
+00100005,"John Martin","126 Avenue des Champs-Elysees",M1 4AB,1958-07-01,44035.46,Y,PREMIER
+00100006,"Anna Rossi","103 High Street",M1 8AB,1997-08-17,28659.35,Y,RETAIL
+00100007,"Lars Martin","28 High Street",LS6 4AB,1995-05-22,32691.47,Y,RETAIL
+00100008,"Wei Nilsson","144 Station Road, Flat 17",EC2V 2AB,1988-12-22,252.10,Y,SME
+00100009,"Chiara Nilsson-Zhang","99 High Street",SW1A 1AB,1999-08-20,41739.21,N,SME
+00100010,"Rahul Khan","84 Avenue des Champs-Elysees, Flat 2",EC2V 3AB,1965-09-12,16907.83,Y,PREMIER
+00100011,"Maria Zhang","137 Station Road",M1 1AB,1947-02-24,6783.40,N,RETAIL
+00100012,"Olu Rossi","20 High Street",SW1A 2AB,1960-02-25,31949.76,N,PREMIER
+00100013,"Chiara Smith","46 Station Road, Flat 19",SW1A 6AB,1997-11-15,43805.20,Y,PREMIER
+00100014,"Maria Martin-Adeyemi","95 Long Winding Countryside Lane",EC2V 5AB,1966-02-06,4737.16,Y,SME
+00100015,"Fatima Garcia","16 Long Winding Countryside Lane, Flat 2",EC2V 4AB,1948-05-04,44854.35,Y,PREMIER
+00100016,"John Khan","52 Avenue des Champs-Elysees",EC2V 5AB,1964-02-07,31624.80,Y,RETAIL
+00100017,"Rahul Garcia","157 Hauptstrasse",M1 4AB,1985-12-10,35523.69,Y,RETAIL
+00100018,"Lars Mueller","183 High Street",EC2V 7AB,1974-10-28,22181.51,Y,RETAIL
+00100019,"Chiara Mueller","25 Avenue des Champs-Elysees",EC2V 9AB,1984-02-03,8434.40,Y,SME
+00100020,"Lars Garcia","144 Hauptstrasse",LS6 5AB,1988-07-11,14368.36,N,RETAIL
+00100021,"Wei Nilsson","39 Hauptstrasse, Flat 10",SW1A 8AB,1963-02-16,22426.25,Y,RETAIL
+00100022,"John Martin","182 Station Road",M1 1AB,1962-07-23,35407.04,N,SME
+00100023,"Rahul Mueller-Garcia","171 High Street, Flat 2",LS6 7AB,1941-05-01,11317.40,N,PREMIER
+00100024,"Anna Mueller","101 High Street",LS6 3AB,1960-02-05,1629.01,Y,SME
+00100025,"John Adeyemi","63 Hauptstrasse",M1 4AB,1982-06-12,21070.20,N,RETAIL
+00100026,"Anna Nilsson-Nilsson","45 Long Winding Countryside Lane",SW1A 9AB,1964-05-06,624.39,N,RETAIL
+00100027,"Olu Adeyemi-Martin","80 Avenue des Champs-Elysees",EC2V 1AB,1941-04-02,14866.81,N,PREMIER
+00100028,"Fatima Nilsson","187 High Street",SW1A 7AB,1958-02-18,13016.51,Y,PREMIER
+00100029,"Maria Garcia-Mueller","12 Station Road",EC2V 9AB,1983-09-09,33460.15,Y,SME
+00100030,"Chiara Sharma","187 Station Road, Flat 26",LS6 3AB,1940-02-14,1993.33,N,SME
+00100031,"Fatima Garcia","194 Hauptstrasse, Flat 10",EC2V 5AB,1988-12-02,13824.46,Y,SME
+00100032,"Wei Sharma","114 Avenue des Champs-Elysees",EC2V 9AB,1948-03-17,39722.92,Y,RETAIL
+00100033,"John Adeyemi","58 Avenue des Champs-Elysees",EC2V 4AB,1983-02-10,11487.04,N,RETAIL
+00100034,"Fatima Garcia-Adeyemi","139 High Street",SW1A 1AB,1950-01-01,46702.24,N,SME
+00100035,"Lars Rossi","10 Station Road, Flat 9",EC2V 3AB,1947-11-14,43894.02,N,RETAIL
+00100036,"Lars Mueller","141 Long Winding Countryside Lane",M1 4AB,1952-07-28,10192.98,Y,RETAIL
+00100037,"John Rossi","84 Station Road, Flat 21",EC2V 3AB,1947-01-16,9897.91,N,PREMIER
+00100038,"Olu Sharma","81 Station Road, Flat 25",SW1A 6AB,1945-07-17,36570.46,Y,PREMIER
+00100039,"Rahul Rossi","151 Hauptstrasse",M1 7AB,1940-04-12,33282.59,Y,PREMIER
+00100040,"Lars Adeyemi-Rossi","156 Avenue des Champs-Elysees",SW1A 2AB,1972-02-13,20409.99,Y,RETAIL
+00100041,"Chiara Nilsson","24 High Street, Flat 18",LS6 7AB,1951-04-14,4311.92,Y,SME
+00100042,"Wei Mueller","95 Long Winding Countryside Lane",SW1A 9AB,1972-03-06,15613.82,Y,SME
+00100043,"Rahul Khan","119 Long Winding Countryside Lane",LS6 4AB,1943-12-18,5558.94,Y,RETAIL
+00100044,"Lars Nilsson","113 Hauptstrasse",EC2V 1AB,1988-02-16,46687.19,N,SME
+00100045,"John Martin","149 Long Winding Countryside Lane, Flat 8",M1 3AB,1967-09-16,45333.58,Y,RETAIL
+00100046,"Lars Nilsson","39 High Street",M1 3AB,1957-09-20,47552.75,Y,RETAIL
+00100047,"Anna Khan-Rossi","136 Hauptstrasse",SW1A 7AB,1999-09-09,14447.76,Y,PREMIER
+00100048,"Anna Khan-Khan","175 Long Winding Countryside Lane",EC2V 8AB,1970-06-25,5503.45,N,PREMIER
+00100049,"Maria Sharma-Nilsson","124 Long Winding Countryside Lane",SW1A 5AB,1994-07-18,44190.31,Y,RETAIL
+00100050,"Rahul Garcia","128 Avenue des Champs-Elysees, Flat 1",EC2V 2AB,1976-10-17,4162.53,N,RETAIL
+00100051,"Maria Zhang-Mueller","191 High Street, Flat 28",SW1A 1AB,1999-03-07,42145.49,N,SME
+00100052,"Chiara Martin","45 Avenue des Champs-Elysees",LS6 2AB,1941-09-14,12836.36,Y,PREMIER
+00100053,"Anna Adeyemi","13 Station Road, Flat 28",SW1A 6AB,1966-10-24,3219.73,N,RETAIL
+00100054,"Sophie Garcia-Adeyemi","102 Avenue des Champs-Elysees",M1 4AB,1972-10-28,24072.97,N,SME
+00100055,"Maria Rossi-Adeyemi","120 Hauptstrasse",EC2V 8AB,1995-06-27,1151.73,Y,RETAIL
+00100056,"Chiara Garcia","136 Hauptstrasse",EC2V 8AB,1941-11-05,11676.91,N,PREMIER
+00100057,"Olu Rossi","168 Long Winding Countryside Lane, Flat 30",LS6 4AB,1982-09-24,15647.02,N,RETAIL
+00100058,"Maria Adeyemi","198 High Street, Flat 16",SW1A 7AB,1987-10-26,24071.10,N,SME
+00100059,"Chiara Zhang","119 Avenue des Champs-Elysees",LS6 2AB,1957-08-12,21842.03,N,RETAIL
+00100060,"Fatima Zhang","28 Long Winding Countryside Lane, Flat 10",LS6 6AB,1992-04-15,44165.08,Y,SME
+00100061,"Lars Smith-Zhang","66 Long Winding Countryside Lane",SW1A 4AB,1991-09-09,24332.27,Y,SME
+00100062,"Wei Smith","97 High Street",SW1A 1AB,1972-06-09,32020.20,Y,SME
+00100063,"Sophie Zhang","188 Avenue des Champs-Elysees",SW1A 6AB,1972-11-11,16772.13,Y,PREMIER
+00100064,"Chiara Martin-Smith","86 Long Winding Countryside Lane",LS6 8AB,1944-06-13,10250.44,Y,RETAIL
+00100065,"Anna Smith-Martin","6 Station Road",EC2V 3AB,1993-04-16,27303.82,Y,PREMIER
+00100066,"Sophie Garcia","178 Avenue des Champs-Elysees, Flat 30",SW1A 1AB,1991-03-09,47998.89,N,SME
+00100067,"Sophie Sharma","179 Station Road",LS6 4AB,1969-10-21,11214.71,N,PREMIER
+00100068,"Rahul Rossi","181 Hauptstrasse",LS6 5AB,1997-03-13,20873.19,Y,PREMIER
+00100069,"Fatima Garcia","5 Long Winding Countryside Lane, Flat 1",EC2V 8AB,1940-01-18,1561.88,N,RETAIL
+00100070,"Olu Rossi","40 Hauptstrasse",SW1A 9AB,1978-03-05,48658.37,N,PREMIER
+00100071,"Rahul Sharma","101 Avenue des Champs-Elysees",EC2V 2AB,1957-05-12,9564.49,Y,PREMIER
+00100072,"Maria Martin-Nilsson","94 Hauptstrasse",M1 7AB,1955-12-18,9034.27,N,PREMIER
+00100073,"John Mueller","78 Avenue des Champs-Elysees",SW1A 9AB,1945-03-16,42948.61,N,SME
+00100074,"Rahul Mueller-Rossi","17 High Street",LS6 9AB,1971-04-16,44344.77,N,PREMIER
+00100075,"Lars Adeyemi","128 Long Winding Countryside Lane",LS6 7AB,1991-02-06,4195.75,N,RETAIL
+00100076,"John Zhang","119 Long Winding Countryside Lane",SW1A 1AB,1969-04-26,40610.74,Y,PREMIER
+00100077,"Fatima Zhang","127 High Street",EC2V 2AB,1980-05-08,8881.97,Y,PREMIER
+00100078,"Wei Khan","191 Hauptstrasse",EC2V 7AB,1962-11-10,33944.55,Y,RETAIL
+00100079,"Olu Mueller-Adeyemi","189 Long Winding Countryside Lane",SW1A 2AB,1993-11-21,15820.67,Y,SME
+00100080,"Olu Nilsson","4 High Street",M1 6AB,1942-11-04,17724.78,Y,SME
+00100081,"Anna Sharma-Sharma","25 Hauptstrasse",M1 5AB,1993-04-25,6815.59,Y,SME
+00100082,"Olu Nilsson","73 High Street",M1 2AB,1970-03-07,33902.75,Y,PREMIER
+00100083,"Rahul Smith","73 Long Winding Countryside Lane, Flat 26",EC2V 7AB,1975-07-12,6784.09,N,RETAIL
+00100084,"Lars Mueller","94 High Street",M1 1AB,1959-01-12,49888.40,N,SME
+00100085,"Rahul Rossi","2 High Street",SW1A 9AB,1942-12-08,10313.21,N,RETAIL
+00100086,"Chiara Sharma","86 Hauptstrasse, Flat 29",LS6 3AB,1963-07-28,30344.25,N,RETAIL
+00100087,"Rahul Khan","10 Station Road",LS6 4AB,1968-03-16,4788.03,N,SME
+00100088,"Wei Mueller","189 Hauptstrasse",SW1A 8AB,1987-08-24,46637.16,Y,PREMIER
+00100089,"Fatima Garcia","185 Hauptstrasse",SW1A 8AB,1966-06-04,5875.22,Y,SME
+00100090,"Maria Garcia","192 Station Road, Flat 21",EC2V 7AB,1946-12-24,5161.90,N,RETAIL
+00100091,"Lars Khan","132 Long Winding Countryside Lane",LS6 2AB,1976-11-05,33362.83,Y,SME
+00100092,"Fatima Martin","88 High Street",SW1A 3AB,1975-03-28,2663.26,Y,PREMIER
+00100093,"Wei Khan","139 Long Winding Countryside Lane",LS6 8AB,1959-12-05,7424.76,N,RETAIL
+00100094,"Olu Sharma-Nilsson","5 Long Winding Countryside Lane, Flat 7",LS6 7AB,1991-04-26,20785.11,N,SME
+00100095,"Lars Nilsson","46 Hauptstrasse, Flat 12",SW1A 4AB,1962-10-20,27225.37,Y,SME
+00100096,"Chiara Sharma","38 Avenue des Champs-Elysees",LS6 1AB,1979-01-14,38593.59,N,RETAIL
+00100097,"John Mueller","17 Long Winding Countryside Lane",SW1A 5AB,1999-07-05,13896.19,Y,SME
+00100098,"Olu Rossi","25 Avenue des Champs-Elysees, Flat 21",M1 7AB,1977-01-15,31202.57,N,SME
+00100099,"Wei Martin","21 Hauptstrasse, Flat 5",M1 3AB,1974-10-21,10591.36,Y,RETAIL
+00100100,"Chiara Nilsson-Sharma","129 Avenue des Champs-Elysees",SW1A 6AB,1971-09-15,37512.21,N,RETAIL
+00100101,"Rahul Khan","21 High Street, Flat 29",M1 6AB,1964-06-26,28765.72,Y,SME
+00100102,"Fatima Mueller","113 Avenue des Champs-Elysees, Flat 8",M1 3AB,1992-05-04,33280.05,Y,RETAIL
+00100103,"Fatima Rossi","77 Hauptstrasse",SW1A 8AB,1966-12-26,15637.90,N,SME
+00100104,"Lars Martin-Mueller","59 Avenue des Champs-Elysees",LS6 9AB,1959-12-18,7591.95,N,SME
+00100105,"Anna Garcia","108 Hauptstrasse",LS6 1AB,1950-12-15,48640.21,Y,PREMIER
+00100106,"Anna Adeyemi-Mueller","54 High Street",SW1A 7AB,1967-07-26,34533.00,Y,PREMIER
+00100107,"Wei Martin","109 Long Winding Countryside Lane",M1 5AB,1974-01-23,11442.68,N,RETAIL
+00100108,"Sophie Rossi","2 Hauptstrasse, Flat 26",EC2V 7AB,1990-04-19,35783.70,Y,SME
+00100109,"Anna Nilsson-Smith","27 High Street, Flat 22",M1 1AB,1996-11-19,28275.07,Y,SME
+00100110,"Maria Rossi","46 Avenue des Champs-Elysees, Flat 14",LS6 2AB,1944-07-15,22649.67,N,PREMIER
+00100111,"Chiara Adeyemi","63 Station Road",M1 5AB,1950-12-26,43114.35,Y,SME
+00100112,"John Garcia","165 Station Road",LS6 2AB,1981-03-14,17373.02,Y,PREMIER
+00100113,"Maria Sharma","43 High Street",M1 2AB,1983-09-06,42229.05,Y,RETAIL
+00100114,"Fatima Garcia-Zhang","105 Station Road, Flat 3",LS6 9AB,1957-06-02,24903.18,N,SME
+00100115,"Chiara Mueller","90 Hauptstrasse",EC2V 9AB,1953-11-21,8621.95,N,RETAIL
+00100116,"Maria Nilsson","153 Long Winding Countryside Lane",LS6 4AB,1946-01-17,9314.67,N,RETAIL
+00100117,"Lars Mueller","169 Long Winding Countryside Lane, Flat 1",LS6 4AB,1977-07-06,19569.95,Y,RETAIL
+00100118,"Rahul Smith","154 Hauptstrasse",LS6 7AB,1992-09-05,40795.01,Y,SME
+00100119,"Sophie Khan","109 Station Road, Flat 2",EC2V 4AB,1973-08-05,2844.37,N,RETAIL
+00100120,"Olu Martin","145 Avenue des Champs-Elysees",SW1A 3AB,1953-10-25,25534.77,Y,RETAIL
+00100121,"Wei Zhang","83 Avenue des Champs-Elysees",LS6 4AB,1964-04-17,20164.58,N,PREMIER
+00100122,"Olu Khan","179 Avenue des Champs-Elysees, Flat 1",LS6 5AB,1975-08-15,31811.15,Y,PREMIER
+00100123,"Wei Smith-Khan","153 Avenue des Champs-Elysees",LS6 6AB,1962-02-11,44274.89,N,SME
+00100124,"Sophie Mueller","93 Long Winding Countryside Lane",SW1A 2AB,1942-11-11,14856.91,Y,RETAIL
+00100125,"Rahul Khan","128 Station Road, Flat 8",LS6 8AB,1988-09-14,4448.02,Y,PREMIER
+00100126,"Anna Khan","4 Station Road, Flat 14",LS6 8AB,1967-02-16,18188.77,Y,PREMIER
+00100127,"Olu Mueller","30 Hauptstrasse",M1 6AB,1953-05-19,27705.93,N,RETAIL
+00100128,"John Adeyemi","1 Long Winding Countryside Lane",EC2V 1AB,1974-08-21,33597.23,Y,PREMIER
+00100129,"Olu Zhang","21 Avenue des Champs-Elysees",LS6 5AB,1950-02-07,46421.01,N,RETAIL
+00100130,"Fatima Zhang-Adeyemi","71 Station Road",M1 8AB,1984-12-23,8822.62,Y,RETAIL
+00100131,"Maria Rossi","88 High Street, Flat 10",SW1A 4AB,1950-06-21,46792.45,N,PREMIER
+00100132,"Chiara Smith","183 Avenue des Champs-Elysees",SW1A 9AB,1945-07-27,44712.20,N,PREMIER
+00100133,"John Khan","133 Station Road",M1 4AB,1998-12-22,21621.37,Y,SME
+00100134,"Lars Garcia","21 Long Winding Countryside Lane",LS6 1AB,1949-04-09,41852.37,Y,SME
+00100135,"Fatima Martin","163 High Street",M1 7AB,1984-12-14,44275.80,N,SME
+00100136,"John Adeyemi","26 Hauptstrasse, Flat 1",M1 3AB,1957-11-15,31678.61,Y,PREMIER
+00100137,"Maria Garcia","79 Hauptstrasse",EC2V 6AB,1970-11-14,41976.07,Y,RETAIL
+00100138,"Maria Smith-Sharma","146 Hauptstrasse",SW1A 4AB,1963-09-11,17507.89,Y,PREMIER
+00100139,"Fatima Garcia","163 Long Winding Countryside Lane",SW1A 8AB,1964-07-08,28626.57,N,PREMIER
+00100140,"Rahul Martin","31 High Street",EC2V 9AB,1992-08-17,7182.72,Y,SME
+00100141,"Rahul Rossi-Khan","60 Long Winding Countryside Lane",EC2V 9AB,1998-04-08,19139.18,N,PREMIER
+00100142,"Wei Rossi","62 High Street, Flat 3",SW1A 7AB,1953-11-20,5953.64,N,PREMIER
+00100143,"Rahul Khan","18 Avenue des Champs-Elysees",SW1A 1AB,1965-02-13,20824.85,Y,PREMIER
+00100144,"John Khan","200 Station Road",SW1A 3AB,1996-03-26,47254.60,Y,PREMIER
+00100145,"Wei Sharma","125 Station Road",SW1A 6AB,1991-12-09,8993.60,Y,PREMIER
+00100146,"Maria Mueller","132 Station Road",SW1A 7AB,1985-05-02,27815.19,N,PREMIER
+00100147,"Anna Zhang","91 Station Road",M1 7AB,1981-06-06,4152.82,Y,RETAIL
+00100148,"John Rossi","194 Station Road",LS6 3AB,1947-01-08,47610.42,Y,RETAIL
+00100149,"Rahul Nilsson","186 Long Winding Countryside Lane",LS6 4AB,1966-02-21,7295.43,N,PREMIER
+00100150,"Chiara Sharma","163 Long Winding Countryside Lane",LS6 3AB,1948-02-07,32331.20,Y,SME
+00100151,"John Nilsson","75 Station Road",EC2V 9AB,1975-09-08,21630.13,N,SME
+00100152,"Chiara Khan","164 Long Winding Countryside Lane",EC2V 7AB,1980-06-21,14945.41,N,SME
+00100153,"Sophie Adeyemi","115 Long Winding Countryside Lane",M1 6AB,1962-08-12,19979.46,Y,PREMIER
+00100154,"John Garcia","27 Station Road",SW1A 5AB,1961-05-14,1740.32,Y,RETAIL
+00100155,"Sophie Garcia","88 Avenue des Champs-Elysees",M1 4AB,1949-05-17,3253.18,Y,SME
+00100156,"Chiara Rossi-Martin","119 Hauptstrasse",EC2V 4AB,1995-11-25,49189.23,Y,RETAIL
+00100157,"Chiara Garcia","28 High Street",LS6 3AB,1946-08-06,39443.12,N,SME
+00100158,"Fatima Smith","35 Avenue des Champs-Elysees",SW1A 1AB,1988-03-11,7597.04,N,PREMIER
+00100159,"Lars Adeyemi","115 Hauptstrasse, Flat 11",LS6 7AB,1958-09-02,44818.97,Y,RETAIL
+00100160,"Anna Rossi","129 Station Road",LS6 3AB,1990-10-09,21304.36,Y,PREMIER
+00100161,"Chiara Smith","125 Station Road, Flat 14",M1 1AB,1962-01-24,46894.27,Y,SME
+00100162,"Olu Adeyemi","93 Station Road",EC2V 1AB,1998-05-17,16927.86,N,SME
+00100163,"Rahul Adeyemi","96 Long Winding Countryside Lane",M1 2AB,1999-10-14,5623.16,Y,RETAIL
+00100164,"Lars Smith","30 Long Winding Countryside Lane, Flat 8",LS6 8AB,1965-02-13,28011.90,Y,PREMIER
+00100165,"Chiara Sharma","170 Hauptstrasse",SW1A 8AB,1973-06-25,13219.37,Y,PREMIER
+00100166,"Chiara Zhang","110 High Street",LS6 1AB,1969-04-06,28473.17,Y,RETAIL
+00100167,"Rahul Zhang","11 High Street",SW1A 2AB,1981-10-24,43834.16,N,RETAIL
+00100168,"Olu Adeyemi-Martin","161 High Street",EC2V 5AB,1945-03-14,22016.88,N,SME
+00100169,"Fatima Sharma-Martin","179 Avenue des Champs-Elysees",SW1A 5AB,1983-10-11,30945.81,Y,RETAIL
+00100170,"Anna Khan","130 Long Winding Countryside Lane, Flat 14",SW1A 3AB,1996-04-07,47786.93,Y,SME
+00100171,"Fatima Nilsson","90 Avenue des Champs-Elysees, Flat 10",EC2V 5AB,1983-08-16,49967.99,Y,PREMIER
+00100172,"Wei Zhang-Khan","194 Avenue des Champs-Elysees, Flat 26",LS6 9AB,1977-04-07,701.03,N,RETAIL
+00100173,"Olu Sharma","112 High Street",SW1A 6AB,1970-03-26,49330.28,Y,PREMIER
+00100174,"Rahul Rossi","48 Station Road, Flat 9",LS6 3AB,1945-10-15,11419.92,Y,RETAIL
+00100175,"Fatima Garcia","72 Long Winding Countryside Lane, Flat 19",EC2V 2AB,1991-07-05,376.65,Y,PREMIER
+00100176,"Wei Martin","70 High Street",EC2V 3AB,1994-12-24,27134.02,Y,RETAIL
+00100177,"Rahul Nilsson","182 High Street",M1 3AB,1946-02-26,28026.25,N,RETAIL
+00100178,"John Nilsson","119 High Street, Flat 27",SW1A 4AB,1979-06-25,48405.13,Y,SME
+00100179,"Chiara Nilsson-Garcia","43 Long Winding Countryside Lane",EC2V 2AB,1990-06-15,20436.35,Y,RETAIL
+00100180,"Maria Smith-Zhang","60 Avenue des Champs-Elysees",SW1A 5AB,1961-09-03,902.76,Y,SME
+00100181,"Chiara Martin-Rossi","51 Avenue des Champs-Elysees",SW1A 2AB,1951-04-05,49555.38,Y,SME
+00100182,"Wei Khan-Zhang","134 Avenue des Champs-Elysees, Flat 19",M1 5AB,1997-07-12,5202.92,N,PREMIER
+00100183,"Sophie Mueller","1 Hauptstrasse",SW1A 8AB,1986-08-12,19442.31,N,SME
+00100184,"Wei Rossi","194 Avenue des Champs-Elysees",EC2V 3AB,1962-09-16,38006.94,Y,RETAIL
+00100185,"Fatima Rossi","193 High Street",SW1A 4AB,1967-12-03,39052.86,N,RETAIL
+00100186,"Anna Smith","157 Long Winding Countryside Lane",EC2V 2AB,1950-12-08,29371.07,N,RETAIL
+00100187,"John Nilsson","59 High Street",SW1A 6AB,1978-08-11,25245.04,Y,PREMIER
+00100188,"Anna Martin","111 High Street",LS6 8AB,1992-04-27,42762.09,Y,PREMIER
+00100189,"Chiara Rossi","1 Hauptstrasse",LS6 6AB,1940-07-07,35998.05,Y,PREMIER
+00100190,"Wei Sharma","58 High Street",EC2V 7AB,1966-08-02,26656.14,Y,RETAIL
+00100191,"John Sharma-Nilsson","14 Station Road",SW1A 9AB,1978-12-02,30124.73,N,SME
+00100192,"Maria Martin","68 Avenue des Champs-Elysees",LS6 3AB,1959-09-20,44097.47,Y,SME
+00100193,"Wei Rossi","172 Station Road",LS6 5AB,1944-04-11,17220.94,Y,SME
+00100194,"Fatima Garcia","170 Long Winding Countryside Lane, Flat 10",M1 9AB,1996-03-23,33428.33,Y,PREMIER
+00100195,"Lars Martin","173 Avenue des Champs-Elysees",M1 8AB,1977-09-01,18582.84,Y,RETAIL
+00100196,"Rahul Khan","77 High Street, Flat 27",LS6 3AB,1995-04-22,25414.27,Y,PREMIER
+00100197,"Sophie Nilsson","119 Avenue des Champs-Elysees, Flat 1",SW1A 3AB,1976-08-05,13048.03,Y,PREMIER
+00100198,"Lars Adeyemi","179 Hauptstrasse",M1 7AB,1980-01-24,49259.21,N,RETAIL
+00100199,"Fatima Adeyemi","137 High Street",EC2V 6AB,1994-11-06,6470.29,Y,PREMIER
+00100200,"Sophie Nilsson","148 Long Winding Countryside Lane",LS6 3AB,1976-02-04,22518.77,N,RETAIL
+00100201,"Maria Adeyemi","41 Avenue des Champs-Elysees, Flat 6",SW1A 4AB,1966-02-28,47039.92,Y,PREMIER
+00100202,"Rahul Smith","126 Hauptstrasse",LS6 8AB,1959-04-06,5838.92,Y,SME
+00100203,"Anna Garcia","170 Long Winding Countryside Lane",M1 9AB,1951-11-18,6757.26,Y,SME
+00100204,"Maria Nilsson","11 High Street",M1 4AB,1998-03-18,8958.59,Y,RETAIL
+00100205,"Sophie Rossi","44 High Street",LS6 5AB,1975-02-10,15056.04,N,SME
+00100206,"Maria Smith-Smith","109 Station Road, Flat 11",EC2V 4AB,1943-07-19,3876.15,N,SME
+00100207,"Rahul Rossi","72 Long Winding Countryside Lane",M1 2AB,1982-01-12,9184.57,N,PREMIER
+00100208,"Fatima Adeyemi","134 Avenue des Champs-Elysees",EC2V 9AB,1985-06-12,29672.63,Y,PREMIER
+00100209,"John Nilsson","166 Avenue des Champs-Elysees, Flat 1",EC2V 7AB,1940-01-25,41187.65,N,RETAIL
+00100210,"Anna Mueller","196 High Street",M1 7AB,1967-05-21,12076.06,N,PREMIER
+00100211,"Maria Garcia","68 Hauptstrasse",LS6 9AB,1940-03-17,31797.97,N,RETAIL
+00100212,"Sophie Smith","180 High Street",EC2V 8AB,1992-03-19,33172.72,N,PREMIER
+00100213,"Fatima Zhang","165 Station Road, Flat 23",EC2V 8AB,1940-10-05,23233.73,Y,PREMIER
+00100214,"Fatima Garcia","58 High Street",SW1A 4AB,1982-09-11,3001.27,Y,PREMIER
+00100215,"Fatima Nilsson-Smith","32 Station Road",LS6 1AB,1957-04-27,26939.29,N,SME
+00100216,"Rahul Sharma","174 High Street, Flat 20",SW1A 3AB,1957-12-24,5980.17,N,SME
+00100217,"Rahul Khan","93 Avenue des Champs-Elysees",SW1A 3AB,1952-10-07,31017.11,N,RETAIL
+00100218,"Chiara Mueller","107 Avenue des Champs-Elysees",SW1A 5AB,1983-11-23,21444.21,Y,PREMIER
+00100219,"Maria Garcia","189 Long Winding Countryside Lane",EC2V 9AB,1977-12-18,27310.26,N,SME
+00100220,"Chiara Garcia-Rossi","166 Station Road",SW1A 1AB,1999-01-04,40994.32,Y,RETAIL
+00100221,"Wei Rossi","18 Hauptstrasse, Flat 25",SW1A 3AB,1984-11-15,14655.47,N,SME
+00100222,"Sophie Rossi","122 High Street, Flat 28",SW1A 5AB,1970-11-26,26103.48,N,RETAIL
+00100223,"Sophie Adeyemi","30 Hauptstrasse",EC2V 2AB,1943-07-27,22272.10,N,RETAIL
+00100224,"Lars Zhang","148 High Street",LS6 6AB,1971-11-04,9557.76,N,SME
+00100225,"Lars Mueller","139 Station Road, Flat 16",M1 9AB,1981-06-01,6982.71,N,PREMIER
+00100226,"Anna Smith","51 Hauptstrasse",LS6 4AB,1996-04-11,12819.66,N,SME
+00100227,"Chiara Rossi","21 High Street",LS6 5AB,1962-12-25,4972.78,Y,RETAIL
+00100228,"Sophie Martin-Khan","90 Station Road, Flat 20",M1 4AB,1958-11-17,43285.33,N,PREMIER
+00100229,"Maria Khan","48 Station Road",M1 7AB,1973-02-28,31264.66,Y,SME
+00100230,"Chiara Mueller","181 High Street, Flat 3",SW1A 5AB,1946-10-03,598.13,Y,RETAIL
+00100231,"Maria Adeyemi-Zhang","88 Station Road",M1 3AB,1988-12-17,35252.09,Y,RETAIL
+00100232,"Lars Mueller","140 Station Road",EC2V 3AB,1953-03-08,11871.17,Y,PREMIER
+00100233,"Lars Sharma","23 Station Road, Flat 28",EC2V 6AB,1952-06-10,12329.04,Y,SME
+00100234,"Wei Zhang","78 Avenue des Champs-Elysees",LS6 2AB,1942-12-28,25431.43,N,PREMIER
+00100235,"Anna Adeyemi","124 High Street",EC2V 1AB,1954-02-05,2516.87,N,PREMIER
+00100236,"Rahul Martin","164 Hauptstrasse",LS6 3AB,1995-09-02,19466.71,Y,RETAIL
+00100237,"Wei Martin","100 Avenue des Champs-Elysees",LS6 1AB,1997-03-21,32184.18,Y,PREMIER
+00100238,"Wei Garcia","98 Station Road",EC2V 2AB,1960-07-05,46290.71,N,PREMIER
+00100239,"John Smith-Rossi","86 Avenue des Champs-Elysees",LS6 6AB,1954-08-22,31900.23,N,PREMIER
+00100240,"Wei Mueller","196 Avenue des Champs-Elysees",EC2V 8AB,1974-12-14,49315.91,N,PREMIER
+00100241,"Anna Garcia","80 Avenue des Champs-Elysees",M1 6AB,1988-10-27,38792.65,Y,RETAIL
+00100242,"John Adeyemi","162 Station Road, Flat 2",M1 2AB,1982-07-24,13014.14,N,SME
+00100243,"Sophie Sharma-Zhang","154 Station Road",LS6 3AB,1954-10-27,20480.89,Y,PREMIER
+00100244,"John Martin","196 Long Winding Countryside Lane, Flat 6",M1 1AB,1955-10-25,9787.38,Y,RETAIL
+00100245,"Anna Smith","24 Long Winding Countryside Lane, Flat 7",EC2V 7AB,1997-10-18,30208.76,Y,PREMIER
+00100246,"Sophie Adeyemi","28 Avenue des Champs-Elysees, Flat 3",M1 9AB,1997-01-22,48063.42,Y,PREMIER
+00100247,"Wei Martin-Zhang","155 High Street",EC2V 1AB,1955-05-18,20583.98,N,SME
+00100248,"Chiara Khan","106 Hauptstrasse",SW1A 9AB,1969-01-15,34767.27,N,RETAIL
+00100249,"John Adeyemi-Khan","160 Hauptstrasse",LS6 9AB,1993-10-07,31869.90,Y,PREMIER
+00100250,"Lars Garcia","74 Station Road",EC2V 6AB,1950-10-24,47107.28,Y,PREMIER
+00100251,"Anna Garcia","112 Hauptstrasse",M1 7AB,1949-06-15,4893.03,Y,SME
+00100252,"Olu Khan","143 Station Road",M1 6AB,1951-07-05,42885.31,N,RETAIL
+00100253,"Chiara Zhang","142 Station Road",M1 2AB,1958-10-23,4902.12,N,PREMIER
+00100254,"Sophie Smith","93 Avenue des Champs-Elysees, Flat 27",EC2V 1AB,1983-02-28,2139.34,Y,SME
+00100255,"Fatima Sharma-Adeyemi","199 High Street, Flat 27",M1 5AB,1975-04-19,23885.90,Y,SME
+00100256,"Fatima Rossi-Rossi","199 Hauptstrasse, Flat 1",M1 8AB,1954-10-01,21784.22,N,SME
+00100257,"John Mueller-Rossi","119 Station Road, Flat 27",LS6 3AB,1982-08-27,14194.56,N,RETAIL
+00100258,"Lars Garcia","62 Avenue des Champs-Elysees, Flat 24",LS6 7AB,1998-06-20,27812.96,N,SME
+00100259,"Chiara Smith","9 Avenue des Champs-Elysees",M1 4AB,1956-12-19,20663.27,N,PREMIER
+00100260,"Olu Khan-Smith","47 Avenue des Champs-Elysees",LS6 3AB,1989-03-12,34939.43,Y,PREMIER
+00100261,"Anna Adeyemi","115 Hauptstrasse, Flat 12",LS6 1AB,1994-06-05,14925.66,N,RETAIL
+00100262,"Rahul Sharma-Zhang","128 Long Winding Countryside Lane, Flat 24",SW1A 2AB,1944-08-17,37241.21,N,RETAIL
+00100263,"Fatima Adeyemi","167 High Street, Flat 18",M1 2AB,1948-10-16,18098.64,Y,SME
+00100264,"Olu Nilsson-Adeyemi","41 High Street",LS6 3AB,1955-04-15,11491.81,Y,SME
+00100265,"Olu Sharma","156 High Street, Flat 7",LS6 5AB,1970-10-05,6619.89,Y,PREMIER
+00100266,"Rahul Mueller","34 Avenue des Champs-Elysees, Flat 5",LS6 7AB,1955-06-05,36802.10,Y,PREMIER
+00100267,"Fatima Adeyemi","112 Long Winding Countryside Lane",LS6 8AB,1954-04-21,13788.21,Y,RETAIL
+00100268,"Chiara Mueller-Khan","45 Station Road",EC2V 1AB,1969-12-05,40840.57,Y,SME
+00100269,"Maria Khan","168 Avenue des Champs-Elysees",M1 3AB,1997-09-26,6770.42,N,RETAIL
+00100270,"Fatima Zhang-Zhang","22 High Street",EC2V 9AB,1990-12-20,16562.84,Y,RETAIL
+00100271,"Wei Nilsson","186 Hauptstrasse",SW1A 3AB,1951-09-03,28149.50,N,SME
+00100272,"John Zhang","158 High Street",EC2V 9AB,1998-12-12,43378.97,N,RETAIL
+00100273,"Rahul Garcia","162 Hauptstrasse",SW1A 4AB,1977-12-17,39379.40,Y,PREMIER
+00100274,"Lars Nilsson","39 Long Winding Countryside Lane",M1 2AB,1961-11-16,42211.95,N,RETAIL
+00100275,"Chiara Khan","81 High Street",SW1A 4AB,1990-02-17,18300.64,N,RETAIL
+00100276,"Olu Martin","158 Hauptstrasse, Flat 30",M1 4AB,1979-12-21,8382.95,N,SME
+00100277,"Wei Rossi-Mueller","5 Long Winding Countryside Lane",M1 5AB,1966-09-25,36427.92,Y,SME
+00100278,"John Mueller","61 High Street",SW1A 2AB,1979-08-23,35714.07,N,RETAIL
+00100279,"Rahul Nilsson","71 High Street",EC2V 7AB,1942-03-07,9455.19,N,PREMIER
+00100280,"Wei Khan","139 High Street",SW1A 3AB,1977-01-03,14337.23,Y,SME
+00100281,"Maria Mueller","162 High Street",LS6 2AB,1969-10-04,23876.91,N,RETAIL
+00100282,"Anna Mueller","43 Avenue des Champs-Elysees, Flat 26",LS6 2AB,1998-03-11,47224.12,Y,RETAIL
+00100283,"Rahul Rossi","23 Avenue des Champs-Elysees",M1 1AB,1944-07-24,4585.68,Y,RETAIL
+00100284,"Rahul Rossi-Nilsson","134 Hauptstrasse",LS6 3AB,1976-03-07,42937.14,N,PREMIER
+00100285,"Olu Sharma","35 Long Winding Countryside Lane",LS6 6AB,1955-03-07,49021.30,Y,PREMIER
+00100286,"Rahul Smith","2 Station Road",LS6 8AB,1958-01-23,1920.53,N,RETAIL
+00100287,"Chiara Garcia","188 Long Winding Countryside Lane",EC2V 8AB,1981-11-11,27660.66,Y,SME
+00100288,"Sophie Martin","17 Station Road",M1 4AB,1945-10-11,49900.63,Y,SME
+00100289,"Rahul Zhang","94 Hauptstrasse",EC2V 2AB,1980-09-06,29630.33,Y,RETAIL
+00100290,"Wei Garcia","161 High Street, Flat 20",EC2V 7AB,1976-07-04,20052.58,N,SME
+00100291,"Olu Rossi","44 Long Winding Countryside Lane",EC2V 7AB,1968-10-17,40028.69,N,RETAIL
+00100292,"Rahul Sharma","100 Hauptstrasse, Flat 21",LS6 3AB,1961-02-17,7436.13,N,PREMIER
+00100293,"Wei Martin","106 High Street",EC2V 1AB,1945-12-17,44249.31,Y,SME
+00100294,"Anna Nilsson-Mueller","22 High Street",M1 9AB,1985-08-21,34514.75,Y,RETAIL
+00100295,"Sophie Smith","96 Long Winding Countryside Lane",LS6 2AB,1960-06-25,48947.35,Y,PREMIER
+00100296,"Fatima Mueller","193 Long Winding Countryside Lane",EC2V 9AB,1953-06-09,2493.86,N,PREMIER
+00100297,"Anna Rossi","126 Station Road",M1 6AB,1984-12-03,19342.45,Y,PREMIER
+00100298,"Chiara Garcia-Adeyemi","117 High Street, Flat 24",SW1A 9AB,1996-06-07,25921.79,N,PREMIER
+00100299,"Wei Mueller","107 Hauptstrasse",EC2V 6AB,1945-08-09,28951.85,Y,PREMIER

@@ -1,0 +1,93 @@
+# Format: EXPECTED_FAMILIES (comma-separated, or NONE) <TAB> line of code/config
+# Written before running the benchmark; covers 8 languages/formats plus look-alike negatives.
+RSA	KeyPairGenerator kpg = KeyPairGenerator.getInstance("RSA");
+EC	KeyPairGenerator g = KeyPairGenerator.getInstance("EC");
+DSA	KeyPairGenerator.getInstance("DSA").initialize(2048);
+ECDH	KeyAgreement ka = KeyAgreement.getInstance("ECDH");
+RSA	Signature sig = Signature.getInstance("SHA256withRSA");
+ECDSA	Signature sig = Signature.getInstance("SHA384withECDSA");
+SHA1,RSA	Signature s = Signature.getInstance("SHA1withRSA");
+MD5	MessageDigest md = MessageDigest.getInstance("MD5");
+SHA1	MessageDigest md = MessageDigest.getInstance("SHA-1");
+SHA2	MessageDigest md = MessageDigest.getInstance("SHA-256");
+3DES	Cipher c = Cipher.getInstance("DESede/CBC/PKCS5Padding");
+DES	Cipher c = Cipher.getInstance("DES/CBC/PKCS5Padding");
+ECB	Cipher c = Cipher.getInstance("AES/ECB/PKCS5Padding");
+AES	Cipher c = Cipher.getInstance("AES/GCM/NoPadding");
+RSA	Cipher rsa = Cipher.getInstance("RSA/ECB/OAEPWithSHA-256AndMGF1Padding");
+MD5	Mac mac = Mac.getInstance("HmacMD5");
+HMAC	Mac mac = Mac.getInstance("HmacSHA256");
+EdDSA	Signature.getInstance("Ed25519");
+ML-KEM	KeyPairGenerator.getInstance("ML-KEM-768");
+RSA	private_key = rsa.generate_private_key(public_exponent=65537, key_size=3072)
+EC	key = ec.generate_private_key(ec.SECP384R1())
+MD5	digest = hashlib.md5(payload).hexdigest()
+SHA1	h = hashlib.sha1(data)
+SHA2	h = hashlib.sha256(data)
+3DES	cipher = DES3.new(key, DES3.MODE_CBC, iv)
+RC4	cipher = ARC4.new(key)
+EdDSA	sk = Ed25519PrivateKey.generate()
+X25519	sk = X25519PrivateKey.generate()
+RSA	key = RSA.generate(2048)
+RSA	const { privateKey } = crypto.generateKeyPairSync('rsa', { modulusLength: 4096 });
+EC	crypto.generateKeyPair('ec', { namedCurve: 'P-256' }, cb);
+EdDSA	const kp = crypto.generateKeyPairSync("ed25519");
+MD5	const h = crypto.createHash('md5').update(s).digest('hex');
+SHA1	crypto.createHmac('sha1', secret)
+SHA2	crypto.createHash("sha256")
+3DES	const c = crypto.createCipheriv('des-ede3-cbc', key, iv);
+ECB	const c = crypto.createCipheriv('aes-128-ecb', key, null);
+AES256	const c = crypto.createCipheriv('aes-256-gcm', key, iv);
+ChaCha20	crypto.createCipheriv('chacha20-poly1305', key, iv, { authTagLength: 16 })
+ECDH	const ecdh = crypto.createECDH('prime256v1');
+RSA	await subtle.generateKey({ name: "RSA-OAEP", modulusLength: 2048, publicExponent: e, hash: "SHA-256" }, true, ["encrypt"]);
+ECDSA	await subtle.generateKey({ name: "ECDSA", namedCurve: "P-384" }, true, ["sign"]);
+RSA	priv, err := rsa.GenerateKey(rand.Reader, 2048)
+ECDSA	priv, _ := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+MD5	sum := md5.Sum(data)
+3DES	block, err := des.NewTripleDESCipher(key)
+TLS_OLD	cfg := &tls.Config{MinVersion: tls.VersionTLS10}
+HYBRID_PQ	CurvePreferences: []tls.CurveID{tls.X25519MLKEM768},
+RSA	using var rsa = RSA.Create(2048);
+ECDSA	var ecdsa = ECDsa.Create();
+MD5	using var md5 = MD5.Create();
+SHA1	var sha = SHA1.Create();
+3DES	var tdes = TripleDES.Create();
+TLS_OLD	ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls11;
+RSA	openssl genrsa -out server.key 2048
+RSA	openssl req -new -newkey rsa:2048 -nodes -keyout k.pem -out r.csr
+EC	openssl ecparam -name prime256v1 -genkey -out ec.key
+RSA	ssh-keygen -t rsa -b 4096 -C "ops@bank"
+EdDSA	ssh-keygen -t ed25519 -C "deploy"
+RSA	keytool -genkeypair -alias gw -keyalg RSA -keysize 2048 -keystore gw.jks
+MD5	md5sum release.tar.gz > release.md5
+TLS_OLD	ssl_protocols TLSv1 TLSv1.1 TLSv1.2;
+TLS_OLD	SSLProtocol all -SSLv3 +TLSv1.1
+RC4	ssl_ciphers RC4-SHA:AES128-SHA;
+TLS_OLD	server.ssl.enabled-protocols=TLSv1.1,TLSv1.2
+HYBRID_PQ	ssl_ecdh_curve X25519MLKEM768:X25519;
+RSA	"alg": "RS256",
+ECDSA	jwt.sign(payload, key, { algorithm: 'ES256' })
+JWT_NONE	jwt.verify(token, null, { algorithms: ['none'] })
+HMAC	"alg": "HS256"
+PRIVATE_KEY	-----BEGIN PRIVATE KEY-----
+PRIVATE_KEY	-----BEGIN EC PRIVATE KEY-----
+RSA	ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQC7 ops@jump
+ECDSA	ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAI host
+ML-DSA	signer = MLDSA65.new()  # ML-DSA-65 signatures for payment files
+ML-KEM	kem = oqs.KeyEncapsulation("Kyber768")
+NONE	const description = "Desktop banking app for corporate clients";
+NONE	String desk = "DES-K Ops desk";
+NONE	ecosystem.register(plugin);
+NONE	const rsaKeyId = config.get("kms.keyId");
+NONE	let md5Url = "/static/checksums.html";
+NONE	The design document describes the payment ecosystem and desktop tools.
+NONE	if (response.status === 200) { render(rows); }
+NONE	SELECT customer_id, account_desc FROM accounts WHERE ec_flag = 'Y';
+NONE	export const SHA_ROUTE = "/api/sha";
+NONE	public static final String ALGORITHM_NAME = "PaymentRouter";
+NONE	const shaped = data.map(reshape);
+NONE	deskTop.render();
+NONE	logger.info("Rsa team sync at 10am");
+NONE	ssl_certificate /etc/ssl/certs/bank.crt;
+NONE	server.ssl.key-store=classpath:keystore.p12
