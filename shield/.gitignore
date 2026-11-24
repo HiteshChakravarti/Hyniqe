@@ -1,0 +1,11 @@
+__pycache__/
+*.pyc
+*.egg-info/
+build/
+dist/
+hyniqe-shield.json
+hyniqe-shield.sarif
+# generated: samples containing invisible characters, and the built web page
+tests/fixtures/malicious/evil-skill/SKILL.md
+tests/fixtures/malicious/bidi.js
+web/index.html

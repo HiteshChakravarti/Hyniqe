@@ -1,0 +1,53 @@
+name: "Hyniqe Shield"
+description: "Check AI agent add-ons (skills, MCP servers and configs, n8n workflows) for hidden instructions, data theft and risky permissions."
+author: "Hyniqe"
+branding:
+  icon: "shield"
+  color: "red"
+
+inputs:
+  path:
+    description: "File or folder to scan, relative to the repository root."
+    required: false
+    default: "."
+  fail-on:
+    description: "Fail the job when the verdict is at least this level: dangerous, caution or never."
+    required: false
+    default: "dangerous"
+  sarif-file:
+    description: "Where to write the SARIF report (upload it with github/codeql-action/upload-sarif)."
+    required: false
+    default: "hyniqe-shield.sarif"
+
+outputs:
+  verdict:
+    description: "DANGEROUS, CAUTION or NO_KNOWN_RISKS"
+    value: ${{ steps.scan.outputs.verdict }}
+  score:
+    description: "Risk score from 0 to 100"
+    value: ${{ steps.scan.outputs.score }}
+
+runs:
+  using: "composite"
+  steps:
+    - id: scan
+      shell: bash
+      # Inputs are passed through environment variables, never interpolated into the script.
+      env:
+        HS_PATH: ${{ inputs.path }}
+        HS_FAIL_ON: ${{ inputs.fail-on }}
+        HS_SARIF: ${{ inputs.sarif-file }}
+        PYTHONPATH: ${{ github.action_path }}
+      run: |
+        set -euo pipefail
+        case "$HS_FAIL_ON" in dangerous|caution|never) ;; *) echo "fail-on must be dangerous, caution or never"; exit 2;; esac
+        python3 -m hyniqe_shield scan "$HS_PATH" -f sarif -o "$HS_SARIF"
+        python3 -m hyniqe_shield scan "$HS_PATH" -f markdown >> "$GITHUB_STEP_SUMMARY"
+        python3 -m hyniqe_shield scan "$HS_PATH" -f json -o hyniqe-shield.json
+        python3 - <<'PY' >> "$GITHUB_OUTPUT"
+        import json
+        d = json.load(open("hyniqe-shield.json"))
+        print(f"verdict={d['verdict']}")
+        print(f"score={d['score']}")
+        PY
+        python3 -m hyniqe_shield scan "$HS_PATH" --fail-on "$HS_FAIL_ON" --no-color

@@ -4,7 +4,7 @@ Copyright © 2025–2026 Hitesh Chakravarti. "Hyniqe" and "Hyniqe Hub" are the n
 
 | Part | License | What it means |
 |---|---|---|
-| Everything in this repository (`engine/`, `solutions/`, `site/`, `scripts/`) | [AGPL-3.0](LICENSE) | Free to use, study and change. If you distribute a modified version, or offer it to others over a network (for example as a website or SaaS), you must publish your complete source code under the same license. |
+| Everything in this repository (`engine/`, `solutions/`, `shield/`, `site/`, `scripts/`) | [AGPL-3.0](LICENSE) | Free to use, study and change. If you distribute a modified version, or offer it to others over a network (for example as a website or SaaS), you must publish your complete source code under the same license. |
 
 Versions of `engine/` published before 22 November 2026 were released under Apache-2.0 and remain available under that license. All later versions are AGPL-3.0.
 

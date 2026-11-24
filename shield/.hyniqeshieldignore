@@ -1,0 +1,10 @@
+# Shield's own rules, samples and docs describe attacks on purpose.
+tests/*
+hyniqe_shield/rules.json
+hyniqe_shield/engine.py
+web/*
+RULES.md
+scripts/*
+README.md
+SECURITY.md
+action.yml
