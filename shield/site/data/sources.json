@@ -1,0 +1,514 @@
+[
+{
+"slug": "anthropic-academy-guide",
+"name": "academy-guide",
+"kind": "skill",
+"repo": "anthropics/skills",
+"sub": "skills/academy-guide",
+"clone": "anthropics_skills"
+},
+{
+"slug": "anthropic-algorithmic-art",
+"name": "algorithmic-art",
+"kind": "skill",
+"repo": "anthropics/skills",
+"sub": "skills/algorithmic-art",
+"clone": "anthropics_skills"
+},
+{
+"slug": "anthropic-brand-guidelines",
+"name": "brand-guidelines",
+"kind": "skill",
+"repo": "anthropics/skills",
+"sub": "skills/brand-guidelines",
+"clone": "anthropics_skills"
+},
+{
+"slug": "anthropic-canvas-design",
+"name": "canvas-design",
+"kind": "skill",
+"repo": "anthropics/skills",
+"sub": "skills/canvas-design",
+"clone": "anthropics_skills"
+},
+{
+"slug": "anthropic-claude-api",
+"name": "claude-api",
+"kind": "skill",
+"repo": "anthropics/skills",
+"sub": "skills/claude-api",
+"clone": "anthropics_skills"
+},
+{
+"slug": "anthropic-discernment-nudge",
+"name": "discernment-nudge",
+"kind": "skill",
+"repo": "anthropics/skills",
+"sub": "skills/discernment-nudge",
+"clone": "anthropics_skills"
+},
+{
+"slug": "anthropic-doc-coauthoring",
+"name": "doc-coauthoring",
+"kind": "skill",
+"repo": "anthropics/skills",
+"sub": "skills/doc-coauthoring",
+"clone": "anthropics_skills"
+},
+{
+"slug": "anthropic-docx",
+"name": "docx",
+"kind": "skill",
+"repo": "anthropics/skills",
+"sub": "skills/docx",
+"clone": "anthropics_skills"
+},
+{
+"slug": "anthropic-frontend-design",
+"name": "frontend-design",
+"kind": "skill",
+"repo": "anthropics/skills",
+"sub": "skills/frontend-design",
+"clone": "anthropics_skills"
+},
+{
+"slug": "anthropic-internal-comms",
+"name": "internal-comms",
+"kind": "skill",
+"repo": "anthropics/skills",
+"sub": "skills/internal-comms",
+"clone": "anthropics_skills"
+},
+{
+"slug": "anthropic-mcp-builder",
+"name": "mcp-builder",
+"kind": "skill",
+"repo": "anthropics/skills",
+"sub": "skills/mcp-builder",
+"clone": "anthropics_skills"
+},
+{
+"slug": "anthropic-pdf",
+"name": "pdf",
+"kind": "skill",
+"repo": "anthropics/skills",
+"sub": "skills/pdf",
+"clone": "anthropics_skills"
+},
+{
+"slug": "anthropic-pptx",
+"name": "pptx",
+"kind": "skill",
+"repo": "anthropics/skills",
+"sub": "skills/pptx",
+"clone": "anthropics_skills"
+},
+{
+"slug": "anthropic-skill-creator",
+"name": "skill-creator",
+"kind": "skill",
+"repo": "anthropics/skills",
+"sub": "skills/skill-creator",
+"clone": "anthropics_skills"
+},
+{
+"slug": "anthropic-slack-gif-creator",
+"name": "slack-gif-creator",
+"kind": "skill",
+"repo": "anthropics/skills",
+"sub": "skills/slack-gif-creator",
+"clone": "anthropics_skills"
+},
+{
+"slug": "anthropic-theme-factory",
+"name": "theme-factory",
+"kind": "skill",
+"repo": "anthropics/skills",
+"sub": "skills/theme-factory",
+"clone": "anthropics_skills"
+},
+{
+"slug": "anthropic-web-artifacts-builder",
+"name": "web-artifacts-builder",
+"kind": "skill",
+"repo": "anthropics/skills",
+"sub": "skills/web-artifacts-builder",
+"clone": "anthropics_skills"
+},
+{
+"slug": "anthropic-webapp-testing",
+"name": "webapp-testing",
+"kind": "skill",
+"repo": "anthropics/skills",
+"sub": "skills/webapp-testing",
+"clone": "anthropics_skills"
+},
+{
+"slug": "anthropic-xlsx",
+"name": "xlsx",
+"kind": "skill",
+"repo": "anthropics/skills",
+"sub": "skills/xlsx",
+"clone": "anthropics_skills"
+},
+{
+"slug": "superpowers-brainstorming",
+"name": "brainstorming",
+"kind": "skill",
+"repo": "obra/superpowers",
+"sub": "skills/brainstorming",
+"clone": "obra_superpowers"
+},
+{
+"slug": "superpowers-diagnosing-superpowers",
+"name": "diagnosing-superpowers",
+"kind": "skill",
+"repo": "obra/superpowers",
+"sub": "skills/diagnosing-superpowers",
+"clone": "obra_superpowers"
+},
+{
+"slug": "superpowers-dispatching-parallel-agents",
+"name": "dispatching-parallel-agents",
+"kind": "skill",
+"repo": "obra/superpowers",
+"sub": "skills/dispatching-parallel-agents",
+"clone": "obra_superpowers"
+},
+{
+"slug": "superpowers-executing-plans",
+"name": "executing-plans",
+"kind": "skill",
+"repo": "obra/superpowers",
+"sub": "skills/executing-plans",
+"clone": "obra_superpowers"
+},
+{
+"slug": "superpowers-finishing-a-development-branch",
+"name": "finishing-a-development-branch",
+"kind": "skill",
+"repo": "obra/superpowers",
+"sub": "skills/finishing-a-development-branch",
+"clone": "obra_superpowers"
+},
+{
+"slug": "superpowers-receiving-code-review",
+"name": "receiving-code-review",
+"kind": "skill",
+"repo": "obra/superpowers",
+"sub": "skills/receiving-code-review",
+"clone": "obra_superpowers"
+},
+{
+"slug": "superpowers-requesting-code-review",
+"name": "requesting-code-review",
+"kind": "skill",
+"repo": "obra/superpowers",
+"sub": "skills/requesting-code-review",
+"clone": "obra_superpowers"
+},
+{
+"slug": "superpowers-subagent-driven-development",
+"name": "subagent-driven-development",
+"kind": "skill",
+"repo": "obra/superpowers",
+"sub": "skills/subagent-driven-development",
+"clone": "obra_superpowers"
+},
+{
+"slug": "superpowers-systematic-debugging",
+"name": "systematic-debugging",
+"kind": "skill",
+"repo": "obra/superpowers",
+"sub": "skills/systematic-debugging",
+"clone": "obra_superpowers"
+},
+{
+"slug": "superpowers-test-driven-development",
+"name": "test-driven-development",
+"kind": "skill",
+"repo": "obra/superpowers",
+"sub": "skills/test-driven-development",
+"clone": "obra_superpowers"
+},
+{
+"slug": "superpowers-using-git-worktrees",
+"name": "using-git-worktrees",
+"kind": "skill",
+"repo": "obra/superpowers",
+"sub": "skills/using-git-worktrees",
+"clone": "obra_superpowers"
+},
+{
+"slug": "superpowers-using-superpowers",
+"name": "using-superpowers",
+"kind": "skill",
+"repo": "obra/superpowers",
+"sub": "skills/using-superpowers",
+"clone": "obra_superpowers"
+},
+{
+"slug": "superpowers-verification-before-completion",
+"name": "verification-before-completion",
+"kind": "skill",
+"repo": "obra/superpowers",
+"sub": "skills/verification-before-completion",
+"clone": "obra_superpowers"
+},
+{
+"slug": "superpowers-writing-plans",
+"name": "writing-plans",
+"kind": "skill",
+"repo": "obra/superpowers",
+"sub": "skills/writing-plans",
+"clone": "obra_superpowers"
+},
+{
+"slug": "superpowers-writing-skills",
+"name": "writing-skills",
+"kind": "skill",
+"repo": "obra/superpowers",
+"sub": "skills/writing-skills",
+"clone": "obra_superpowers"
+},
+{
+"slug": "mcp-everything",
+"name": "everything",
+"kind": "mcp",
+"repo": "modelcontextprotocol/servers",
+"sub": "src/everything",
+"clone": "modelcontextprotocol_servers"
+},
+{
+"slug": "mcp-fetch",
+"name": "fetch",
+"kind": "mcp",
+"repo": "modelcontextprotocol/servers",
+"sub": "src/fetch",
+"clone": "modelcontextprotocol_servers"
+},
+{
+"slug": "mcp-filesystem",
+"name": "filesystem",
+"kind": "mcp",
+"repo": "modelcontextprotocol/servers",
+"sub": "src/filesystem",
+"clone": "modelcontextprotocol_servers"
+},
+{
+"slug": "mcp-git",
+"name": "git",
+"kind": "mcp",
+"repo": "modelcontextprotocol/servers",
+"sub": "src/git",
+"clone": "modelcontextprotocol_servers"
+},
+{
+"slug": "mcp-memory",
+"name": "memory",
+"kind": "mcp",
+"repo": "modelcontextprotocol/servers",
+"sub": "src/memory",
+"clone": "modelcontextprotocol_servers"
+},
+{
+"slug": "mcp-sequentialthinking",
+"name": "sequentialthinking",
+"kind": "mcp",
+"repo": "modelcontextprotocol/servers",
+"sub": "src/sequentialthinking",
+"clone": "modelcontextprotocol_servers"
+},
+{
+"slug": "mcp-time",
+"name": "time",
+"kind": "mcp",
+"repo": "modelcontextprotocol/servers",
+"sub": "src/time",
+"clone": "modelcontextprotocol_servers"
+},
+{
+"slug": "browsermcp-mcp",
+"name": "mcp",
+"kind": "mcp",
+"repo": "BrowserMCP/mcp",
+"sub": "",
+"clone": "BrowserMCP_mcp"
+},
+{
+"slug": "glips-figma-context-mcp",
+"name": "Figma-Context-MCP",
+"kind": "mcp",
+"repo": "GLips/Figma-Context-MCP",
+"sub": "",
+"clone": "GLips_Figma-Context-MCP"
+},
+{
+"slug": "browserbase-mcp-server-browserbase",
+"name": "mcp-server-browserbase",
+"kind": "mcp",
+"repo": "browserbase/mcp-server-browserbase",
+"sub": "",
+"clone": "browserbase_mcp-server-browserbase"
+},
+{
+"slug": "cloudflare-mcp-server-cloudflare",
+"name": "mcp-server-cloudflare",
+"kind": "mcp",
+"repo": "cloudflare/mcp-server-cloudflare",
+"sub": "",
+"clone": "cloudflare_mcp-server-cloudflare"
+},
+{
+"slug": "elastic-mcp-server-elasticsearch",
+"name": "mcp-server-elasticsearch",
+"kind": "mcp",
+"repo": "elastic/mcp-server-elasticsearch",
+"sub": "",
+"clone": "elastic_mcp-server-elasticsearch"
+},
+{
+"slug": "exa-labs-exa-mcp-server",
+"name": "exa-mcp-server",
+"kind": "mcp",
+"repo": "exa-labs/exa-mcp-server",
+"sub": "",
+"clone": "exa-labs_exa-mcp-server"
+},
+{
+"slug": "executeautomation-mcp-playwright",
+"name": "mcp-playwright",
+"kind": "mcp",
+"repo": "executeautomation/mcp-playwright",
+"sub": "",
+"clone": "executeautomation_mcp-playwright"
+},
+{
+"slug": "firecrawl-firecrawl-mcp-server",
+"name": "firecrawl-mcp-server",
+"kind": "mcp",
+"repo": "firecrawl/firecrawl-mcp-server",
+"sub": "",
+"clone": "firecrawl_firecrawl-mcp-server"
+},
+{
+"slug": "getsentry-sentry-mcp",
+"name": "sentry-mcp",
+"kind": "mcp",
+"repo": "getsentry/sentry-mcp",
+"sub": "",
+"clone": "getsentry_sentry-mcp"
+},
+{
+"slug": "github-github-mcp-server",
+"name": "github-mcp-server",
+"kind": "mcp",
+"repo": "github/github-mcp-server",
+"sub": "",
+"clone": "github_github-mcp-server"
+},
+{
+"slug": "grafana-mcp-grafana",
+"name": "mcp-grafana",
+"kind": "mcp",
+"repo": "grafana/mcp-grafana",
+"sub": "",
+"clone": "grafana_mcp-grafana"
+},
+{
+"slug": "hashicorp-terraform-mcp-server",
+"name": "terraform-mcp-server",
+"kind": "mcp",
+"repo": "hashicorp/terraform-mcp-server",
+"sub": "",
+"clone": "hashicorp_terraform-mcp-server"
+},
+{
+"slug": "heroku-heroku-mcp-server",
+"name": "heroku-mcp-server",
+"kind": "mcp",
+"repo": "heroku/heroku-mcp-server",
+"sub": "",
+"clone": "heroku_heroku-mcp-server"
+},
+{
+"slug": "makenotion-notion-mcp-server",
+"name": "notion-mcp-server",
+"kind": "mcp",
+"repo": "makenotion/notion-mcp-server",
+"sub": "",
+"clone": "makenotion_notion-mcp-server"
+},
+{
+"slug": "microsoft-playwright-mcp",
+"name": "playwright-mcp",
+"kind": "mcp",
+"repo": "microsoft/playwright-mcp",
+"sub": "",
+"clone": "microsoft_playwright-mcp"
+},
+{
+"slug": "mongodb-js-mongodb-mcp-server",
+"name": "mongodb-mcp-server",
+"kind": "mcp",
+"repo": "mongodb-js/mongodb-mcp-server",
+"sub": "",
+"clone": "mongodb-js_mongodb-mcp-server"
+},
+{
+"slug": "neondatabase-mcp-server-neon",
+"name": "mcp-server-neon",
+"kind": "mcp",
+"repo": "neondatabase/mcp-server-neon",
+"sub": "",
+"clone": "neondatabase_mcp-server-neon"
+},
+{
+"slug": "redis-mcp-redis",
+"name": "mcp-redis",
+"kind": "mcp",
+"repo": "redis/mcp-redis",
+"sub": "",
+"clone": "redis_mcp-redis"
+},
+{
+"slug": "stripe-agent-toolkit",
+"name": "agent-toolkit",
+"kind": "mcp",
+"repo": "stripe/agent-toolkit",
+"sub": "",
+"clone": "stripe_agent-toolkit"
+},
+{
+"slug": "supabase-community-supabase-mcp",
+"name": "supabase-mcp",
+"kind": "mcp",
+"repo": "supabase-community/supabase-mcp",
+"sub": "",
+"clone": "supabase-community_supabase-mcp"
+},
+{
+"slug": "tavily-ai-tavily-mcp",
+"name": "tavily-mcp",
+"kind": "mcp",
+"repo": "tavily-ai/tavily-mcp",
+"sub": "",
+"clone": "tavily-ai_tavily-mcp"
+},
+{
+"slug": "upstash-context7",
+"name": "context7",
+"kind": "mcp",
+"repo": "upstash/context7",
+"sub": "",
+"clone": "upstash_context7"
+},
+{
+"slug": "wonderwhy-er-desktopcommandermcp",
+"name": "DesktopCommanderMCP",
+"kind": "mcp",
+"repo": "wonderwhy-er/DesktopCommanderMCP",
+"sub": "",
+"clone": "wonderwhy-er_DesktopCommanderMCP"
+}
+]

@@ -76,7 +76,11 @@ def main(corpus: str) -> None:
         print(f"{r.verdict:15} {s['slug']}")
     data = {"scanned_on": dt.date.today().isoformat(), "rules_version": scanner.rules["version"],
             "excludes": EXCLUDES, "addons": out}
-    (HERE / "data" / "scans.json").write_text(json.dumps(data, ensure_ascii=True, separators=(",", ":")) + "\n")
+    # one add-on per line keeps diffs readable when a single add-on is re-scanned
+    dump = lambda o: json.dumps(o, ensure_ascii=True, separators=(",", ":"))  # noqa: E731
+    head = dump({k: v for k, v in data.items() if k != "addons"})[:-1]
+    text = head + ',"addons":[\n' + ",\n".join(dump(a) for a in out) + "\n]}\n"
+    (HERE / "data" / "scans.json").write_text(text)
 
 
 if __name__ == "__main__":
