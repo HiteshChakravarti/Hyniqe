@@ -1,0 +1,32 @@
+name: shield-ci
+on:
+  push:
+    paths: ["shield/**", ".github/workflows/shield-ci.yml"]
+  pull_request:
+    paths: ["shield/**", ".github/workflows/shield-ci.yml"]
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python: ["3.9", "3.12"]
+    defaults:
+      run:
+        working-directory: shield
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - run: python -m unittest discover -s tests -v
+      - name: docs are up to date and the web page builds
+        run: |
+          python scripts/build_docs.py
+          git diff --exit-code -- RULES.md
+          python scripts/build_web.py
+          test -s web/index.html

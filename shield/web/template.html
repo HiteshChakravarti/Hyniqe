@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hyniqe Shield Checker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* VOICE work: a security instrument, calm and exact
+   IDEA an airport X-ray inspection station for AI add-ons: drop the bag in, get the inspection slip
+   PICTURE the live verdict slip: huge verdict word, risk band with marker, severity tally
+   COLOUR ice ground, deep ink, hot pink for danger; amber caution, green clear
+   TYPE Space Grotesk display + Inter text
+   LAYOUT laptop: input station left, verdict slip right, findings full width below; phone: title, slip, input, findings */
+:root{color-scheme:light dark;--bg:light-dark(#dff1f7,#06222e);--ink:light-dark(#06222e,#dff1f7);--panel:light-dark(#ffffff,#0b2f3d);--line:light-dark(#b9dbe6,#1d4a5a);--soft:light-dark(#4a6873,#9cc3d0);--pink:#ff2e7e;--amber:light-dark(#b86e00,#ffb547);--green:light-dark(#0b8a63,#3fd6a2);--chip:light-dark(#eef8fb,#0f3847)}
+:root[data-theme=light]{color-scheme:light}
+:root[data-theme=dark]{color-scheme:dark}
+*{box-sizing:border-box;min-width:0}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font:16px/1.55 Inter,system-ui,sans-serif;overflow-x:clip}
+h1,h2,h3{font-family:"Space Grotesk",Inter,sans-serif;letter-spacing:-.02em;line-height:1.05;margin:0}
+.band{padding:clamp(20px,3vw,40px) max(4vw,16px)}
+.wrap{max-width:1240px;margin:0 auto}
+header.band{padding-bottom:8px}
+.top{display:flex;flex-wrap:wrap;align-items:end;justify-content:space-between;gap:12px 24px}
+h1{font-size:clamp(32px,4.4vw,48px)}
+.lede{margin:8px 0 0;color:var(--soft);max-width:62ch}
+.privacy{display:flex;gap:8px;align-items:center;font-size:14px;color:var(--soft)}
+.privacy svg{flex:none}
+.station{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,1fr);gap:20px;align-items:stretch}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:20px}
+.label{font-size:14px;font-weight:600;margin:0 0 8px}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px}
+button,.btn{font:600 15px/1 Inter,sans-serif;border-radius:10px;border:1px solid var(--line);background:var(--chip);color:var(--ink);min-height:44px;padding:0 14px;cursor:pointer}
+button:hover,.btn:hover{border-color:var(--ink)}
+button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible,.btn:focus-within{outline:3px solid var(--pink);outline-offset:2px}
+button.on{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.primary{background:var(--pink);border-color:var(--pink);color:#fff}
+.primary:hover{border-color:var(--ink)}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+input[type=text],select{font:16px Inter,sans-serif;min-height:44px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--ink);padding:0 12px}
+#fname{flex:1 1 220px}
+textarea{width:100%;min-height:260px;resize:vertical;font:14px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--ink);padding:12px;margin:10px 0}
+.drop{border:2px dashed var(--line);border-radius:12px;padding:14px;text-align:center;color:var(--soft);font-size:14px;margin-bottom:12px}
+.drop.over{border-color:var(--pink);color:var(--ink)}
+.drop label{color:var(--ink);font-weight:600;text-decoration:underline;cursor:pointer}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+.slip{display:flex;flex-direction:column;gap:16px;border-radius:14px;padding:24px;color:#fff;background:var(--vc,#0b8a63);transition:background .3s}
+.slip .k{font-size:14px;font-weight:600;opacity:.9}
+.verdict{font-size:clamp(40px,6vw,64px);font-family:"Space Grotesk",sans-serif;font-weight:700;letter-spacing:-.03em;line-height:1}
+.vsub{font-size:17px;font-weight:500;margin-top:6px}
+.meter{position:relative;height:18px;border-radius:9px;background:rgba(255,255,255,.25);overflow:visible}
+.meter .z{position:absolute;top:0;bottom:0;background:rgba(255,255,255,.18)}
+.meter .fill{position:absolute;left:0;top:0;bottom:0;border-radius:9px;background:#fff;transition:width .4s}
+.scale{display:flex;justify-content:space-between;font-size:13px;opacity:.9}
+.tally{display:grid;grid-template-columns:repeat(auto-fit,minmax(5.5em,1fr));gap:8px}
+.tally div{background:rgba(255,255,255,.16);border-radius:10px;padding:8px 10px}
+.tally b{display:block;font:700 26px/1.1 "Space Grotesk",sans-serif}
+.tally span{font-size:13px}
+.slipnote{font-size:13px;opacity:.92;margin:auto 0 0}
+.result{display:flex}
+.result .slip{flex:1}
+.ffiles{font-size:14px;margin:0;padding:0;list-style:none}
+.ffiles li{display:flex;justify-content:space-between;gap:10px;border-top:1px solid rgba(255,255,255,.25);padding:6px 0}
+.ffiles code{overflow-wrap:anywhere}
+.ffiles em{font-style:normal;white-space:nowrap;font-weight:600}
+.fhead{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:12px;margin-bottom:12px}
+h2{font-size:clamp(24px,2.6vw,32px)}
+.flist{display:grid;gap:10px}
+.f{background:var(--panel);border:1px solid var(--line);border-left:6px solid var(--sc);border-radius:12px;padding:14px 16px;display:grid;grid-template-columns:7.5em minmax(0,1fr);gap:4px 16px}
+.sev{font:700 14px/1.3 "Space Grotesk",sans-serif;color:var(--sc);white-space:nowrap}
+.sev small{display:block;font:500 13px Inter,sans-serif;color:var(--soft)}
+.f h3{font-size:18px;line-height:1.25}
+.loc{font-size:13px;color:var(--soft);margin-top:2px}
+.loc code{overflow-wrap:anywhere}
+.ev{font:13px/1.45 ui-monospace,Menlo,monospace;background:var(--chip);border-radius:8px;padding:6px 10px;margin:8px 0 0;overflow-wrap:anywhere}
+.detail{margin:8px 0 0;font-weight:600}
+.why{margin:8px 0 0}
+.fix{margin:4px 0 0}
+.fix b{color:var(--ink)}
+.tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.tags span{font-size:13px;border:1px solid var(--line);border-radius:999px;padding:1px 8px;color:var(--soft)}
+.empty{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:20px;color:var(--soft)}
+.c-critical{--sc:var(--pink)}.c-high{--sc:#e0457b}.c-medium{--sc:var(--amber)}.c-low{--sc:#2f8fb0}.c-info{--sc:var(--soft)}
+.cli{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:20px}
+pre{overflow-x:auto;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px;font:14px/1.5 ui-monospace,Menlo,monospace;margin:8px 0 0}
+footer{font-size:14px;color:var(--soft)}
+footer a,.cli a{color:var(--ink)}
+.toast{min-height:1.4em;font-size:14px;color:var(--soft)}
+@media (max-width:900px){.station,.cli{grid-template-columns:minmax(0,1fr)}.result{order:-1}}
+@media (max-width:600px){.f{grid-template-columns:minmax(0,1fr)}textarea{min-height:200px}.panel,.slip{padding:16px}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<header class="band">
+  <div class="wrap top">
+    <div>
+      <h1>Hyniqe Shield</h1>
+      <p class="lede">Check an AI skill, MCP server, MCP config or n8n workflow for hidden instructions, data theft and risky permissions before you install it.</p>
+    </div>
+    <p class="privacy"><svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2 4 5v6c0 5 3.4 9.4 8 11 4.6-1.6 8-6 8-11V5z" fill="none" stroke="currentColor" stroke-width="2"/><path d="m8.5 12 2.5 2.5 4.5-5" fill="none" stroke="currentColor" stroke-width="2"/></svg>Runs entirely in your browser. Nothing is uploaded.</p>
+  </div>
+</header>
+
+<main>
+  <section class="band" style="padding-top:12px">
+    <div class="wrap station">
+      <div class="panel">
+        <p class="label" id="exlabel">Try an example</p>
+        <div class="chips" id="examples" role="group" aria-labelledby="exlabel"></div>
+        <div class="drop" id="drop">Drop files or a folder here, or <label for="files">choose files</label> / <label for="folder">a folder</label>
+          <input class="sr" type="file" id="files" multiple>
+          <input class="sr" type="file" id="folder" webkitdirectory multiple>
+        </div>
+        <label class="label" for="fname">File name (tells the checker what kind of file this is)</label>
+        <div class="row">
+          <input type="text" id="fname" value="SKILL.md" autocomplete="off" spellcheck="false">
+          <select id="kindhint" aria-label="Common file names">
+            <option value="">Common names…</option>
+            <option>SKILL.md</option><option>claude_desktop_config.json</option><option>mcp.json</option>
+            <option>workflow.json</option><option>server.py</option><option>index.ts</option><option>install.sh</option>
+          </select>
+        </div>
+        <label class="sr" for="src">Paste the add-on content</label>
+        <textarea id="src" spellcheck="false" placeholder="Paste a SKILL.md, an MCP server's code, your claude_desktop_config.json or an exported n8n workflow…"></textarea>
+        <div class="row">
+          <button class="primary" id="scan">Check it</button>
+          <button id="clear">Clear</button>
+          <span class="toast" id="toast" aria-live="polite"></span>
+        </div>
+      </div>
+
+      <div class="result">
+        <div class="slip" id="slip" aria-live="polite">
+          <div>
+            <div class="k" id="target">Inspection result</div>
+            <div class="verdict" id="verdict">–</div>
+            <div class="vsub" id="vsub"></div>
+          </div>
+          <div>
+            <div class="meter" role="img" id="meter" aria-label="Risk score">
+              <div class="z" style="left:10%;width:40%"></div>
+              <div class="fill" id="fill" style="width:0%"></div>
+            </div>
+            <div class="scale"><span>0 clear</span><span id="score">score 0/100</span><span>100</span></div>
+          </div>
+          <div class="tally" id="tally"></div>
+          <ul class="ffiles" id="ffiles"></ul>
+          <p class="slipnote">A static check, not a guarantee. "No known risks" means none of the 40 rules matched.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="band" style="padding-top:8px">
+    <div class="wrap">
+      <div class="fhead">
+        <h2 id="fcount">Findings</h2>
+        <div class="row">
+          <label class="sr" for="minsev">Show severity</label>
+          <select id="minsev">
+            <option value="info">All severities</option>
+            <option value="low">Low and above</option>
+            <option value="medium">Medium and above</option>
+            <option value="high">High and above</option>
+            <option value="critical">Critical only</option>
+          </select>
+          <button id="copy">Copy report</button>
+        </div>
+      </div>
+      <div class="flist" id="flist"></div>
+    </div>
+  </section>
+
+  <section class="band">
+    <div class="wrap cli">
+      <div>
+        <h2>Check whole projects from the terminal</h2>
+        <p>The same engine runs as a free, open-source command-line tool with no dependencies. It never runs the code it checks.</p>
+        <pre><code>git clone https://github.com/HiteshChakravarti/Hyniqe
+cd Hyniqe/shield
+python3 -m hyniqe_shield scan ~/.cursor/mcp.json
+python3 -m hyniqe_shield scan ./my-skills -f markdown</code></pre>
+      </div>
+      <div>
+        <h2>Block risky add-ons in pull requests</h2>
+        <p>Add the GitHub Action and every change to skills, MCP configs or workflows is checked, with findings shown in GitHub code scanning.</p>
+        <pre><code>- uses: HiteshChakravarti/Hyniqe/shield@main
+  with:
+    path: .
+    fail-on: dangerous</code></pre>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="band">
+  <div class="wrap">Hyniqe Shield <span id="ver"></span> · rules mapped to the OWASP Top 10 for Agentic Applications 2026 · <a href="https://github.com/HiteshChakravarti/Hyniqe">Source on GitHub</a></div>
+</footer>
+
+<script>/*__ENGINE__*/</script>
+<script>
+{
+const RULES = /*__RULES__*/null;
+const EXAMPLES = /*__EXAMPLES__*/[];
+const scanner = HyniqeShield.createScanner(RULES);
+const ORDER = HyniqeShield.SEVERITY_ORDER;
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]));
+const VERDICT = {DANGEROUS:["Dangerous","Do not install this.","var(--pink)"],CAUTION:["Caution","Review the findings before installing.","var(--amber)"],NO_KNOWN_RISKS:["No known risks","None of the rules matched.","var(--green)"]};
+let current = null;
+let loaded = [];
+
+$("ver").textContent = "v" + RULES.version;
+
+$("examples").innerHTML = EXAMPLES.map((e, i) => `<button data-i="${i}">${esc(e.label)}</button>`).join("");
+$("examples").addEventListener("click", (ev) => {
+  const b = ev.target.closest("button");
+  if (!b) return;
+  const e = EXAMPLES[+b.dataset.i];
+  loaded = [];
+  $("fname").value = e.name;
+  $("src").value = e.text;
+  for (const x of $("examples").children) x.classList.toggle("on", x === b);
+  run();
+});
+
+$("kindhint").addEventListener("change", () => { if ($("kindhint").value) $("fname").value = $("kindhint").value; $("kindhint").value = ""; run(); });
+
+function run() {
+  let files;
+  if (loaded.length) files = loaded.map((f) => scanner.scanText(f.text, f.name));
+  else {
+    const text = $("src").value;
+    if (!text.trim()) { render(null); return; }
+    files = [scanner.scanText(text, $("fname").value.trim() || "input.txt")];
+  }
+  const target = loaded.length ? `${loaded.length} file${loaded.length > 1 ? "s" : ""}` : ($("fname").value.trim() || "pasted text");
+  current = scanner.summarise(target, files);
+  render(current);
+}
+
+function render(r) {
+  if (!r) {
+    $("slip").style.setProperty("--vc", "var(--soft)");
+    $("verdict").textContent = "Waiting";
+    $("vsub").textContent = "Paste something or pick an example.";
+    $("target").textContent = "Inspection result";
+    $("fill").style.width = "0%";
+    $("score").textContent = "score –";
+    $("tally").innerHTML = "";
+    $("ffiles").innerHTML = "";
+    $("fcount").textContent = "Findings";
+    $("flist").innerHTML = `<div class="empty">Nothing checked yet.</div>`;
+    current = null;
+    return;
+  }
+  const [word, sub, col] = VERDICT[r.verdict];
+  $("slip").style.setProperty("--vc", col);
+  $("verdict").textContent = word;
+  $("vsub").textContent = sub;
+  $("target").textContent = "Inspection result · " + r.target;
+  $("fill").style.width = r.score + "%";
+  $("meter").setAttribute("aria-label", `Risk score ${r.score} out of 100`);
+  $("score").textContent = `score ${r.score}/100`;
+  const shown = ["critical", "high", "medium", "low"];
+  $("tally").innerHTML = shown.map((s) => `<div><b>${r.counts[s]}</b><span>${s}</span></div>`).join("");
+  $("ffiles").innerHTML = r.files.length > 1 ? r.files.slice().sort((a, b) => b.score - a.score).slice(0, 8)
+    .map((f) => `<li><code>${esc(f.path)}</code><em>${esc(VERDICT[f.verdict][0])} · ${f.score}</em></li>`).join("") : "";
+  renderFindings();
+}
+
+function renderFindings() {
+  if (!current) return;
+  const floor = ORDER.indexOf($("minsev").value);
+  const list = current.findings.filter((f) => ORDER.indexOf(f.severity) >= floor);
+  $("fcount").textContent = `${current.findings.length} finding${current.findings.length === 1 ? "" : "s"}`;
+  if (!list.length) {
+    $("flist").innerHTML = `<div class="empty">${current.findings.length ? "No findings at this severity." : "No findings. Still only install add-ons from people you trust."}</div>`;
+    return;
+  }
+  $("flist").innerHTML = list.map((f) => `
+    <article class="f c-${f.severity}">
+      <div class="sev">${esc(f.severity[0].toUpperCase() + f.severity.slice(1))}<small>${esc(f.rule_id)}</small></div>
+      <div>
+        <h3>${esc(f.title)}</h3>
+        <div class="loc"><code>${esc(f.file)}</code>, line ${f.line}</div>
+        ${f.evidence ? `<div class="ev">${esc(f.evidence)}</div>` : ""}
+        ${f.detail ? `<p class="detail">${esc(f.detail)}</p>` : ""}
+        <p class="why">${esc(f.explain)}</p>
+        <p class="fix"><b>Fix:</b> ${esc(f.fix)}</p>
+        <div class="tags">${f.owasp.map((o) => `<span>${esc(o)} ${esc(RULES.owasp[o] || "")}</span>`).join("")}</div>
+      </div>
+    </article>`).join("");
+}
+
+$("minsev").addEventListener("change", renderFindings);
+$("scan").addEventListener("click", run);
+let t = null;
+$("src").addEventListener("input", () => { loaded = []; clearTimeout(t); t = setTimeout(run, 350); });
+$("fname").addEventListener("change", run);
+$("clear").addEventListener("click", () => { $("src").value = ""; loaded = []; for (const x of $("examples").children) x.classList.remove("on"); render(null); $("src").focus(); });
+
+async function readFiles(list) {
+  const out = [];
+  for (const f of list) {
+    if (f.size > 2000000) continue;
+    const path = f.webkitRelativePath || f.name;
+    if (/(^|\/)(node_modules|\.git)\//.test(path)) continue;
+    if (!/\.(md|markdown|txt|json|jsonc|ya?ml|toml|py|js|mjs|cjs|ts|tsx|jsx|sh|bash|zsh|ps1|rb|go|rs|java|kt|php|env|html|xml|ini|cfg)$/i.test(path) && !/(^|\/)(SKILL\.md|Dockerfile|Makefile)$/i.test(path)) continue;
+    const text = await f.text();
+    if (text.slice(0, 4096).includes("\u0000")) continue;
+    out.push({ name: path, text });
+  }
+  return out;
+}
+async function takeFiles(list) {
+  const files = await readFiles([...list]);
+  if (!files.length) { $("toast").textContent = "No readable text files found."; return; }
+  loaded = files;
+  for (const x of $("examples").children) x.classList.remove("on");
+  if (files.length === 1) { $("fname").value = files[0].name.split("/").pop(); $("src").value = files[0].text; loaded = []; }
+  else { $("src").value = ""; $("fname").value = ""; }
+  $("toast").textContent = `Checked ${files.length} file${files.length > 1 ? "s" : ""}.`;
+  run();
+}
+$("files").addEventListener("change", (e) => takeFiles(e.target.files));
+$("folder").addEventListener("change", (e) => takeFiles(e.target.files));
+const drop = $("drop");
+drop.addEventListener("dragover", (e) => { e.preventDefault(); drop.classList.add("over"); });
+drop.addEventListener("dragleave", () => drop.classList.remove("over"));
+drop.addEventListener("drop", async (e) => {
+  e.preventDefault(); drop.classList.remove("over");
+  const items = [...(e.dataTransfer.items || [])].map((i) => i.webkitGetAsEntry && i.webkitGetAsEntry()).filter(Boolean);
+  if (!items.some((x) => x.isDirectory)) { takeFiles(e.dataTransfer.files); return; }
+  const files = [];
+  const walk = (entry, prefix) => new Promise((res) => {
+    if (entry.isFile) entry.file((f) => { Object.defineProperty(f, "webkitRelativePath", { value: prefix + f.name }); files.push(f); res(); }, () => res());
+    else { const rd = entry.createReader(); const all = []; const next = () => rd.readEntries(async (ents) => { if (!ents.length) { for (const c of all) await walk(c, prefix + entry.name + "/"); res(); } else { all.push(...ents); next(); } }, () => res()); next(); }
+  });
+  for (const it of items) await walk(it, "");
+  takeFiles(files);
+});
+
+$("copy").addEventListener("click", async () => {
+  if (!current) return;
+  const lines = [`Hyniqe Shield: ${VERDICT[current.verdict][0]} (risk score ${current.score}/100) - ${current.target}`, ""];
+  for (const f of current.findings) lines.push(`- [${f.severity}] ${f.rule_id} ${f.title} (${f.file}:${f.line}) ${f.evidence ? "> " + f.evidence : ""}\n  Fix: ${f.fix}`);
+  lines.push("", "Static check, not a guarantee.");
+  try { await navigator.clipboard.writeText(lines.join("\n")); $("toast").textContent = "Report copied."; }
+  catch (e) { $("toast").textContent = "Copy was blocked by the browser."; }
+});
+
+if (EXAMPLES.length) $("examples").children[0].click(); else render(null);
+}
+</script>
+</body>
+</html>
