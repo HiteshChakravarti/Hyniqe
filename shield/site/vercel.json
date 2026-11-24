@@ -1,0 +1,12 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": null,
+  "installCommand": "",
+  "buildCommand": "python3 build_site.py",
+  "outputDirectory": "dist",
+  "trailingSlash": true,
+  "headers": [
+    {"source": "/badge/(.*)", "headers": [{"key": "Cache-Control", "value": "public, max-age=3600"}, {"key": "Content-Type", "value": "image/svg+xml; charset=utf-8"}]},
+    {"source": "/(.*)", "headers": [{"key": "X-Content-Type-Options", "value": "nosniff"}, {"key": "Referrer-Policy", "value": "strict-origin-when-cross-origin"}]}
+  ]
+}
