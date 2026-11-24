@@ -12,7 +12,7 @@
     ".rb", ".go", ".rs", ".java", ".kt", ".php"]);
   const INLINE_IGNORE = /hyniqe-shield:\s*ignore(?:\s+(HS-[A-Z0-9-]+(?:\s*,\s*HS-[A-Z0-9-]+)*))?/i;
   const SECRET_NAME = /(token|secret|password|passwd|api[_-]?key|apikey|access[_-]?key|private[_-]?key|auth|bearer|credential)/i;
-  const PLACEHOLDER = /^\s*$|^\$\{?[A-Za-z_][A-Za-z0-9_]*\}?$|^\$\{\{.*\}\}$|^<.*>$|^(your|xxx|changeme|replace|example|placeholder|todo|\*+)/i;
+  const PLACEHOLDER = /\$\{[^}]+\}|\$[A-Z_][A-Z0-9_]{2,}\b|\$env:|\{\{.*\}\}|^\s*$|^\$\{?[A-Za-z_][A-Za-z0-9_]*\}?$|^\$\{\{.*\}\}$|^<.*>$|^(your|xxx|changeme|replace|example|placeholder|todo|\*+)/i;
 
   const basename = (p) => p.split(/[\\/]/).pop();
   const extname = (p) => { const b = basename(p); const i = b.lastIndexOf("."); return i > 0 ? b.slice(i).toLowerCase() : ""; };
@@ -95,7 +95,8 @@
   }
 
   function createScanner(rules) {
-    const compiled = rules.rules.map((r) => ({ ...r, _re: new RegExp(r.pattern, "gm" + (r.flags.includes("i") ? "i" : "")) }));
+    const compiled = rules.rules.map((r) => ({ ...r, _re: new RegExp(r.pattern, "gm" + (r.flags.includes("i") ? "i" : "")),
+      _not: r.not_if_line ? new RegExp(r.not_if_line, "i") : null }));
     const S = rules.structural_rules;
     const W = rules.severity_weights;
 
@@ -113,6 +114,7 @@
         let m, hits = 0;
         while ((m = r._re.exec(text)) !== null) {
           if (m[0].length === 0) { r._re.lastIndex++; continue; }
+          if (r._not && r._not.test(lineText(text, lineOf(text, m.index)))) continue;
           hits++;
           if (hits > 20) break;
           out.push(ruleFinding(r, name, lineOf(text, m.index), snippet(text, m.index, m.index + m[0].length, !!r.mask)));
@@ -134,7 +136,7 @@
           if (cp >= 0xE0020 && cp <= 0xE007E) cur.chars.push(String.fromCharCode(cp - 0xE0000));
         } else {
           if (cur !== null) { runs.push(cur); cur = null; }
-          if ([0x200B, 0x200C, 0x200D, 0x2060, 0x2061, 0x2062, 0x2063, 0x2064].includes(cp) || (cp === 0xFEFF && i > 0)) zw.add(line);
+          if ([0x200B, 0x200C, 0x2060, 0x2061, 0x2062, 0x2063, 0x2064].includes(cp) || (cp === 0xFEFF && i > 0)) zw.add(line);
           else if ((cp >= 0x202A && cp <= 0x202E) || (cp >= 0x2066 && cp <= 0x2069)) bidi.add(line);
           if (cp === 10) line++;
         }
@@ -283,7 +285,7 @@
       const seen = new Map();
       let total = 0;
       for (const f of findings) {
-        const key = f.file + "\u0000" + f.rule_id;
+        const key = f.rule_id;
         const n = seen.get(key) || 0;
         const w = W[f.severity];
         if (w) total += n === 0 ? w : (n < 5 ? Math.max(1, Math.floor(w / 4)) : 0);
@@ -291,7 +293,8 @@
       }
       const s = Math.min(100, total);
       const sev = new Set(findings.map((f) => f.severity));
-      const verdict = sev.has("critical") || s >= 50 ? "DANGEROUS" : (sev.has("high") || s >= 10 ? "CAUTION" : "NO_KNOWN_RISKS");
+      const highRules = new Set(findings.filter((f) => f.severity === "high").map((f) => f.rule_id));
+      const verdict = sev.has("critical") || highRules.size >= 2 ? "DANGEROUS" : (sev.has("high") || s >= 10 ? "CAUTION" : "NO_KNOWN_RISKS");
       return [s, verdict];
     }
 
