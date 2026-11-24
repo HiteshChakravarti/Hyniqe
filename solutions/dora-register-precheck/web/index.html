@@ -1,0 +1,920 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DORA Register Pre-Check · Hyniqe Hub</title>
+<style>:root { --ink:#14213d; --muted:#5b6475; --line:#e3e7ef; --bg:#f7f8fb; --card:#fff; --accent:#1f5eff; --accent-ink:#fff; --ok:#137a3f; --warn:#b26a00; --bad:#b3261e; }
+* { box-sizing: border-box; }
+body { margin:0; font:15px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; color:var(--ink); background:var(--bg); }
+header { padding:28px clamp(16px,5vw,56px) 18px; background:var(--card); border-bottom:1px solid var(--line); }
+.brand { font-weight:700; letter-spacing:.2px; color:var(--muted); font-size:13px; text-transform:uppercase; }
+.brand span { color:var(--accent); }
+h1 { margin:6px 0 4px; font-size:clamp(22px,3vw,30px); }
+.tagline { margin:0; color:var(--muted); max-width:760px; }
+.local { margin:10px 0 0; font-size:13px; color:var(--ok); }
+main { padding:20px clamp(16px,5vw,56px) 40px; display:grid; gap:18px; max-width:1180px; }
+.card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:18px; }
+.card h2 { margin:0 0 10px; font-size:17px; }
+label { display:block; font-weight:600; margin:10px 0 4px; font-size:14px; }
+.hint { color:var(--muted); font-size:13px; font-weight:400; }
+textarea, input[type=text], select { width:100%; font:13px/1.45 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; border:1px solid var(--line); border-radius:8px; padding:9px; background:#fbfcfe; color:var(--ink); }
+input[type=text], select { font-family:inherit; font-size:14px; }
+textarea { min-height:140px; resize:vertical; }
+.row { display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:12px; }
+.actions { display:flex; flex-wrap:wrap; gap:8px; margin-top:14px; }
+button { font:inherit; font-weight:600; border-radius:8px; padding:9px 14px; border:1px solid var(--line); background:#fff; color:var(--ink); cursor:pointer; }
+button.primary { background:var(--accent); border-color:var(--accent); color:var(--accent-ink); }
+button:disabled { opacity:.5; cursor:default; }
+.tabs { display:flex; gap:6px; margin-bottom:6px; }
+.tabs button[aria-selected=true] { background:var(--ink); color:#fff; border-color:var(--ink); }
+#report { overflow-wrap:anywhere; }
+#report h2 { font-size:22px; margin:4px 0 8px; } #report h3 { font-size:18px; margin:22px 0 8px; } #report h4, #report h5 { font-size:15px; margin:18px 0 6px; }
+#report p { margin:8px 0; }
+.tablewrap { overflow-x:auto; margin:10px 0; }
+table { border-collapse:collapse; width:100%; font-size:13.5px; }
+th, td { border:1px solid var(--line); padding:6px 8px; text-align:left; vertical-align:top; }
+th { background:#f1f4f9; }
+code { background:#f1f4f9; padding:1px 4px; border-radius:4px; font-size:12.5px; }
+.error { color:var(--bad); font-weight:600; white-space:pre-wrap; }
+.empty { color:var(--muted); }
+footer { padding:20px clamp(16px,5vw,56px) 36px; color:var(--muted); font-size:12.5px; }
+@media (prefers-color-scheme: dark) {
+  :root { --ink:#e8ecf5; --muted:#a3acbf; --line:#2b3345; --bg:#10141d; --card:#171c27; --accent:#5b8cff; }
+  textarea, input[type=text], select { background:#121722; }
+  th, code { background:#1f2634; } button { background:#1d2330; } .tabs button[aria-selected=true] { background:#e8ecf5; color:#10141d; }
+}
+</style>
+</head>
+<body data-solution="dora-register-precheck">
+<header><div class="brand">Hyniqe <span>Hub</span></div><h1>DORA Register Pre-Check</h1><p class="tagline">Catch the errors that get your DORA Register of Information rejected, before you submit.</p><p class="local">🔒 Runs entirely in your browser. Nothing you load here is uploaded.</p></header>
+<main id="app"></main>
+<footer>Hyniqe Hub · open-source tools for financial operations. Outputs support your judgement; they are not legal, audit or security advice.</footer>
+<script>
+const __m = {};
+__m["shared/table.js"] = (() => {
+// Small, dependency-free table helpers shared by the Hyniqe Hub solutions in this batch.
+// Runs unchanged in Node (22+, type stripping) and in the browser after `tsc`.
+/** Parse CSV text into rows keyed by lower-cased, trimmed headers (spaces → underscores).
+ *  Handles quoted fields, escaped quotes, BOM, CRLF, and comma / semicolon / tab separators. */
+function parseCsv(text) {
+    const clean = text.replace(/^﻿/, "");
+    const firstLine = clean.split(/\r?\n/, 1)[0] ?? "";
+    const sep = pickSeparator(firstLine);
+    const records = [];
+    let field = "";
+    let record = [];
+    let inQuotes = false;
+    for (let i = 0; i < clean.length; i++) {
+        const ch = clean[i];
+        if (inQuotes) {
+            if (ch === '"') {
+                if (clean[i + 1] === '"') {
+                    field += '"';
+                    i++;
+                }
+                else {
+                    inQuotes = false;
+                }
+            }
+            else {
+                field += ch;
+            }
+            continue;
+        }
+        if (ch === '"') {
+            inQuotes = true;
+            continue;
+        }
+        if (ch === sep) {
+            record.push(field);
+            field = "";
+            continue;
+        }
+        if (ch === "\n" || ch === "\r") {
+            if (ch === "\r" && clean[i + 1] === "\n")
+                i++;
+            record.push(field);
+            field = "";
+            if (record.some((f) => f.trim() !== ""))
+                records.push(record);
+            record = [];
+            continue;
+        }
+        field += ch;
+    }
+    record.push(field);
+    if (record.some((f) => f.trim() !== ""))
+        records.push(record);
+    if (records.length === 0)
+        return [];
+    const headers = records[0].map(normaliseHeader);
+    return records.slice(1).map((r) => {
+        const row = {};
+        headers.forEach((h, idx) => { row[h] = (r[idx] ?? "").trim(); });
+        return row;
+    });
+}
+function normaliseHeader(h) {
+    return h.trim().toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_|_$/g, "");
+}
+function pickSeparator(line) {
+    const counts = [",", ";", "\t"].map((s) => [s, line.split(s).length - 1]);
+    counts.sort((a, b) => b[1] - a[1]);
+    return counts[0][1] > 0 ? counts[0][0] : ",";
+}
+/** Serialise rows to CSV with a fixed column order. */
+function toCsv(rows, columns) {
+    const esc = (v) => {
+        const s = v === undefined || v === null ? "" : String(v);
+        return /[",\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+    };
+    return [columns.join(","), ...rows.map((r) => columns.map((c) => esc(r[c])).join(","))].join("\n") + "\n";
+}
+/** Render a simple Markdown table. */
+function mdTable(headers, rows) {
+    const cell = (v) => String(v).replace(/\|/g, "\\|").replace(/\n/g, " ");
+    return [
+        `| ${headers.map(cell).join(" | ")} |`,
+        `| ${headers.map(() => "---").join(" | ")} |`,
+        ...rows.map((r) => `| ${r.map(cell).join(" | ")} |`),
+    ].join("\n");
+}
+/** Read the first non-empty value among several possible column names. */
+function pick(row, ...names) {
+    for (const n of names) {
+        const v = row[normaliseHeader(n)];
+        if (v !== undefined && v !== "")
+            return v;
+    }
+    return "";
+}
+function parseAmount(raw) {
+    if (!raw)
+        return null;
+    let s = raw.replace(/[^\d.,\-]/g, "");
+    if (s.includes(",") && s.includes(".")) {
+        s = s.lastIndexOf(",") > s.lastIndexOf(".") ? s.replace(/\./g, "").replace(",", ".") : s.replace(/,/g, "");
+    }
+    else if (s.includes(",")) {
+        const parts = s.split(",");
+        s = parts.length === 2 && parts[1].length !== 3 ? s.replace(",", ".") : s.replace(/,/g, "");
+    }
+    const n = Number(s);
+    return Number.isFinite(n) ? n : null;
+}
+function parseBool(raw) {
+    const s = raw.trim().toLowerCase();
+    if (["y", "yes", "true", "1", "done", "passed", "pass"].includes(s))
+        return true;
+    if (["n", "no", "false", "0", "not done", "failed", "fail", ""].includes(s))
+        return s === "" ? null : false;
+    return null;
+}
+/** Parse ISO-ish timestamps ("2026-11-24 14:05", "2026-11-24T14:05:00Z", "24/11/2026 14:05"). */
+function parseTimestamp(raw) {
+    const s = raw.trim();
+    if (!s)
+        return null;
+    const dmy = s.match(/^(\d{1,2})[\/.](\d{1,2})[\/.](\d{4})(?:[ T](\d{1,2}):(\d{2})(?::(\d{2}))?)?$/);
+    if (dmy) {
+        const [, d, m, y, hh = "0", mm = "0", ss = "0"] = dmy;
+        return new Date(Date.UTC(+y, +m - 1, +d, +hh, +mm, +ss));
+    }
+    const iso = s.includes("T") ? s : s.replace(" ", "T");
+    const withZone = /[zZ]|[+\-]\d{2}:?\d{2}$/.test(iso) ? iso : iso + (iso.length > 10 ? "Z" : "T00:00:00Z");
+    const d = new Date(withZone);
+    return Number.isNaN(d.getTime()) ? null : d;
+}
+
+return { parseCsv, normaliseHeader, toCsv, mdTable, pick, parseAmount, parseBool, parseTimestamp };
+})();
+__m["shared/ids.js"] = (() => {
+// Identifier validators used across Hub solutions: IBAN, BIC, LEI, ISIN, currency and country codes.
+// Pure functions; run in Node and the browser.
+const COUNTRIES = new Set(("AD AE AF AG AI AL AM AO AQ AR AS AT AU AW AX AZ BA BB BD BE BF BG BH BI BJ BL BM BN BO BQ BR BS BT BV BW BY BZ CA CC CD CF CG CH CI CK CL CM CN CO CR CU CV CW CX CY CZ " +
+    "DE DJ DK DM DO DZ EC EE EG EH ER ES ET FI FJ FK FM FO FR GA GB GD GE GF GG GH GI GL GM GN GP GQ GR GS GT GU GW GY HK HM HN HR HT HU ID IE IL IM IN IO IQ IR IS IT JE JM JO JP " +
+    "KE KG KH KI KM KN KP KR KW KY KZ LA LB LC LI LK LR LS LT LU LV LY MA MC MD ME MF MG MH MK ML MM MN MO MP MQ MR MS MT MU MV MW MX MY MZ NA NC NE NF NG NI NL NO NP NR NU NZ " +
+    "OM PA PE PF PG PH PK PL PM PN PR PS PT PW PY QA RE RO RS RU RW SA SB SC SD SE SG SH SI SJ SK SL SM SN SO SR SS ST SV SX SY SZ TC TD TF TG TH TJ TK TL TM TN TO TR TT TV TW TZ " +
+    "UA UG UM US UY UZ VA VC VE VG VI VN VU WF WS XK YE YT ZA ZM ZW").split(" "));
+const CURRENCIES = new Set(("AED AFN ALL AMD ANG AOA ARS AUD AWG AZN BAM BBD BDT BGN BHD BIF BMD BND BOB BRL BSD BTN BWP BYN BZD CAD CDF CHF CLP CNY COP CRC CUP CVE CZK DJF DKK DOP DZD EGP ERN ETB EUR " +
+    "FJD FKP GBP GEL GHS GIP GMD GNF GTQ GYD HKD HNL HTG HUF IDR ILS INR IQD IRR ISK JMD JOD JPY KES KGS KHR KMF KPW KRW KWD KYD KZT LAK LBP LKR LRD LSL LYD MAD MDL MGA MKD MMK " +
+    "MNT MOP MRU MUR MVR MWK MXN MYR MZN NAD NGN NIO NOK NPR NZD OMR PAB PEN PGK PHP PKR PLN PYG QAR RON RSD RUB RWF SAR SBD SCR SDG SEK SGD SHP SLE SOS SRD SSP STN SVC SYP SZL " +
+    "THB TJS TMT TND TOP TRY TTD TWD TZS UAH UGX USD UYU UZS VES VND VUV WST XAF XAG XAU XCD XOF XPD XPF XPT YER ZAR ZMW ZWG").split(" "));
+/** IBAN lengths for common countries (SWIFT IBAN registry). Unknown countries are checked by checksum only. */
+const IBAN_LEN = {
+    AD: 24, AE: 23, AT: 20, BE: 16, BG: 22, BH: 22, CH: 21, CY: 28, CZ: 24, DE: 22, DK: 18, EE: 20, ES: 24, FI: 18, FR: 27, GB: 22, GI: 23, GR: 27, HR: 21, HU: 28,
+    IE: 22, IL: 23, IS: 26, IT: 27, KW: 30, KZ: 20, LI: 21, LT: 20, LU: 20, LV: 21, MC: 27, MT: 31, NL: 18, NO: 15, PL: 28, PT: 25, QA: 29, RO: 24, SA: 24, SE: 24,
+    SI: 19, SK: 24, SM: 27, TR: 26, UA: 29, VA: 22,
+};
+const SEPA_COUNTRIES = new Set("AD AT BE BG CH CY CZ DE DK EE ES FI FR GB GI GR HR HU IE IS IT LI LT LU LV MC MT NL NO PL PT RO SE SI SK SM VA".split(" "));
+function mod97(numeric) {
+    let rem = 0;
+    for (let i = 0; i < numeric.length; i += 7)
+        rem = Number(String(rem) + numeric.slice(i, i + 7)) % 97;
+    return rem;
+}
+const lettersToDigits = (s) => s.replace(/[A-Z]/g, (c) => String(c.charCodeAt(0) - 55));
+function cleanIban(raw) {
+    return raw.replace(/\s+/g, "").toUpperCase();
+}
+function checkIban(raw) {
+    const iban = cleanIban(raw);
+    if (!iban)
+        return { ok: false, reason: "empty" };
+    if (!/^[A-Z]{2}\d{2}[A-Z0-9]{8,30}$/.test(iban))
+        return { ok: false, reason: "wrong format" };
+    const cc = iban.slice(0, 2);
+    if (!COUNTRIES.has(cc))
+        return { ok: false, reason: `unknown country ${cc}` };
+    if (IBAN_LEN[cc] && iban.length !== IBAN_LEN[cc])
+        return { ok: false, reason: `${cc} IBANs have ${IBAN_LEN[cc]} characters, this has ${iban.length}` };
+    if (mod97(lettersToDigits(iban.slice(4) + iban.slice(0, 4))) !== 1)
+        return { ok: false, reason: "check digits wrong (typo?)" };
+    return { ok: true };
+}
+function checkBic(raw) {
+    const b = raw.trim().toUpperCase();
+    if (!b)
+        return { ok: false, reason: "empty" };
+    if (!/^[A-Z]{4}[A-Z]{2}[A-Z0-9]{2}([A-Z0-9]{3})?$/.test(b))
+        return { ok: false, reason: "must be 8 or 11 characters: 4 letters, country, location (+ branch)" };
+    if (!COUNTRIES.has(b.slice(4, 6)))
+        return { ok: false, reason: `unknown country ${b.slice(4, 6)}` };
+    if (b[7] === "0")
+        return { ok: true, reason: "test BIC (location ends in 0)" };
+    return { ok: true };
+}
+/** LEI: ISO 17442, 18 alphanumerics + 2 check digits, mod 97 = 1. */
+function checkLei(raw) {
+    const l = raw.trim().toUpperCase();
+    if (!l)
+        return { ok: false, reason: "empty" };
+    if (!/^[A-Z0-9]{18}\d{2}$/.test(l))
+        return { ok: false, reason: "must be 20 characters (18 letters/digits + 2 check digits)" };
+    if (mod97(lettersToDigits(l)) !== 1)
+        return { ok: false, reason: "check digits wrong (typo?)" };
+    return { ok: true };
+}
+/** ISIN: ISO 6166, 2-letter country + 9 alphanumerics + Luhn check digit. */
+function checkIsin(raw) {
+    const s = raw.trim().toUpperCase();
+    if (!s)
+        return { ok: false, reason: "empty" };
+    if (!/^[A-Z]{2}[A-Z0-9]{9}\d$/.test(s))
+        return { ok: false, reason: "must be 12 characters: country + 9 + check digit" };
+    if (!COUNTRIES.has(s.slice(0, 2)) && !["XS", "EU", "QS", "QT"].includes(s.slice(0, 2)))
+        return { ok: false, reason: `unknown prefix ${s.slice(0, 2)}` };
+    const digits = lettersToDigits(s.slice(0, 11));
+    let sum = 0;
+    for (let i = 0; i < digits.length; i++) {
+        let d = Number(digits[digits.length - 1 - i]);
+        if (i % 2 === 0) {
+            d *= 2;
+            if (d > 9)
+                d -= 9;
+        }
+        sum += d;
+    }
+    const check = (10 - (sum % 10)) % 10;
+    return check === Number(s[11]) ? { ok: true } : { ok: false, reason: "check digit wrong (typo?)" };
+}
+function checkCurrency(raw) {
+    const c = raw.trim().toUpperCase();
+    return CURRENCIES.has(c) ? { ok: true } : { ok: false, reason: c ? `${c} is not an ISO 4217 currency` : "empty" };
+}
+function checkCountry(raw) {
+    const c = raw.trim().toUpperCase();
+    return COUNTRIES.has(c) ? { ok: true } : { ok: false, reason: c ? `${c} is not an ISO 3166 country code` : "empty" };
+}
+const UUID_RE = /\b[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\b/i;
+/** Build a valid LEI / IBAN check pair for tests and samples. */
+function leiWithCheck(base18) {
+    const r = 98 - mod97(lettersToDigits(base18.toUpperCase() + "00"));
+    return base18.toUpperCase() + String(r).padStart(2, "0");
+}
+function ibanWithCheck(country, bban) {
+    const r = 98 - mod97(lettersToDigits(bban.toUpperCase() + country.toUpperCase() + "00"));
+    return country.toUpperCase() + String(r).padStart(2, "0") + bban.toUpperCase();
+}
+
+return { COUNTRIES, CURRENCIES, SEPA_COUNTRIES, cleanIban, checkIban, checkBic, checkLei, checkIsin, checkCurrency, checkCountry, UUID_RE, leiWithCheck, ibanWithCheck };
+})();
+__m["shared/text.js"] = (() => {
+// Name normalisation and fuzzy matching shared by Hub solutions.
+const LEGAL_FORMS = [
+    "limited", "ltd", "llc", "l l c", "inc", "incorporated", "plc", "corp", "corporation", "co", "company", "gmbh", "mbh", "ag", "kg", "ohg", "ug", "e k", "ek", "sa", "s a", "sas", "sarl", "s a r l",
+    "srl", "s r l", "spa", "s p a", "bv", "b v", "nv", "n v", "oy", "ab", "as", "a s", "aps", "sl", "s l", "sp z o o", "spzoo", "pvt", "private", "pte", "pty", "kft", "zrt", "doo", "d o o", "se",
+];
+const LEGAL_RE = new RegExp(`\\b(${LEGAL_FORMS.map((f) => f.replace(/ /g, "\\s?")).join("|")})\\b`, "g");
+function stripAccents(s) {
+    return s.normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/ß/g, "ss").replace(/æ/g, "ae").replace(/ø/g, "o").replace(/œ/g, "oe").replace(/ł/g, "l");
+}
+/** Lower-case, strip accents, punctuation and (optionally) legal forms. */
+function normName(s, dropLegalForms = true) {
+    let t = stripAccents(s.toLowerCase()).replace(/&/g, " and ").replace(/[^a-z0-9 ]+/g, " ").replace(/\s+/g, " ").trim();
+    if (dropLegalForms)
+        t = t.replace(LEGAL_RE, " ").replace(/\s+/g, " ").trim();
+    return t.replace(/^the /, "");
+}
+function levenshtein(a, b) {
+    if (a === b)
+        return 0;
+    const dp = Array.from({ length: b.length + 1 }, (_, i) => i);
+    for (let i = 1; i <= a.length; i++) {
+        let prev = dp[0];
+        dp[0] = i;
+        for (let j = 1; j <= b.length; j++) {
+            const tmp = dp[j];
+            dp[j] = Math.min(dp[j] + 1, dp[j - 1] + 1, prev + (a[i - 1] === b[j - 1] ? 0 : 1));
+            prev = tmp;
+        }
+    }
+    return dp[b.length];
+}
+function similarity(a, b) {
+    if (!a && !b)
+        return 1;
+    return 1 - levenshtein(a, b) / Math.max(a.length, b.length);
+}
+function tokenSet(s) {
+    return new Set(s.split(" ").filter(Boolean));
+}
+/** Same words in a different order? */
+function sameTokens(a, b) {
+    const x = tokenSet(a), y = tokenSet(b);
+    return x.size === y.size && [...x].every((t) => y.has(t));
+}
+
+return { stripAccents, normName, levenshtein, similarity, tokenSet, sameTokens };
+})();
+__m["dora-register-precheck/src/precheck.js"] = (() => {
+// DORA Register Pre-Check
+// EU financial entities submit a yearly Register of Information on their ICT third-party arrangements, and many
+// submissions are rejected or questioned for data-quality errors. This checks a working register (one row per
+// contractual arrangement, as most firms keep it in a spreadsheet before converting to the official xBRL-CSV format)
+// for the errors that most often cause trouble: invalid LEIs/identifiers, bad codes and dates, duplicates, broken
+// references, inconsistent provider data, and gaps for arrangements supporting critical or important functions.
+const { pick, parseAmount, parseBool } = __m["shared/table.js"];
+const { checkCountry, checkCurrency, checkLei } = __m["shared/ids.js"];
+const { normName } = __m["shared/text.js"];
+function readRegister(rows) {
+    return rows.map((r, i) => ({
+        line: i + 2,
+        ref: pick(r, "arrangement_ref", "contract_ref", "contractual_arrangement_reference", "reference", "contract_id"),
+        entity_lei: pick(r, "entity_lei", "financial_entity_lei", "lei_of_entity", "entity_lei_code"),
+        provider: pick(r, "provider_name", "ict_provider", "provider", "vendor_name", "supplier"),
+        provider_id: pick(r, "provider_id", "provider_identification_code", "provider_lei", "provider_code"),
+        provider_id_type: pick(r, "provider_id_type", "type_of_code", "identification_code_type", "id_type").toUpperCase(),
+        provider_country: pick(r, "provider_country", "country_of_provider", "headquarters_country", "provider_hq_country").toUpperCase(),
+        parent_ref: pick(r, "subcontractor_of", "parent_arrangement", "parent_ref", "rank_parent", "upstream_arrangement"),
+        service_type: pick(r, "ict_service_type", "service_type", "type_of_ict_service", "service"),
+        function: pick(r, "function_name", "function", "business_function", "function_supported"),
+        critical: parseBool(pick(r, "function_critical", "critical_or_important", "critical", "cif", "critical_important")),
+        start: pick(r, "start_date", "effective_date", "contract_start"), end: pick(r, "end_date", "termination_date", "contract_end", "expiry_date"),
+        notice_entity: pick(r, "notice_period_entity", "notice_period_entity_days", "termination_notice_entity"), notice_provider: pick(r, "notice_period_provider", "notice_period_provider_days", "termination_notice_provider"),
+        governing_law: pick(r, "governing_law_country", "governing_law", "law_country").toUpperCase(),
+        data_location: pick(r, "data_location_country", "data_storage_country", "location_of_data", "data_country").toUpperCase(),
+        stores_data: parseBool(pick(r, "stores_data", "data_storage", "storage_of_data")),
+        substitutability: pick(r, "substitutability", "substitutability_assessment"), exit_plan: parseBool(pick(r, "exit_plan", "exit_plan_exists", "exit_strategy")),
+        reintegration: pick(r, "reintegration_possible", "reintegration", "possibility_of_reintegration"),
+        cost: pick(r, "annual_cost", "annual_expense", "cost", "annual_budget"), currency: pick(r, "currency", "cost_currency").toUpperCase(),
+        intra_group: parseBool(pick(r, "intra_group", "intragroup", "is_intra_group")),
+    }));
+}
+const RULE_TITLES = {
+    MISSING: "Mandatory value missing", INVALID_LEI: "LEI invalid", INVALID_EUID: "EUID malformed", ID_TYPE: "Identifier type doesn't fit the code", INVALID_COUNTRY: "Country not ISO 3166",
+    INVALID_CURRENCY: "Currency not ISO 4217", DATE_FORMAT: "Date not in YYYY-MM-DD", DATE_ORDER: "End date before start date", EXPIRED: "Arrangement already ended", DUPLICATE_REF: "Duplicate arrangement reference",
+    BROKEN_REFERENCE: "Subcontracting reference points nowhere", PROVIDER_INCONSISTENT: "Same provider recorded inconsistently", CRITICAL_GAP: "Critical/important function: assessment missing",
+    NUMBER: "Not a valid number", DATA_LOCATION: "Data stored but location missing",
+};
+const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
+const EUID = /^[A-Z]{2}[A-Z0-9]{1,12}\.[A-Z0-9][A-Z0-9.\-\/ ]{0,40}$/i;
+function precheck(list, opts = {}) {
+    const out = [];
+    const refDate = opts.referenceDate ?? `${new Date().getUTCFullYear() - 1}-12-31`;
+    const add = (a, field, value, rule, severity, message) => out.push({ line: a.line, ref: a.ref, field, value, rule, severity, message });
+    const refs = new Map();
+    for (const a of list) {
+        for (const [f, v] of [["arrangement_ref", a.ref], ["entity_lei", a.entity_lei], ["provider_name", a.provider], ["provider_id", a.provider_id], ["ict_service_type", a.service_type], ["function_name", a.function], ["start_date", a.start]])
+            if (!v)
+                add(a, f, "", "MISSING", "error", `${f} is required.`);
+        if (a.entity_lei && !checkLei(a.entity_lei).ok)
+            add(a, "entity_lei", a.entity_lei, "INVALID_LEI", "error", checkLei(a.entity_lei).reason ?? "");
+        if (a.provider_id) {
+            const looksLei = /^[A-Z0-9]{18}\d{2}$/i.test(a.provider_id);
+            const type = a.provider_id_type || (looksLei ? "LEI" : "");
+            if (type === "LEI" && !checkLei(a.provider_id).ok)
+                add(a, "provider_id", a.provider_id, "INVALID_LEI", "error", checkLei(a.provider_id).reason ?? "");
+            if (type === "EUID" && !EUID.test(a.provider_id))
+                add(a, "provider_id", a.provider_id, "INVALID_EUID", "error", "EUID should look like country code + register code + '.' + registration number.");
+            if (type === "EUID" && looksLei && checkLei(a.provider_id).ok)
+                add(a, "provider_id_type", type, "ID_TYPE", "warning", "Code looks like a valid LEI but is typed as EUID. LEI is preferred where one exists.");
+            if (!type)
+                add(a, "provider_id_type", "", "MISSING", "error", "Say whether the provider code is an LEI or an EUID (or another permitted code).");
+        }
+        for (const [f, v] of [["provider_country", a.provider_country], ["governing_law_country", a.governing_law], ["data_location_country", a.data_location]])
+            if (v && !checkCountry(v).ok)
+                add(a, f, v, "INVALID_COUNTRY", "error", checkCountry(v).reason ?? "");
+        if (a.currency && !checkCurrency(a.currency).ok)
+            add(a, "currency", a.currency, "INVALID_CURRENCY", "error", checkCurrency(a.currency).reason ?? "");
+        if (a.cost && !a.currency)
+            add(a, "currency", "", "MISSING", "error", "Cost given without a currency.");
+        if (a.cost && (parseAmount(a.cost) === null || parseAmount(a.cost) < 0))
+            add(a, "annual_cost", a.cost, "NUMBER", "error", "Annual cost must be a non-negative number.");
+        for (const [f, v] of [["notice_period_entity", a.notice_entity], ["notice_period_provider", a.notice_provider]])
+            if (v && !/^\d+$/.test(v.trim()))
+                add(a, f, v, "NUMBER", "error", "Notice period must be a whole number of days.");
+        for (const [f, v] of [["start_date", a.start], ["end_date", a.end]])
+            if (v && !ISO_DATE.test(v))
+                add(a, f, v, "DATE_FORMAT", "error", "Use YYYY-MM-DD.");
+        if (ISO_DATE.test(a.start) && ISO_DATE.test(a.end) && a.end < a.start)
+            add(a, "end_date", a.end, "DATE_ORDER", "error", `Ends before it starts (${a.start}).`);
+        if (ISO_DATE.test(a.end) && a.end < refDate.slice(0, 4) + "-01-01")
+            add(a, "end_date", a.end, "EXPIRED", "warning", `Ended before the reporting year (reference date ${refDate}). Check whether it belongs in the register.`);
+        if (a.stores_data && !a.data_location)
+            add(a, "data_location_country", "", "DATA_LOCATION", "error", "Provider stores data, but the storage location is missing.");
+        if (a.critical) {
+            const gaps = [!a.substitutability && "substitutability assessment", a.exit_plan === null && "whether an exit plan exists", !a.reintegration && "reintegration possibility", !a.notice_entity && "notice period", !a.data_location && "data location", !a.governing_law && "governing law"].filter(Boolean);
+            if (a.exit_plan === false)
+                add(a, "exit_plan", "no", "CRITICAL_GAP", "warning", "Supports a critical or important function with no exit plan. Expect supervisory questions.");
+            if (gaps.length)
+                add(a, "critical", "yes", "CRITICAL_GAP", "error", `Supports a critical or important function but is missing: ${gaps.join(", ")}.`);
+        }
+        if (a.ref) {
+            if (refs.has(a.ref))
+                add(a, "arrangement_ref", a.ref, "DUPLICATE_REF", "error", `Same reference as line ${refs.get(a.ref)}.`);
+            else
+                refs.set(a.ref, a.line);
+        }
+    }
+    for (const a of list)
+        if (a.parent_ref && !refs.has(a.parent_ref))
+            add(a, "subcontractor_of", a.parent_ref, "BROKEN_REFERENCE", "error", "Points to an arrangement reference that isn't in the register.");
+    // provider consistency: same id with different names/countries, same name with different ids
+    const byId = new Map(), byName = new Map();
+    for (const a of list) {
+        if (a.provider_id)
+            byId.set(a.provider_id.toUpperCase(), [...(byId.get(a.provider_id.toUpperCase()) ?? []), a]);
+        if (a.provider)
+            byName.set(normName(a.provider), [...(byName.get(normName(a.provider)) ?? []), a]);
+    }
+    for (const [id, l] of byId) {
+        const names = new Set(l.map((a) => normName(a.provider))), countries = new Set(l.map((a) => a.provider_country).filter(Boolean));
+        if (names.size > 1 || countries.size > 1)
+            for (const a of l.slice(1))
+                add(a, "provider_id", id, "PROVIDER_INCONSISTENT", "warning", `Provider ${id} appears with ${names.size > 1 ? "different names" : ""}${names.size > 1 && countries.size > 1 ? " and " : ""}${countries.size > 1 ? "different countries" : ""}.`);
+    }
+    for (const [n, l] of byName) {
+        const ids = new Set(l.map((a) => a.provider_id.toUpperCase()).filter(Boolean));
+        if (ids.size > 1)
+            for (const a of l.slice(1))
+                add(a, "provider_name", a.provider, "PROVIDER_INCONSISTENT", "warning", `"${n}" has ${ids.size} different identifiers: check whether these are different legal entities.`);
+    }
+    return out;
+}
+
+return { readRegister, RULE_TITLES, precheck };
+})();
+__m["dora-register-precheck/src/report.js"] = (() => {
+const { mdTable, toCsv } = __m["shared/table.js"];
+const { RULE_TITLES } = __m["dora-register-precheck/src/precheck.js"];
+function toMarkdown(list, issues, title = "DORA Register of Information: pre-check") {
+    const errors = issues.filter((i) => i.severity === "error");
+    const clean = list.filter((a) => !errors.some((e) => e.line === a.line)).length;
+    const byRule = {};
+    for (const i of issues)
+        (byRule[i.rule] ??= []).push(i);
+    const crit = list.filter((a) => a.critical).length;
+    const out = [
+        `# ${title}`, "",
+        `**${list.length} arrangements** (${crit} supporting critical or important functions): **${clean} ready**, ${list.length - clean} with errors. ${errors.length} errors and ${issues.length - errors.length} warnings in total.`, "",
+    ];
+    if (Object.keys(byRule).length) {
+        out.push("## Summary", "", mdTable(["Issue", "Severity", "Count"], Object.entries(byRule).sort((a, b) => b[1].length - a[1].length).map(([r, l]) => [RULE_TITLES[r] ?? r, l.some((x) => x.severity === "error") ? "error" : "warning", l.length])), "");
+        out.push("## Fix list", "", mdTable(["Line", "Arrangement", "Field", "Value", "Issue"], issues.sort((a, b) => a.line - b.line || (a.severity === "error" ? -1 : 1)).map((i) => [i.line, i.ref, i.field, i.value, i.message])), "");
+    }
+    else
+        out.push("No issues found by these checks.", "");
+    out.push("## Before you submit", "", "1. Fix the errors here, then convert to the official xBRL-CSV templates.", "2. Run your authority's / the ESAs' validation rules on the converted files: this pre-check does not replace them.", "3. Keep the register current during the year; it's also what supervisors use to map concentration risk.", "", "_Generated by Hyniqe Hub · DORA Register Pre-Check. Runs locally. Not legal or regulatory advice._");
+    return out.join("\n") + "\n";
+}
+function toIssuesCsv(issues) {
+    return toCsv(issues, ["line", "ref", "field", "value", "rule", "severity", "message"]);
+}
+
+return { toMarkdown, toIssuesCsv };
+})();
+const SAMPLES = {"register":"arrangement_ref,entity_lei,provider_name,provider_id,provider_id_type,provider_country,subcontractor_of,ict_service_type,function_name,function_critical,start_date,end_date,notice_period_entity,notice_period_provider,governing_law_country,data_location_country,stores_data,substitutability,exit_plan,reintegration_possible,annual_cost,currency,intra_group\nCA-001,529900HYNIQEBANK0131,Nimbus Cloud Services Ltd,HWUPKR0MPOU8FGXBT394,LEI,IE,,Cloud computing (IaaS),Core banking hosting,yes,2023-01-01,,180,365,IE,DE,yes,difficult,yes,partially,2400000,EUR,no\nCA-002,529900HYNIQEBANK0131,Nimbus Cloud Services Ltd,HWUPKR0MPOU8FGXBT394,LEI,US,,Cloud computing (SaaS),Email and collaboration,no,2022-05-01,,90,90,IE,NL,yes,easy,yes,yes,180000,EUR,no\nCA-003,529900HYNIQEBANK0131,Ledgerly CRM,HYNIQECRMVENDOR00118,LEI,GB,,Software (SaaS),Customer relationship management,no,2024-03-15,2027-03-14,60,60,GB,GB,yes,medium,no,yes,95000,GBP,no\nCA-004,529900HYNIQEBANK0131,PayRail Processing,HYNIQEPAYPROC0000181,LEI,NL,,Payment processing,Card payments,yes,2021-07-01,,,180,NL,,yes,,no,,1100000,EUR,no\nCA-005,529900HYNIQEBANK0131,DataVault Backup,DEK1101R.HRB98765,EUID,DE,CA-001,Data backup (subcontractor),Core banking hosting,yes,2023-01-01,,180,180,DE,DE,yes,medium,yes,no,0,EUR,no\nCA-006,529900HYNIQEBANK0131,Old Print Services,HYNIQEPRINT000000151,LEI,FR,,Document printing,Statement printing,no,2019-01-01,2024-12-31,30,30,FR,FR,yes,easy,yes,yes,12000,EUR,no\nCA-007,,SecureOps SOC,HYNIQESOCVENDOR00120,LEI,UK,,Managed security services,Security monitoring,yes,01/06/2025,,90,90,GB,GB,yes,difficult,yes,partially,350000,EUR,no\nCA-007,529900HYNIQEBANK0131,Group IT Services,HYNIQEGROUPIT0000149,LEI,LU,CA-099,Application support,Payments platform support,no,2024-01-01,2023-12-31,30,30,LU,LU,no,,,,\"85,000\",,yes\n"};
+// Minimal, safe Markdown → HTML for the reports these tools produce (headings, tables, lists, checkboxes,
+// bold/italic/code, line breaks). All text is HTML-escaped first.
+function renderMarkdown(md) {
+  const esc = (s) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  const inline = (s) => esc(s)
+    .replace(/`([^`]+)`/g, "<code>$1</code>")
+    .replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>")
+    .replace(/(^|[\s(])_([^_]+)_(?=[\s).,:;]|$)/g, "$1<em>$2</em>")
+    .replace(/ {2}$/g, "<br>");
+  const lines = md.replace(/\r/g, "").split("\n");
+  const html = [];
+  let i = 0;
+  while (i < lines.length) {
+    const l = lines[i];
+    if (/^#{1,4} /.test(l)) { const n = l.match(/^#+/)[0].length; html.push(`<h${n + 1}>${inline(l.slice(n + 1))}</h${n + 1}>`); i++; continue; }
+    if (/^\|.*\|$/.test(l) && /^\|\s*-+/.test(lines[i + 1] || "")) {
+      const cells = (row) => row.slice(1, -1).split(/(?<!\\)\|/).map((c) => inline(c.trim().replace(/\\\|/g, "|")));
+      const head = cells(l);
+      i += 2;
+      const body = [];
+      while (i < lines.length && /^\|.*\|$/.test(lines[i])) body.push(cells(lines[i++]));
+      html.push(`<div class="tablewrap"><table><thead><tr>${head.map((c) => `<th>${c}</th>`).join("")}</tr></thead><tbody>${body.map((r) => `<tr>${r.map((c) => `<td>${c}</td>`).join("")}</tr>`).join("")}</tbody></table></div>`);
+      continue;
+    }
+    if (/^(\d+\.|-) /.test(l)) {
+      const ordered = /^\d+\./.test(l);
+      const items = [];
+      while (i < lines.length && (/^(\d+\.|-) /.test(lines[i]) || /^ {2,}\S/.test(lines[i]))) {
+        if (/^ {2,}\S/.test(lines[i]) && items.length) items[items.length - 1] += "<br>" + inline(lines[i].trim());
+        else items.push(inline(lines[i].replace(/^(\d+\.|-) /, "")).replace(/^\[ \] /, '<input type="checkbox"> ').replace(/^\[x\] /i, '<input type="checkbox" checked> '));
+        // keep "  " line-break markers inside items
+        if (/ {2}$/.test(lines[i])) items[items.length - 1] = items[items.length - 1].replace(/<br>$/, "");
+        i++;
+      }
+      html.push(`<${ordered ? "ol" : "ul"}>${items.map((x) => `<li>${x}</li>`).join("")}</${ordered ? "ol" : "ul"}>`);
+      continue;
+    }
+    if (!l.trim()) { i++; continue; }
+    const para = [];
+    while (i < lines.length && lines[i].trim() && !/^(#|\||\d+\. |- )/.test(lines[i])) para.push(inline(lines[i++]));
+    html.push(`<p>${para.join(" ")}</p>`);
+  }
+  return html.join("\n");
+}
+
+// Page UI for each Hub solution. Expects: __m (bundled modules), SAMPLES, renderMarkdown.
+(function () {
+  const $ = (sel, el = document) => el.querySelector(sel);
+  const h = (html) => { const t = document.createElement("template"); t.innerHTML = html.trim(); return t.content.firstElementChild; };
+  const app = $("#app");
+  const table = __m["shared/table.js"];
+  const solution = document.body.dataset.solution;
+
+  function download(name, text, type = "text/plain") {
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(new Blob([text], { type }));
+    a.download = name;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+  }
+  async function readFiles(input) {
+    return Promise.all([...input.files].map(async (f) => ({ name: f.webkitRelativePath || f.name, text: await f.text() })));
+  }
+  function fileInto(input, textarea) {
+    input.addEventListener("change", async () => { const [f] = await readFiles(input); if (f) textarea.value = f.text; });
+  }
+  const resultCard = h(`<section class="card"><div id="downloads" class="actions" style="margin:0 0 8px"></div><div id="report" class="empty">Your report will appear here.</div></section>`);
+  function show(md, downloads = []) {
+    const r = $("#report", resultCard);
+    r.className = "";
+    r.innerHTML = renderMarkdown(md);
+    const d = $("#downloads", resultCard);
+    d.innerHTML = "";
+    for (const [label, name, text, type] of [["Download report (.md)", "report.md", md, "text/markdown"], ...downloads]) {
+      const b = h(`<button>${label}</button>`);
+      b.onclick = () => download(name, text, type);
+      d.append(b);
+    }
+    resultCard.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+  function showError(e) {
+    const r = $("#report", resultCard);
+    r.className = "error";
+    r.textContent = e && e.message ? e.message : String(e);
+  }
+  const safe = (fn) => () => { try { fn(); } catch (e) { console.error(e); showError(e); } };
+
+  // ------------------------------------------------------------------ Agent Payment Mandate Checker
+  if (solution === "agent-payment-mandate-checker") {
+    const c = __m["agent-payment-mandate-checker/src/checker.js"], rep = __m["agent-payment-mandate-checker/src/report.js"];
+    const card = h(`<section class="card"><h2>1 · Mandates <span class="hint">(JSON: what each agent may pay, to whom, up to what limit)</span></h2>
+      <input type="file" id="mf" accept=".json"><textarea id="m" placeholder='{"mandates":[{"id":"M-1","agent_id":"ap-agent","per_payment_limit":5000}]}'></textarea>
+      <h2 style="margin-top:16px">2 · Agent payment log <span class="hint">(CSV: payment_id, timestamp, agent_id, mandate_id, payee, amount, currency, category, approved_by, approval_time, purpose, status)</span></h2>
+      <input type="file" id="pf" accept=".csv,.txt"><textarea id="p"></textarea>
+      <div class="actions"><button class="primary" id="run">Check payments</button><button id="sample">Load sample data</button></div></section>`);
+    app.append(card, resultCard);
+    fileInto($("#mf", card), $("#m", card)); fileInto($("#pf", card), $("#p", card));
+    $("#sample", card).onclick = () => { $("#m", card).value = SAMPLES.mandates; $("#p", card).value = SAMPLES.payments; };
+    $("#run", card).onclick = safe(() => {
+      let raw;
+      try { raw = JSON.parse($("#m", card).value); } catch (e) { throw new Error("Mandates must be valid JSON: " + e.message); }
+      const { file, errors } = c.validateMandateFile(raw);
+      if (!file || errors.length) throw new Error(errors.join("\n"));
+      const res = c.checkPayments(file, c.readPayments(table.parseCsv($("#p", card).value)));
+      show(rep.toMarkdown(res), [["Download results (.csv)", "mandate-check.csv", rep.toResultCsv(res), "text/csv"]]);
+    });
+  }
+
+  // ------------------------------------------------------------------ Verify-Before-You-Pay
+  if (solution === "verify-before-you-pay") {
+    const a = __m["verify-before-you-pay/src/assess.js"], rep = __m["verify-before-you-pay/src/report.js"];
+    const card = h(`<section class="card"><div class="tabs"><button aria-selected="true" data-t="one">Check one request</button><button aria-selected="false" data-t="log">Audit an approval log</button></div>
+      <label>Your company's and key suppliers' email domains <span class="hint">(comma-separated, so look-alikes can be spotted)</span></label><input type="text" id="dom" placeholder="yourbank.com, mainsupplier.com">
+      <div data-p="one"><label>Paste the message, email or call notes</label><textarea id="txt" placeholder="Paste the payment request here…"></textarea>
+        <div class="row"><div><label>Who is asking?</label><input type="text" id="from" placeholder="e.g. Jane Smith"></div><div><label>Their title</label><input type="text" id="title" placeholder="e.g. CFO, Supplier"></div>
+        <div><label>How did it arrive?</label><select id="ch"><option value="">(not sure)</option><option>email</option><option>phone</option><option>voice note</option><option>video</option><option>teams</option><option>whatsapp</option><option>sms</option><option>in person</option></select></div></div>
+        <div class="row"><div><label>Amount</label><input type="text" id="amt" placeholder="e.g. 48500"></div><div><label>Currency</label><input type="text" id="ccy" placeholder="USD"></div>
+        <div><label>New payee?</label><select id="np"><option value="">(not sure)</option><option value="yes">Yes</option><option value="no">No</option></select></div><div><label>Bank details changed?</label><select id="bc"><option value="">(not sure)</option><option value="yes">Yes</option><option value="no">No</option></select></div></div>
+        <div class="actions"><button class="primary" id="go1">Check this request</button><button id="ex">Try an example</button></div></div>
+      <div data-p="log" hidden><label>Approval log CSV <span class="hint">(request_id, received_at, requested_by, requester_title, channel, sender, amount, currency, payee, payee_new, bank_details_changed, bank_change_at, message, callback_done, callback_source, challenge_passed, approver_1, approver_2, released_by, paid_at)</span></label>
+        <input type="file" id="lf" accept=".csv,.txt"><textarea id="log"></textarea><div class="actions"><button class="primary" id="go2">Audit log</button><button id="sl">Load sample log</button></div></div></section>`);
+    app.append(card, resultCard);
+    card.querySelectorAll(".tabs button").forEach((b) => b.onclick = () => {
+      card.querySelectorAll(".tabs button").forEach((x) => x.setAttribute("aria-selected", x === b));
+      card.querySelectorAll("[data-p]").forEach((p) => (p.hidden = p.dataset.p !== b.dataset.t));
+    });
+    fileInto($("#lf", card), $("#log", card));
+    const policy = () => ({ ...a.DEFAULT_POLICY, company_domains: $("#dom", card).value.split(",").map((s) => s.trim()).filter(Boolean) });
+    $("#ex", card).onclick = () => {
+      $("#txt", card).value = "From: d.chen@northwind-group.co\nHi, are you at your desk? I need a favour. Please wire $48,500 today to our new legal counsel for a confidential acquisition. Don't discuss this with anyone yet. I'm in a board meeting so can't talk, just email me when it's done.";
+      $("#dom", card).value = "northwind.com"; $("#from", card).value = "David Chen"; $("#title", card).value = "CEO"; $("#ch", card).value = "email"; $("#np", card).value = "yes";
+    };
+    $("#sl", card).onclick = () => { $("#log", card).value = SAMPLES.log; if (!$("#dom", card).value) $("#dom", card).value = "northwind-demo.com, globex-logistics.com"; };
+    $("#go1", card).onclick = safe(() => {
+      const text = $("#txt", card).value;
+      if (!text.trim()) throw new Error("Paste the request text first.");
+      const yn = (v) => (v === "yes" ? true : v === "no" ? false : null);
+      const extra = { requested_by: $("#from", card).value, requester_title: $("#title", card).value, payee_new: yn($("#np", card).value) };
+      if ($("#ch", card).value) extra.channel = $("#ch", card).value;
+      if ($("#amt", card).value) extra.amount = table.parseAmount($("#amt", card).value);
+      if ($("#ccy", card).value) extra.currency = $("#ccy", card).value.toUpperCase();
+      if (yn($("#bc", card).value) !== null) extra.bank_details_changed = yn($("#bc", card).value);
+      const req = a.requestFromText(text, extra);
+      show("# Verify-Before-You-Pay\n\n" + rep.oneToMarkdown(a.assess(req, policy())));
+    });
+    $("#go2", card).onclick = safe(() => {
+      const list = a.readRequests(table.parseCsv($("#log", card).value)).map((r) => a.assess(r, policy()));
+      if (!list.length) throw new Error("No rows found in the log.");
+      show(rep.toMarkdown(list), [["Download results (.csv)", "verify-report.csv", rep.toResultCsv(list), "text/csv"]]);
+    });
+  }
+
+  // ------------------------------------------------------------------ AI Use Register
+  if (solution === "ai-use-register") {
+    const c = __m["ai-use-register/src/classify.js"], rep = __m["ai-use-register/src/report.js"];
+    const card = h(`<section class="card"><h2>Your AI inventory <span class="hint">(CSV. Only name and description are required; every other column sharpens the register.)</span></h2>
+      <input type="file" id="f" accept=".csv,.txt"><textarea id="t"></textarea>
+      <div class="actions"><button class="primary" id="go">Build register</button><button id="tpl">Download blank template</button><button id="s">Load sample inventory</button></div></section>`);
+    app.append(card, resultCard);
+    fileInto($("#f", card), $("#t", card));
+    $("#tpl", card).onclick = () => download("ai-inventory-template.csv", rep.templateCsv(), "text/csv");
+    $("#s", card).onclick = () => ($("#t", card).value = SAMPLES.inventory);
+    $("#go", card).onclick = safe(() => {
+      const rows = table.parseCsv($("#t", card).value).filter((r) => !/^your reference/i.test(Object.values(r)[0] || ""));
+      if (!rows.length) throw new Error("No rows found. Load a CSV or the sample.");
+      const list = c.readUseCases(rows).map((u) => c.classify(u));
+      show(rep.toMarkdown(list), [["Download register (.csv)", "ai-register.csv", rep.toRegisterCsv(list), "text/csv"]]);
+    });
+  }
+
+  // ------------------------------------------------------------------ PQC Crypto Inventory
+  if (solution === "pqc-crypto-inventory") {
+    const sc = __m["pqc-crypto-inventory/src/scan.js"], rep = __m["pqc-crypto-inventory/src/report.js"];
+    const card = h(`<section class="card"><h2>Choose a code folder or files <span class="hint">(source, configs, scripts, certificates; read locally, never uploaded)</span></h2>
+      <div class="row"><div><label>Folder</label><input type="file" id="dir" webkitdirectory multiple></div><div><label>Or individual files</label><input type="file" id="files" multiple></div></div>
+      <label>Or paste code / config</label><textarea id="t" placeholder='KeyPairGenerator.getInstance("RSA") …'></textarea>
+      <div class="actions"><button class="primary" id="go">Scan</button><button id="s">Scan the demo repo</button></div><p class="hint" id="status"></p></section>`);
+    app.append(card, resultCard);
+    const SKIP = /(^|\/)(node_modules|\.git|dist|build|target|vendor|\.venv|venv|__pycache__)\//;
+    async function run(inputs) {
+      const findings = [];
+      let n = 0;
+      for (const f of inputs) {
+        if (SKIP.test(f.name) || (!sc.isScannable(f.name) && f.name !== "pasted.txt") || f.text.length > 2000000 || f.text.includes("\u0000")) continue;
+        n++;
+        findings.push(...sc.scanText(f.name, f.text));
+      }
+      const s = sc.summarise(findings, n);
+      $("#status", card).textContent = `Scanned ${n} file(s).`;
+      show(rep.toMarkdown(findings, s), [["Download findings (.csv)", "pqc-inventory.csv", rep.toResultCsv(findings), "text/csv"], ["Download CBOM (.json)", "cbom.json", JSON.stringify(sc.toCbom(findings), null, 2), "application/json"]]);
+    }
+    $("#go", card).onclick = async () => {
+      try {
+        const inputs = [...(await readFiles($("#dir", card))), ...(await readFiles($("#files", card)))];
+        if ($("#t", card).value.trim()) inputs.push({ name: "pasted.txt", text: $("#t", card).value });
+        if (!inputs.length) throw new Error("Choose a folder, some files, or paste code first.");
+        $("#status", card).textContent = `Reading ${inputs.length} file(s)…`;
+        await run(inputs);
+      } catch (e) { showError(e); }
+    };
+    $("#s", card).onclick = () => run(Object.entries(SAMPLES).map(([name, text]) => ({ name, text }))).catch(showError);
+  }
+
+  // ------------------------------------------------------------------ Legacy Runbook Builder
+  if (solution === "legacy-runbook-builder") {
+    const x = __m["legacy-runbook-builder/src/extract.js"], rep = __m["legacy-runbook-builder/src/report.js"];
+    const card = h(`<section class="card"><h2>Old procedures, handover notes and scripts <span class="hint">(text, shell/batch scripts, JCL, crontabs, SQL)</span></h2>
+      <input type="file" id="files" multiple><label>Or paste text</label><textarea id="t" placeholder="Paste a handover email, procedure or script…"></textarea>
+      <label>Runbook title <span class="hint">(optional)</span></label><input type="text" id="title" placeholder="e.g. USD nostro reconciliation">
+      <div class="actions"><button class="primary" id="go">Build runbook</button><button id="s">Load sample handover</button></div></section>`);
+    app.append(card, resultCard);
+    let sampleLoaded = false;
+    $("#s", card).onclick = () => { sampleLoaded = true; $("#t", card).value = "(sample: nostro recon handover email + SWIFT batch script + JCL + crontab will be used)"; $("#title", card).value = "Payments ops: SWIFT batch, GL extract & USD nostro recon"; };
+    $("#go", card).onclick = async () => {
+      try {
+        let inputs = await readFiles($("#files", card));
+        const pasted = $("#t", card).value;
+        if (sampleLoaded && pasted.startsWith("(sample")) inputs = inputs.concat(Object.entries(SAMPLES).map(([name, text]) => ({ name, text })));
+        else if (pasted.trim()) inputs.push({ name: "pasted.txt", text: pasted });
+        if (!inputs.length) throw new Error("Choose files or paste text first.");
+        const rb = x.buildRunbook(inputs, $("#title", card).value || undefined);
+        const prompt = rep.aiPrompt(rb, inputs);
+        show(rep.toMarkdown(rb), [["Download knowledge gaps (.csv)", "knowledge-gaps.csv", rep.gapsCsv(rb), "text/csv"], ["Download AI prompt (.txt)", "ai-prompt.txt", prompt, "text/plain"]]);
+      } catch (e) { showError(e); }
+    };
+  }
+
+  // ------------------------------------------------------------------ helpers for the second batch
+  const fromB64 = (s) => Uint8Array.from(atob(s.replace(/^base64:/, "")), (c) => c.charCodeAt(0));
+  async function readBytes(input) { return Promise.all([...input.files].map(async (f) => ({ name: f.webkitRelativePath || f.name, bytes: new Uint8Array(await f.arrayBuffer()) }))); }
+  function simpleCard(html) { const c = h(`<section class="card">${html}</section>`); app.append(c, resultCard); return c; }
+  const csvBox = (id, label, hint) => `<label>${label} <span class="hint">${hint || ""}</span></label><input type="file" id="${id}f" accept=".csv,.txt"><textarea id="${id}"></textarea>`;
+  const wire = (card, ids) => ids.forEach((id) => fileInto($(`#${id}f`, card), $(`#${id}`, card)));
+
+  if (solution === "t1-settlement-predictor") {
+    const m = __m["t1-settlement-predictor/src/predict.js"], rep = __m["t1-settlement-predictor/src/report.js"];
+    const card = simpleCard(`<h2>Trades and SSIs</h2>${csvBox("tr", "Trade blotter (CSV)", "trade_id, trade_date, trade_time, settlement_date, isin, counterparty, place_of_settlement, currency, account_currency, allocation_time, affirmation_time, instruction_time")}${csvBox("ss", "Standing settlement instructions (CSV)", "counterparty, place_of_settlement, currency, agent_bic, account, valid_from, valid_to, last_verified")}
+      <div class="row"><div><label><input type="checkbox" id="t1"> Treat all trades as T+1 (test today's blotter)</label></div><div><label>Holidays <span class="hint">(YYYY-MM-DD, comma-separated)</span></label><input type="text" id="hol"></div></div>
+      <div class="actions"><button class="primary" id="go">Check trades</button><button id="s">Load sample</button></div>`);
+    wire(card, ["tr", "ss"]);
+    $("#s", card).onclick = () => { $("#tr", card).value = SAMPLES.trades; $("#ss", card).value = SAMPLES.ssis; };
+    $("#go", card).onclick = safe(() => {
+      const cfg = { ...m.DEFAULT_CONFIG, assume_t1: $("#t1", card).checked, holidays: $("#hol", card).value.split(",").map((x) => x.trim()).filter(Boolean) };
+      const list = m.assessTrades(m.readTrades(table.parseCsv($("#tr", card).value)), m.readSsis(table.parseCsv($("#ss", card).value)), cfg);
+      if (!list.length) throw new Error("No trades found.");
+      show(rep.toMarkdown(list), [["Download results (.csv)", "t1-report.csv", rep.toResultCsv(list), "text/csv"]]);
+    });
+  }
+
+  if (solution === "vop-precheck") {
+    const m = __m["vop-precheck/src/precheck.js"], rep = __m["vop-precheck/src/report.js"];
+    const card = simpleCard(`<h2>Payment file and supplier master</h2>${csvBox("pa", "Payment file (CSV)", "payee_name, iban, amount")}${csvBox("ma", "Supplier master (CSV, optional but recommended)", "iban, account_holder_name, trading_names")}
+      <div class="actions"><button class="primary" id="go">Check payments</button><button id="s">Load sample</button></div>`);
+    wire(card, ["pa", "ma"]);
+    $("#s", card).onclick = () => { $("#pa", card).value = SAMPLES.payments; $("#ma", card).value = SAMPLES.master; };
+    $("#go", card).onclick = safe(() => {
+      const list = m.precheck(m.readPayments(table.parseCsv($("#pa", card).value)), $("#ma", card).value.trim() ? m.readMaster(table.parseCsv($("#ma", card).value)) : []);
+      if (!list.length) throw new Error("No payments found.");
+      show(rep.toMarkdown(list), [["Download results (.csv)", "vop-precheck.csv", rep.toResultCsv(list), "text/csv"]]);
+    });
+  }
+
+  if (solution === "payment-investigation-assistant") {
+    const m = __m["payment-investigation-assistant/src/investigate.js"], rep = __m["payment-investigation-assistant/src/report.js"];
+    const card = simpleCard(`<h2>Payment query</h2><label>Paste an MT199/n99, an email or call notes</label><textarea id="t" style="min-height:200px"></textarea>
+      <div class="actions"><button class="primary" id="go">Analyse</button><button id="s1">Sample: MT199 non-receipt</button><button id="s2">Sample: fraud recall email</button></div>`);
+    $("#s1", card).onclick = () => ($("#t", card).value = SAMPLES.mt199);
+    $("#s2", card).onclick = () => ($("#t", card).value = SAMPLES.fraud);
+    $("#go", card).onclick = safe(() => { const t = $("#t", card).value; if (!t.trim()) throw new Error("Paste a query first."); show(rep.toMarkdown(m.analyse(t))); });
+  }
+
+  if (solution === "translation-loss-auditor") {
+    const m = __m["translation-loss-auditor/src/audit.js"], rep = __m["translation-loss-auditor/src/report.js"];
+    const card = simpleCard(`<h2>The two versions of one payment</h2><div class="row"><div><label>ISO 20022 pacs.008 (XML)</label><input type="file" id="mxf" accept=".xml,.txt"><textarea id="mx" style="min-height:220px"></textarea></div>
+      <div><label>MT103 (FIN text)</label><input type="file" id="mtf" accept=".txt,.fin,.mt"><textarea id="mt" style="min-height:220px"></textarea></div></div>
+      <div class="actions"><button class="primary" id="go">Compare</button><button id="s">Load sample</button></div>`);
+    wire(card, ["mx", "mt"]);
+    $("#s", card).onclick = () => { $("#mx", card).value = SAMPLES.mx; $("#mt", card).value = SAMPLES.mt; };
+    $("#go", card).onclick = safe(() => {
+      const mx = m.parsePacs008($("#mx", card).value), mt = m.parseMt103($("#mt", card).value);
+      const pairs = [{ name: "payment", uetr: mx.uetr, findings: m.audit(mx, mt) }];
+      show(rep.toMarkdown(pairs), [["Download findings (.csv)", "translation-audit.csv", rep.toResultCsv(pairs), "text/csv"]]);
+    });
+  }
+
+  if (solution === "sanctions-fp-analyser") {
+    const m = __m["sanctions-fp-analyser/src/analyse.js"], rep = __m["sanctions-fp-analyser/src/report.js"];
+    const card = simpleCard(`<h2>Closed alerts export</h2>${csvBox("al", "Alerts (CSV)", "alert_id, created_at, screened_name, matched_name, list, match_score, matched_field, message_type, disposition, handling_minutes, customer_id")}
+      <div class="row"><div><label>Cleared at least … times to count as a repeat pair</label><input type="text" id="mc" value="3"></div><div><label>Minutes per alert when not recorded</label><input type="text" id="mn" value="30"></div></div>
+      <div class="actions"><button class="primary" id="go">Analyse</button><button id="s">Load sample (invented names)</button></div>`);
+    wire(card, ["al"]);
+    $("#s", card).onclick = () => ($("#al", card).value = SAMPLES.alerts);
+    $("#go", card).onclick = safe(() => {
+      const a = m.analyse(m.readAlerts(table.parseCsv($("#al", card).value)), { minClears: Number($("#mc", card).value) || 3, defaultMinutes: Number($("#mn", card).value) || 30 });
+      if (!a.total) throw new Error("No alerts found.");
+      show(rep.toMarkdown(a), [["Download good-guy candidates (.csv)", "good-guy-candidates.csv", rep.goodGuysCsv(a), "text/csv"]]);
+    });
+  }
+
+  if (solution === "report-sanity-checker") {
+    const m = __m["report-sanity-checker/src/check.js"], rep = __m["report-sanity-checker/src/report.js"];
+    const card = simpleCard(`<h2>Report extract</h2>${csvBox("rp", "Report (CSV)", "columns are recognised by name: uti, *_lei, isin, notional, currency, *_date, country…")}
+      <div class="row"><div><label>Required columns <span class="hint">(comma-separated, optional)</span></label><input type="text" id="req"></div><div><label>Report date <span class="hint">(optional)</span></label><input type="text" id="rd" placeholder="YYYY-MM-DD"></div></div>
+      <div class="actions"><button class="primary" id="go">Check report</button><button id="s">Load sample</button></div>`);
+    wire(card, ["rp"]);
+    $("#s", card).onclick = () => ($("#rp", card).value = SAMPLES.report);
+    $("#go", card).onclick = safe(() => {
+      const res = m.checkReport(table.parseCsv($("#rp", card).value), { required: $("#req", card).value.split(",").map((x) => x.trim()).filter(Boolean), reportDate: $("#rd", card).value || undefined });
+      if (!res.rows) throw new Error("No rows found.");
+      show(rep.toMarkdown(res), [["Download issues (.csv)", "report-issues.csv", rep.toIssuesCsv(res.issues), "text/csv"]]);
+    });
+  }
+
+  if (solution === "dora-register-precheck") {
+    const m = __m["dora-register-precheck/src/precheck.js"], rep = __m["dora-register-precheck/src/report.js"];
+    const card = simpleCard(`<h2>Working register</h2>${csvBox("rg", "Register (CSV, one row per contractual arrangement)", "")}
+      <label>Reference date <span class="hint">(end of the reporting year)</span></label><input type="text" id="rd" placeholder="e.g. 2026-12-31">
+      <div class="actions"><button class="primary" id="go">Check register</button><button id="s">Load sample</button></div>`);
+    wire(card, ["rg"]);
+    $("#s", card).onclick = () => { $("#rg", card).value = SAMPLES.register; $("#rd", card).value = "2026-12-31"; };
+    $("#go", card).onclick = safe(() => {
+      const list = m.readRegister(table.parseCsv($("#rg", card).value));
+      if (!list.length) throw new Error("No arrangements found.");
+      const issues = m.precheck(list, { referenceDate: $("#rd", card).value || undefined });
+      show(rep.toMarkdown(list, issues), [["Download fix list (.csv)", "dora-issues.csv", rep.toIssuesCsv(issues), "text/csv"]]);
+    });
+  }
+
+  if (solution === "copybook-decoder") {
+    const m = __m["copybook-decoder/src/copybook.js"], rep = __m["copybook-decoder/src/report.js"];
+    const card = simpleCard(`<h2>Copybook and data file</h2><label>COBOL copybook</label><input type="file" id="cbf" accept=".cpy,.cbl,.cob,.txt"><textarea id="cb" style="min-height:200px"></textarea>
+      <label>Data file <span class="hint">(optional: fixed-length records; read locally)</span></label><input type="file" id="df">
+      <div class="row"><div><label>Encoding</label><select id="enc"><option value="ebcdic">EBCDIC (mainframe)</option><option value="ascii">ASCII</option></select></div><div><label>Record format</label><select id="fmt"><option value="fixed">Fixed length</option><option value="rdw">Variable (RDW)</option><option value="lines">One record per line</option></select></div></div>
+      <div class="actions"><button class="primary" id="go">Decode</button><button id="s">Load sample</button></div><p class="hint" id="st"></p>`);
+    fileInto($("#cbf", card), $("#cb", card));
+    let sampleData = null;
+    $("#s", card).onclick = () => { $("#cb", card).value = SAMPLES.copybook; sampleData = fromB64(SAMPLES.data); $("#st", card).textContent = `Sample data loaded (${sampleData.length} bytes, EBCDIC).`; };
+    $("#go", card).onclick = async () => {
+      try {
+        const { root, warnings } = m.parseCopybook($("#cb", card).value);
+        const l = m.layout(root);
+        let md = rep.dictionaryMarkdown(l.fields, l.recordLength, [...warnings, ...l.warnings]);
+        const dl = [["Download data dictionary (.csv)", "data-dictionary.csv", rep.dictionaryCsv(l.fields), "text/csv"]];
+        const [f] = await readBytes($("#df", card));
+        const bytes = f ? f.bytes : sampleData;
+        if (bytes) {
+          const fmt = $("#fmt", card).value;
+          const d = m.decodeData(l.fields, bytes, { encoding: $("#enc", card).value, recordLength: l.recordLength, rdw: fmt === "rdw", lineSeparated: fmt === "lines" });
+          md += "\n" + rep.decodeSummary(d);
+          dl.push(["Download decoded data (.csv)", "decoded.csv", rep.dataCsv(d), "text/csv"]);
+        }
+        show(md, dl);
+      } catch (e) { showError(e); }
+    };
+  }
+
+  if (solution === "migration-reconciler") {
+    const m = __m["migration-reconciler/src/reconcile.js"], rep = __m["migration-reconciler/src/report.js"];
+    const card = simpleCard(`<h2>Source and target extracts</h2><div class="row"><div>${csvBox("src", "Source (legacy) CSV", "")}</div><div>${csvBox("tgt", "Target (new system) CSV", "")}</div></div>
+      <div class="row"><div><label>Key column(s) in source</label><input type="text" id="key" placeholder="customer_id"></div><div><label>Column mapping <span class="hint">source:target, comma-separated</span></label><input type="text" id="map"></div></div>
+      <div class="row"><div><label>Numeric tolerance</label><input type="text" id="tol" value="0"></div><div><label>Ignore columns</label><input type="text" id="ign"></div></div>
+      <label><input type="checkbox" id="lz" checked> Ignore leading zeros in keys</label> <label><input type="checkbox" id="ic" checked> Ignore case in keys</label>
+      <div class="actions"><button class="primary" id="go">Reconcile</button><button id="s">Load sample</button></div>`);
+    wire(card, ["src", "tgt"]);
+    $("#s", card).onclick = () => { $("#src", card).value = SAMPLES.source; $("#tgt", card).value = SAMPLES.target; $("#key", card).value = "customer_id"; $("#map", card).value = "customer_id:cust_no,full_name:customer_name,address_line:address,postcode:post_code,date_of_birth:dob,balance:balance_amt,marketing_consent:consent_marketing"; };
+    $("#go", card).onclick = safe(() => {
+      const map = Object.fromEntries($("#map", card).value.split(",").filter(Boolean).map((p) => p.split(":").map((x) => x.trim())));
+      const r = m.reconcile(table.parseCsv($("#src", card).value), table.parseCsv($("#tgt", card).value), { key: $("#key", card).value.split(",").map((x) => x.trim()).filter(Boolean), map, tolerance: Number($("#tol", card).value) || 0, ignoreLeadingZeros: $("#lz", card).checked, ignoreCase: $("#ic", card).checked, ignoreFields: $("#ign", card).value.split(",").map((x) => x.trim()).filter(Boolean) });
+      show(rep.toMarkdown(r), [["Download differences (.csv)", "differences.csv", rep.diffsCsv(r), "text/csv"]]);
+    });
+  }
+
+  if (solution === "euc-risk-scanner") {
+    const m = __m["euc-risk-scanner/src/scan.js"], rep = __m["euc-risk-scanner/src/report.js"], zip = __m["shared/zip.js"];
+    const card = simpleCard(`<h2>Spreadsheets to scan</h2><div class="row"><div><label>Folder</label><input type="file" id="dir" webkitdirectory multiple></div><div><label>Or files</label><input type="file" id="files" multiple accept=".xlsx,.xlsm,.xls,.xltx,.xltm"></div></div>
+      <div class="actions"><button class="primary" id="go">Scan</button><button id="s">Scan samples</button></div><p class="hint" id="st"></p>`);
+    async function run(items) {
+      const reports = [];
+      for (const it of items.filter((x) => /\.(xlsx|xlsm|xls|xltx|xltm)$/i.test(x.name) && !/(^|\/)~\$/.test(x.name))) {
+        try { reports.push(await m.scanWorkbook(it.name, it.bytes, zip.browserInflate)); } catch (e) { console.warn(it.name, e); }
+      }
+      if (!reports.length) throw new Error("No Excel workbooks found.");
+      $("#st", card).textContent = `Scanned ${reports.length} workbook(s).`;
+      show(rep.toMarkdown(reports), [["Download EUC register (.csv)", "euc-register.csv", rep.registerCsv(reports), "text/csv"]]);
+    }
+    $("#go", card).onclick = async () => { try { await run([...(await readBytes($("#dir", card))), ...(await readBytes($("#files", card)))]); } catch (e) { showError(e); } };
+    $("#s", card).onclick = () => run(Object.entries(SAMPLES).map(([name, v]) => ({ name, bytes: fromB64(v) }))).catch(showError);
+  }
+
+  if (solution === "batch-dependency-mapper") {
+    const m = __m["batch-dependency-mapper/src/map.js"], rep = __m["batch-dependency-mapper/src/report.js"];
+    const card = simpleCard(`<h2>Batch files</h2><p class="hint">JCL, Control-M XML exports, crontabs and shell scripts.</p><div class="row"><div><label>Folder</label><input type="file" id="dir" webkitdirectory multiple></div><div><label>Or files</label><input type="file" id="files" multiple></div></div>
+      <div class="actions"><button class="primary" id="go">Map</button><button id="s">Load sample</button></div>`);
+    const diagram = h(`<section class="card" hidden><h2>Diagram</h2><div id="svg" style="overflow:auto"></div></section>`);
+    app.insertBefore(diagram, resultCard);
+    function run(files) {
+      const { jobs, skipped } = m.parseAll(files);
+      if (!jobs.length) throw new Error("No jobs found in these files.");
+      const g = m.buildGraph(jobs);
+      const svgText = rep.svg(g);
+      diagram.hidden = false;
+      $("#svg", diagram).innerHTML = svgText;
+      show(rep.toMarkdown(g, skipped).replace(/```mermaid[\s\S]*?```\n/, ""), [["Download diagram (.svg)", "batch-map.svg", svgText, "image/svg+xml"], ["Download dependencies (.csv)", "dependencies.csv", rep.edgesCsv(g), "text/csv"], ["Download Mermaid (.mmd)", "batch-map.mmd", rep.mermaid(g), "text/plain"]]);
+    }
+    $("#go", card).onclick = async () => { try { run([...(await readFiles($("#dir", card))), ...(await readFiles($("#files", card)))]); } catch (e) { showError(e); } };
+    $("#s", card).onclick = safe(() => run(Object.entries(SAMPLES).map(([name, text]) => ({ name, text }))));
+  }
+})();
+
+</script>
+</body>
+</html>

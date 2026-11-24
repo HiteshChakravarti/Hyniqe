@@ -1,0 +1,949 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Copybook Decoder · Hyniqe Hub</title>
+<style>:root { --ink:#14213d; --muted:#5b6475; --line:#e3e7ef; --bg:#f7f8fb; --card:#fff; --accent:#1f5eff; --accent-ink:#fff; --ok:#137a3f; --warn:#b26a00; --bad:#b3261e; }
+* { box-sizing: border-box; }
+body { margin:0; font:15px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; color:var(--ink); background:var(--bg); }
+header { padding:28px clamp(16px,5vw,56px) 18px; background:var(--card); border-bottom:1px solid var(--line); }
+.brand { font-weight:700; letter-spacing:.2px; color:var(--muted); font-size:13px; text-transform:uppercase; }
+.brand span { color:var(--accent); }
+h1 { margin:6px 0 4px; font-size:clamp(22px,3vw,30px); }
+.tagline { margin:0; color:var(--muted); max-width:760px; }
+.local { margin:10px 0 0; font-size:13px; color:var(--ok); }
+main { padding:20px clamp(16px,5vw,56px) 40px; display:grid; gap:18px; max-width:1180px; }
+.card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:18px; }
+.card h2 { margin:0 0 10px; font-size:17px; }
+label { display:block; font-weight:600; margin:10px 0 4px; font-size:14px; }
+.hint { color:var(--muted); font-size:13px; font-weight:400; }
+textarea, input[type=text], select { width:100%; font:13px/1.45 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; border:1px solid var(--line); border-radius:8px; padding:9px; background:#fbfcfe; color:var(--ink); }
+input[type=text], select { font-family:inherit; font-size:14px; }
+textarea { min-height:140px; resize:vertical; }
+.row { display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:12px; }
+.actions { display:flex; flex-wrap:wrap; gap:8px; margin-top:14px; }
+button { font:inherit; font-weight:600; border-radius:8px; padding:9px 14px; border:1px solid var(--line); background:#fff; color:var(--ink); cursor:pointer; }
+button.primary { background:var(--accent); border-color:var(--accent); color:var(--accent-ink); }
+button:disabled { opacity:.5; cursor:default; }
+.tabs { display:flex; gap:6px; margin-bottom:6px; }
+.tabs button[aria-selected=true] { background:var(--ink); color:#fff; border-color:var(--ink); }
+#report { overflow-wrap:anywhere; }
+#report h2 { font-size:22px; margin:4px 0 8px; } #report h3 { font-size:18px; margin:22px 0 8px; } #report h4, #report h5 { font-size:15px; margin:18px 0 6px; }
+#report p { margin:8px 0; }
+.tablewrap { overflow-x:auto; margin:10px 0; }
+table { border-collapse:collapse; width:100%; font-size:13.5px; }
+th, td { border:1px solid var(--line); padding:6px 8px; text-align:left; vertical-align:top; }
+th { background:#f1f4f9; }
+code { background:#f1f4f9; padding:1px 4px; border-radius:4px; font-size:12.5px; }
+.error { color:var(--bad); font-weight:600; white-space:pre-wrap; }
+.empty { color:var(--muted); }
+footer { padding:20px clamp(16px,5vw,56px) 36px; color:var(--muted); font-size:12.5px; }
+@media (prefers-color-scheme: dark) {
+  :root { --ink:#e8ecf5; --muted:#a3acbf; --line:#2b3345; --bg:#10141d; --card:#171c27; --accent:#5b8cff; }
+  textarea, input[type=text], select { background:#121722; }
+  th, code { background:#1f2634; } button { background:#1d2330; } .tabs button[aria-selected=true] { background:#e8ecf5; color:#10141d; }
+}
+</style>
+</head>
+<body data-solution="copybook-decoder">
+<header><div class="brand">Hyniqe <span>Hub</span></div><h1>Copybook Decoder</h1><p class="tagline">Turn a mainframe file nobody can read into a spreadsheet, and its copybook into a data dictionary.</p><p class="local">🔒 Runs entirely in your browser. Nothing you load here is uploaded.</p></header>
+<main id="app"></main>
+<footer>Hyniqe Hub · open-source tools for financial operations. Outputs support your judgement; they are not legal, audit or security advice.</footer>
+<script>
+const __m = {};
+__m["copybook-decoder/src/ebcdic.js"] = (() => {
+// IBM EBCDIC code page 037 (US/Canada) → Unicode, generated from Python's cp037 codec.
+const CP037 = "\u0000\u0001\u0002\u0003\u009c\t\u0086\u007f\u0097\u008d\u008e\u000b\f\r\u000e\u000f\u0010\u0011\u0012\u0013\u009d\u0085\b\u0087\u0018\u0019\u0092\u008f\u001c\u001d\u001e\u001f\u0080\u0081\u0082\u0083\u0084\n\u0017\u001b\u0088\u0089\u008a\u008b\u008c\u0005\u0006\u0007\u0090\u0091\u0016\u0093\u0094\u0095\u0096\u0004\u0098\u0099\u009a\u009b\u0014\u0015\u009e\u001a \u00a0\u00e2\u00e4\u00e0\u00e1\u00e3\u00e5\u00e7\u00f1\u00a2.<(+|&\u00e9\u00ea\u00eb\u00e8\u00ed\u00ee\u00ef\u00ec\u00df!$*);\u00ac-/\u00c2\u00c4\u00c0\u00c1\u00c3\u00c5\u00c7\u00d1\u00a6,%_>?\u00f8\u00c9\u00ca\u00cb\u00c8\u00cd\u00ce\u00cf\u00cc`:#@'=\"\u00d8abcdefghi\u00ab\u00bb\u00f0\u00fd\u00fe\u00b1\u00b0jklmnopqr\u00aa\u00ba\u00e6\u00b8\u00c6\u00a4\u00b5~stuvwxyz\u00a1\u00bf\u00d0\u00dd\u00de\u00ae^\u00a3\u00a5\u00b7\u00a9\u00a7\u00b6\u00bc\u00bd\u00be[]\u00af\u00a8\u00b4\u00d7{ABCDEFGHI\u00ad\u00f4\u00f6\u00f2\u00f3\u00f5}JKLMNOPQR\u00b9\u00fb\u00fc\u00f9\u00fa\u00ff\\\u00f7STUVWXYZ\u00b2\u00d4\u00d6\u00d2\u00d3\u00d50123456789\u00b3\u00db\u00dc\u00d9\u00da\u009f";
+
+return { CP037 };
+})();
+__m["copybook-decoder/src/copybook.js"] = (() => {
+// Copybook Decoder
+// Reads a COBOL copybook (the record layout of a mainframe file), produces a data dictionary (field, position, length,
+// type) and decodes fixed-length mainframe data (EBCDIC or ASCII; zoned, packed COMP-3 and binary numbers) into
+// rows you can open in Excel. Handles groups, OCCURS, REDEFINES, 88-level values, signed and implied-decimal numbers.
+const { CP037 } = __m["copybook-decoder/src/ebcdic.js"];
+/** Remove sequence numbers / comment lines (fixed format) and split into period-terminated statements. */
+function statements(src) {
+    const lines = src.replace(/\r/g, "").split("\n");
+    const fixed = lines.filter((l) => l.trim()).every((l) => l.length < 7 || /^[\d ]{6}/.test(l.slice(0, 6)) || /^\s/.test(l));
+    let buf = "", startLine = 0;
+    const out = [];
+    lines.forEach((raw, i) => {
+        let l = raw;
+        if (fixed && l.length >= 7) {
+            if ("*/".includes(l[6]))
+                return;
+            l = l.slice(7, 72);
+        }
+        else if (fixed && l.length < 7)
+            return;
+        if (/^\s*\*/.test(l))
+            return;
+        l = l.replace(/\*>.*$/, "");
+        if (!l.trim())
+            return;
+        if (!buf)
+            startLine = i + 1;
+        buf += " " + l.trim();
+        // a statement ends with a period followed by space/end (not inside PIC 9(5).99 style edits)
+        while (/\.(\s|$)/.test(buf)) {
+            const m = buf.match(/^(.*?\S)\.(\s+|$)/);
+            if (!m)
+                break;
+            out.push({ text: m[1].trim(), line: startLine });
+            buf = buf.slice(m[0].length);
+            startLine = i + 1;
+        }
+    });
+    if (buf.trim())
+        out.push({ text: buf.trim(), line: startLine });
+    return out;
+}
+function parseCopybook(src) {
+    const warnings = [];
+    const root = [];
+    const stack = [];
+    let last;
+    for (const st of statements(src)) {
+        const tok = st.text.match(/^(\d{1,2})\s+([A-Za-z0-9][A-Za-z0-9-]*)?(.*)$/);
+        if (!tok) {
+            warnings.push(`Line ${st.line}: couldn't read "${st.text.slice(0, 40)}"`);
+            continue;
+        }
+        const level = Number(tok[1]);
+        const name = (tok[2] ?? "FILLER").toUpperCase();
+        const rest = " " + (tok[3] ?? "") + " ";
+        if (level === 88) {
+            const v = rest.match(/VALUES?\s+(?:ARE\s+|IS\s+)?(.+)$/i)?.[1].trim() ?? "";
+            if (last)
+                last.values.push(`${name} = ${v}`);
+            continue;
+        }
+        if (level === 66) {
+            warnings.push(`Line ${st.line}: 66-level RENAMES ${name} ignored.`);
+            continue;
+        }
+        const pic = rest.match(/\sPIC(?:TURE)?\s+(?:IS\s+)?(\S+)/i)?.[1].toUpperCase() ?? "";
+        const u = rest.toUpperCase();
+        const usage = /\s(COMP-3|COMPUTATIONAL-3|PACKED-DECIMAL)\b/.test(u) ? "COMP-3" : /\s(COMP-1|COMPUTATIONAL-1)\b/.test(u) ? "COMP-1" : /\s(COMP-2|COMPUTATIONAL-2)\b/.test(u) ? "COMP-2"
+            : /\s(COMP|COMPUTATIONAL|COMP-4|COMPUTATIONAL-4|COMP-5|COMPUTATIONAL-5|BINARY)\b/.test(u) ? "BINARY" : "DISPLAY";
+        const occ = u.match(/\sOCCURS\s+(?:\d+\s+TO\s+)?(\d+)/);
+        if (/DEPENDING\s+ON/.test(u))
+            warnings.push(`Line ${st.line}: ${name} OCCURS DEPENDING ON. Laid out at its maximum size; real records may be shorter.`);
+        const item = { level: level === 77 ? 1 : level, name, pic, usage, occurs: occ ? Number(occ[1]) : 1, redefines: u.match(/\sREDEFINES\s+([A-Z0-9-]+)/)?.[1] ?? "", values: [],
+            signSeparate: /SIGN\s+(IS\s+)?(LEADING|TRAILING)\s+SEPARATE|\sSEPARATE\b/.test(u), signLeading: /SIGN\s+(IS\s+)?LEADING/.test(u), children: [], line: st.line };
+        while (stack.length && stack[stack.length - 1].level >= item.level)
+            stack.pop();
+        const parent = stack[stack.length - 1];
+        if (parent) {
+            if (parent.usage !== "DISPLAY" && item.usage === "DISPLAY" && !/\sDISPLAY\b/.test(u))
+                item.usage = parent.usage; // group USAGE applies to children
+            parent.children.push(item);
+        }
+        else
+            root.push(item);
+        stack.push(item);
+        last = item;
+    }
+    return { root, warnings };
+}
+function picInfo(pic) {
+    const p = pic.replace(/(.)\((\d+)\)/g, (_m, c, n) => c.repeat(Number(n)));
+    const signed = p.includes("S");
+    if (/[XA]/.test(p))
+        return { kind: "alphanumeric", digits: 0, scale: 0, signed: false, chars: p.replace(/[S]/g, "").length };
+    if (/[Z*$,.+\-B0\/]|CR|DB/.test(p.replace(/^S/, "")))
+        return { kind: "edited", digits: (p.match(/[9Z*]/g) ?? []).length, scale: 0, signed, chars: p.replace(/^S/, "").length };
+    const [intPart, decPart = ""] = p.replace("S", "").split("V");
+    const count = (s) => (s.match(/[9P]/g) ?? []).length;
+    return { kind: "numeric", digits: count(intPart) + count(decPart), scale: count(decPart), signed, chars: count(intPart) + count(decPart) };
+}
+function storageLength(it) {
+    if (it.usage === "COMP-1")
+        return 4;
+    if (it.usage === "COMP-2")
+        return 8;
+    const pi = picInfo(it.pic);
+    if (it.usage === "COMP-3")
+        return Math.floor(pi.digits / 2) + 1;
+    if (it.usage === "BINARY")
+        return pi.digits <= 4 ? 2 : pi.digits <= 9 ? 4 : 8;
+    return pi.chars + (pi.kind === "numeric" && pi.signed && it.signSeparate ? 1 : 0);
+}
+function size(it) {
+    if (!it.children.length)
+        return storageLength(it);
+    let total = 0;
+    const offsets = new Map();
+    for (const c of it.children) {
+        if (c.redefines && offsets.has(c.redefines))
+            continue; // redefinition doesn't add length (assumes it's not longer)
+        offsets.set(c.name, total);
+        total += size(c) * c.occurs;
+    }
+    return total;
+}
+/** Flatten into fields with absolute offsets (0-based). OCCURS are expanded as NAME(1), NAME(2)… */
+function layout(root, maxFields = 5000) {
+    const fields = [];
+    const warnings = [];
+    const rec = root[0];
+    if (!rec)
+        return { fields, recordLength: 0, warnings: ["No 01-level record found."] };
+    if (root.length > 1)
+        warnings.push(`${root.length} 01-level records found; using ${rec.name} (others may be alternative layouts).`);
+    const walk = (it, offset, path, suffix, isRedef) => {
+        const name = it.name + suffix;
+        const pi = picInfo(it.pic);
+        const len = it.children.length ? size(it) : storageLength(it);
+        if (fields.length < maxFields)
+            fields.push({
+                path: path ? `${path}.${name}` : name, name, level: it.level, offset, length: len, kind: it.children.length ? "group" : it.usage === "COMP-1" || it.usage === "COMP-2" ? "float" : pi.kind,
+                pic: it.pic, usage: it.usage, digits: pi.digits, scale: pi.scale, signed: pi.signed, signSeparate: it.signSeparate, signLeading: it.signLeading, values: it.values, redefines: isRedef || !!it.redefines, leaf: !it.children.length,
+            });
+        let cur = offset;
+        const childOffsets = new Map();
+        for (const c of it.children) {
+            const start = c.redefines && childOffsets.has(c.redefines) ? childOffsets.get(c.redefines) : cur;
+            if (c.redefines && !childOffsets.has(c.redefines))
+                warnings.push(`${c.name} REDEFINES ${c.redefines}, which isn't a sibling. Laid out sequentially.`);
+            childOffsets.set(c.name, start);
+            const csize = c.children.length ? size(c) : storageLength(c);
+            for (let k = 0; k < c.occurs; k++)
+                walk(c, start + k * csize, path ? `${path}.${name}` : name, `${suffix}${c.occurs > 1 ? `(${k + 1})` : ""}`, isRedef || !!c.redefines);
+            if (!(c.redefines && start !== cur))
+                cur = Math.max(cur, start + csize * c.occurs);
+        }
+    };
+    walk(rec, 0, "", "", false);
+    if (fields.length >= maxFields)
+        warnings.push(`Layout truncated at ${maxFields} fields.`);
+    return { fields, recordLength: size(rec) * rec.occurs, warnings };
+}
+function text(bytes, enc) {
+    let s = "";
+    for (const b of bytes)
+        s += enc === "ebcdic" ? CP037[b] : String.fromCharCode(b);
+    return s;
+}
+function decodeField(f, bytes, enc) {
+    if (f.kind === "alphanumeric" || f.kind === "edited" || f.kind === "group")
+        return { value: text(bytes, enc).replace(/[\u0000-\u001f]/g, " ").trimEnd() };
+    if (f.kind === "float")
+        return { value: "", problem: "COMP-1/COMP-2 floating point not decoded" };
+    let digits = "", neg = false;
+    if (f.usage === "COMP-3") {
+        for (let i = 0; i < bytes.length; i++) {
+            const hi = bytes[i] >> 4, lo = bytes[i] & 0x0f;
+            if (i < bytes.length - 1) {
+                if (hi > 9 || lo > 9)
+                    return { value: hex(bytes), problem: "invalid packed decimal digit" };
+                digits += `${hi}${lo}`;
+            }
+            else {
+                if (hi > 9)
+                    return { value: hex(bytes), problem: "invalid packed decimal digit" };
+                digits += `${hi}`;
+                if (![0xc, 0xd, 0xf, 0xa, 0xb, 0xe].includes(lo))
+                    return { value: hex(bytes), problem: "invalid packed sign nibble" };
+                neg = lo === 0xd || lo === 0xb;
+            }
+        }
+    }
+    else if (f.usage === "BINARY") {
+        let v = 0n;
+        for (const b of bytes)
+            v = (v << 8n) | BigInt(b);
+        if (f.signed && bytes[0] & 0x80)
+            v -= 1n << BigInt(bytes.length * 8);
+        neg = v < 0n;
+        digits = (neg ? -v : v).toString();
+    }
+    else {
+        // zoned decimal
+        const arr = [...bytes];
+        if (f.signSeparate) {
+            const signByte = f.signLeading ? arr.shift() : arr.pop();
+            const sc = enc === "ebcdic" ? CP037[signByte] : String.fromCharCode(signByte);
+            neg = sc === "-";
+        }
+        for (let i = 0; i < arr.length; i++) {
+            const b = arr[i];
+            const signPos = f.signed && !f.signSeparate && (f.signLeading ? i === 0 : i === arr.length - 1);
+            if (enc === "ebcdic") {
+                const zone = b >> 4, d = b & 0x0f;
+                if (d > 9)
+                    return { value: text(bytes, enc), problem: "not a number" };
+                if (signPos)
+                    neg = zone === 0xd || zone === 0xb;
+                else if (zone !== 0xf && !(b === 0x40))
+                    return { value: text(bytes, enc), problem: "not a number" };
+                digits += b === 0x40 ? "0" : String(d);
+            }
+            else {
+                const c = String.fromCharCode(b);
+                if (/\d/.test(c))
+                    digits += c;
+                else if (c === " ")
+                    digits += "0";
+                else if (signPos && "{ABCDEFGHI".includes(c))
+                    digits += String("{ABCDEFGHI".indexOf(c));
+                else if (signPos && "}JKLMNOPQR".includes(c)) {
+                    digits += String("}JKLMNOPQR".indexOf(c));
+                    neg = true;
+                }
+                else if (signPos && /[p-y]/.test(c)) {
+                    digits += String(c.charCodeAt(0) - 112);
+                    neg = true;
+                }
+                else
+                    return { value: text(bytes, enc), problem: "not a number" };
+            }
+        }
+    }
+    digits = digits.replace(/^0+(?=\d)/, "") || "0";
+    if (f.scale) {
+        digits = digits.padStart(f.scale + 1, "0");
+        digits = digits.slice(0, -f.scale) + "." + digits.slice(-f.scale);
+    }
+    const isZero = !/[1-9]/.test(digits);
+    return { value: (neg && !isZero ? "-" : "") + digits, problem: neg && !f.signed ? "negative sign on unsigned field" : undefined };
+}
+const hex = (b) => "0x" + [...b].map((x) => x.toString(16).padStart(2, "0")).join("").toUpperCase();
+function decodeData(fields, data, opts) {
+    const leaves = fields.filter((f) => f.leaf && (opts.includeRedefines || !f.redefines) && f.name !== "FILLER" && !f.name.startsWith("FILLER("));
+    const rows = [];
+    const problems = [];
+    const max = opts.maxRecords ?? 100000;
+    let pos = 0, rec = 0;
+    const recLen = opts.recordLength;
+    while (pos < data.length && rec < max) {
+        let len = recLen, start = pos;
+        if (opts.rdw) {
+            len = ((data[pos] << 8) | data[pos + 1]) - 4;
+            start = pos + 4;
+            pos = start + len;
+        }
+        else if (opts.lineSeparated) {
+            let end = pos;
+            while (end < data.length && data[end] !== 0x0a)
+                end++;
+            start = pos;
+            len = end - pos;
+            if (len && data[end - 1] === 0x0d)
+                len--;
+            pos = end + 1;
+            if (!len)
+                continue;
+        }
+        else {
+            if (pos + recLen > data.length)
+                break;
+            pos += recLen;
+        }
+        const recBytes = data.subarray(start, start + len);
+        rec++;
+        rows.push(leaves.map((f) => {
+            if (f.offset + f.length > recBytes.length) {
+                problems.push({ record: rec, field: f.path, problem: "record shorter than layout", raw: "" });
+                return "";
+            }
+            const d = decodeField(f, recBytes.subarray(f.offset, f.offset + f.length), opts.encoding);
+            if (d.problem && problems.length < 500)
+                problems.push({ record: rec, field: f.path, problem: d.problem, raw: hex(recBytes.subarray(f.offset, f.offset + f.length)) });
+            return d.value;
+        }));
+    }
+    const leftover = opts.rdw || opts.lineSeparated ? 0 : data.length - rec * recLen;
+    return { columns: leaves.map((f) => f.path.split(".").slice(1).join(".") || f.name), rows, problems, records: rec, leftover: rec >= max ? 0 : leftover, recordLength: recLen };
+}
+
+return { statements, parseCopybook, picInfo, layout, decodeField, decodeData };
+})();
+__m["shared/table.js"] = (() => {
+// Small, dependency-free table helpers shared by the Hyniqe Hub solutions in this batch.
+// Runs unchanged in Node (22+, type stripping) and in the browser after `tsc`.
+/** Parse CSV text into rows keyed by lower-cased, trimmed headers (spaces → underscores).
+ *  Handles quoted fields, escaped quotes, BOM, CRLF, and comma / semicolon / tab separators. */
+function parseCsv(text) {
+    const clean = text.replace(/^﻿/, "");
+    const firstLine = clean.split(/\r?\n/, 1)[0] ?? "";
+    const sep = pickSeparator(firstLine);
+    const records = [];
+    let field = "";
+    let record = [];
+    let inQuotes = false;
+    for (let i = 0; i < clean.length; i++) {
+        const ch = clean[i];
+        if (inQuotes) {
+            if (ch === '"') {
+                if (clean[i + 1] === '"') {
+                    field += '"';
+                    i++;
+                }
+                else {
+                    inQuotes = false;
+                }
+            }
+            else {
+                field += ch;
+            }
+            continue;
+        }
+        if (ch === '"') {
+            inQuotes = true;
+            continue;
+        }
+        if (ch === sep) {
+            record.push(field);
+            field = "";
+            continue;
+        }
+        if (ch === "\n" || ch === "\r") {
+            if (ch === "\r" && clean[i + 1] === "\n")
+                i++;
+            record.push(field);
+            field = "";
+            if (record.some((f) => f.trim() !== ""))
+                records.push(record);
+            record = [];
+            continue;
+        }
+        field += ch;
+    }
+    record.push(field);
+    if (record.some((f) => f.trim() !== ""))
+        records.push(record);
+    if (records.length === 0)
+        return [];
+    const headers = records[0].map(normaliseHeader);
+    return records.slice(1).map((r) => {
+        const row = {};
+        headers.forEach((h, idx) => { row[h] = (r[idx] ?? "").trim(); });
+        return row;
+    });
+}
+function normaliseHeader(h) {
+    return h.trim().toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_|_$/g, "");
+}
+function pickSeparator(line) {
+    const counts = [",", ";", "\t"].map((s) => [s, line.split(s).length - 1]);
+    counts.sort((a, b) => b[1] - a[1]);
+    return counts[0][1] > 0 ? counts[0][0] : ",";
+}
+/** Serialise rows to CSV with a fixed column order. */
+function toCsv(rows, columns) {
+    const esc = (v) => {
+        const s = v === undefined || v === null ? "" : String(v);
+        return /[",\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+    };
+    return [columns.join(","), ...rows.map((r) => columns.map((c) => esc(r[c])).join(","))].join("\n") + "\n";
+}
+/** Render a simple Markdown table. */
+function mdTable(headers, rows) {
+    const cell = (v) => String(v).replace(/\|/g, "\\|").replace(/\n/g, " ");
+    return [
+        `| ${headers.map(cell).join(" | ")} |`,
+        `| ${headers.map(() => "---").join(" | ")} |`,
+        ...rows.map((r) => `| ${r.map(cell).join(" | ")} |`),
+    ].join("\n");
+}
+/** Read the first non-empty value among several possible column names. */
+function pick(row, ...names) {
+    for (const n of names) {
+        const v = row[normaliseHeader(n)];
+        if (v !== undefined && v !== "")
+            return v;
+    }
+    return "";
+}
+function parseAmount(raw) {
+    if (!raw)
+        return null;
+    let s = raw.replace(/[^\d.,\-]/g, "");
+    if (s.includes(",") && s.includes(".")) {
+        s = s.lastIndexOf(",") > s.lastIndexOf(".") ? s.replace(/\./g, "").replace(",", ".") : s.replace(/,/g, "");
+    }
+    else if (s.includes(",")) {
+        const parts = s.split(",");
+        s = parts.length === 2 && parts[1].length !== 3 ? s.replace(",", ".") : s.replace(/,/g, "");
+    }
+    const n = Number(s);
+    return Number.isFinite(n) ? n : null;
+}
+function parseBool(raw) {
+    const s = raw.trim().toLowerCase();
+    if (["y", "yes", "true", "1", "done", "passed", "pass"].includes(s))
+        return true;
+    if (["n", "no", "false", "0", "not done", "failed", "fail", ""].includes(s))
+        return s === "" ? null : false;
+    return null;
+}
+/** Parse ISO-ish timestamps ("2026-11-24 14:05", "2026-11-24T14:05:00Z", "24/11/2026 14:05"). */
+function parseTimestamp(raw) {
+    const s = raw.trim();
+    if (!s)
+        return null;
+    const dmy = s.match(/^(\d{1,2})[\/.](\d{1,2})[\/.](\d{4})(?:[ T](\d{1,2}):(\d{2})(?::(\d{2}))?)?$/);
+    if (dmy) {
+        const [, d, m, y, hh = "0", mm = "0", ss = "0"] = dmy;
+        return new Date(Date.UTC(+y, +m - 1, +d, +hh, +mm, +ss));
+    }
+    const iso = s.includes("T") ? s : s.replace(" ", "T");
+    const withZone = /[zZ]|[+\-]\d{2}:?\d{2}$/.test(iso) ? iso : iso + (iso.length > 10 ? "Z" : "T00:00:00Z");
+    const d = new Date(withZone);
+    return Number.isNaN(d.getTime()) ? null : d;
+}
+
+return { parseCsv, normaliseHeader, toCsv, mdTable, pick, parseAmount, parseBool, parseTimestamp };
+})();
+__m["copybook-decoder/src/report.js"] = (() => {
+const { mdTable, toCsv } = __m["shared/table.js"];
+function dictionaryMarkdown(fields, recordLength, warnings, title = "Data dictionary") {
+    const out = [`# ${title}`, "", `**Record length: ${recordLength} bytes** · ${fields.filter((f) => f.leaf).length} elementary fields.`, ""];
+    if (warnings.length)
+        out.push(...warnings.map((w) => `- ⚠️ ${w}`), "");
+    out.push(mdTable(["Level", "Field", "Start", "Length", "Type", "PIC", "Storage", "Notes"], fields.map((f) => [
+        f.level, "  ".repeat(Math.max(0, f.path.split(".").length - 1)) + f.name, f.offset + 1, f.length,
+        f.kind === "numeric" ? `number${f.scale ? ` (${f.scale} decimals)` : ""}${f.signed ? ", signed" : ""}` : f.kind,
+        f.pic || "-", f.usage === "COMP-3" ? "packed (COMP-3)" : f.usage === "BINARY" ? "binary" : f.kind === "group" ? "-" : "text/zoned",
+        [f.redefines ? "redefines earlier field" : "", f.values.length ? `values: ${f.values.join("; ")}` : ""].filter(Boolean).join(" · "),
+    ])), "");
+    return out.join("\n") + "\n";
+}
+function decodeSummary(d) {
+    const out = ["## Decoded data", "", `**${d.records.toLocaleString("en-US")} records** decoded (${d.recordLength} bytes each).`];
+    if (d.leftover)
+        out.push(`⚠️ ${d.leftover} bytes left over at the end: record length or file format may be wrong (variable-length files need --rdw).`);
+    if (d.problems.length) {
+        out.push("", `⚠️ ${d.problems.length} field value(s) couldn't be decoded cleanly (shown as raw hex in the CSV):`, "", mdTable(["Record", "Field", "Problem", "Raw bytes"], d.problems.slice(0, 30).map((p) => [p.record, p.field, p.problem, p.raw])));
+    }
+    if (d.rows.length)
+        out.push("", "**First 5 records**", "", mdTable(d.columns, d.rows.slice(0, 5)));
+    out.push("", "_Generated by Hyniqe Hub · Copybook Decoder. Runs locally; your data never leaves your machine._");
+    return out.join("\n") + "\n";
+}
+function dictionaryCsv(fields) {
+    return toCsv(fields.map((f) => ({ level: f.level, path: f.path, start: f.offset + 1, length: f.length, end: f.offset + f.length, type: f.kind, pic: f.pic, usage: f.usage, digits: f.digits, decimals: f.scale, signed: f.signed ? "yes" : "no", redefines: f.redefines ? "yes" : "no", values: f.values.join("; ") })), ["level", "path", "start", "length", "end", "type", "pic", "usage", "digits", "decimals", "signed", "redefines", "values"]);
+}
+function dataCsv(d) {
+    return toCsv(d.rows.map((r) => Object.fromEntries(d.columns.map((c, i) => [c, r[i]]))), d.columns);
+}
+
+return { dictionaryMarkdown, decodeSummary, dictionaryCsv, dataCsv };
+})();
+const SAMPLES = {"copybook":"      * CUSTOMER MASTER RECORD - DAILY EXTRACT FROM CORE BANKING\n      * LAST CHANGED 1998 (Y2K DATE EXPANSION)\n       01  CUSTOMER-RECORD.\n           05  CUST-ID                 PIC 9(8).\n           05  CUST-NAME               PIC X(30).\n           05  CUST-TYPE               PIC X.\n               88  CUST-RETAIL         VALUE 'R'.\n               88  CUST-CORPORATE      VALUE 'C'.\n           05  OPEN-DATE               PIC 9(8).\n           05  OPEN-DATE-R REDEFINES OPEN-DATE.\n               10  OPEN-YYYY           PIC 9(4).\n               10  OPEN-MM             PIC 99.\n               10  OPEN-DD             PIC 99.\n           05  BALANCE                 PIC S9(11)V99 COMP-3.\n           05  CREDIT-LIMIT            PIC S9(7)V99.\n           05  TXN-COUNT               PIC 9(4) COMP.\n           05  ADDRESS-LINE            PIC X(20) OCCURS 2 TIMES.\n           05  COUNTRY-CODE            PIC XX.\n           05  RISK-SCORE              PIC S999 COMP-3.\n           05  FILLER                  PIC X(5).\n","data":"base64:8fDw8PDw8PDWwtnJxdVAUEDi1tXiQNPjxEBAQEBAQEBAQEBAQEDZ8vDw8PHx8PIAFGhkl1ec8PDw8vXw8PDQF2f1+fdAyMnHyEDi49nFxeNAQEBAQNPW1cTW1UBAQEBAQEBAQEBAQEBAxeI4nEBAQEBA8fDw8PDw8/fB1dXBQNTkxdPTxdlAQEBAQEBAQEBAQEBAQEBAQEDZ8vDw8vD38PMACRI1dDCM9fnx9fjy9PjDGyv28UDIycfIQOLj2cXF40BAQEBAQNTBxNnJxEBAQEBAQEBAQEBAQEBAx8JAfEBAQEBA8fDw8PDw9/TB1dXBQNTkxdPTxdlAQEBAQEBAQEBAQEBAQEBAQEDD8fn3+PD08PIAOHJmhxSc9PT5+fT38fLACTv19fRAyMnHyEDi49nFxeNAQEBAQNPW1cTW1UBAQEBAQEBAQEBAQEBAxeJYHEBAQEBA8fDw8PDx8fHRxcHVYNfB5NNAxOTC1sniQEBAQEBAQEBAQEBAQEDZ8vDx8vHw8vEAR1UVQBZc8fD09fH18vjEIw738/BAyMnHyEDi49nFxeNAQEBAQNPW1cTW1UBAQEBAQEBAQEBAQEBAxeIHLEBAQEBA8fDw8PDx9PjiyeXB4uTC2cHUwdXJwdVAw0BAQEBAQEBAQEBAQEDD8vDx+PD58fQARXh4RRRM9Pn5+PP28fnGJXn59PZAyMnHyEDi49nFxeNAQEBAQMPIxdXVwclAQEBAQEBAQEBAQEBAxtlWPEBAQEBA8fDw8PDx+PXiyeXB4uTC2cHUwdXJwdVAw0BAQEBAQEBAQEBAQEDZ8vDx+fD08PMAQGIYNnGc9fbz+PL19PTIH6/4+fdAyMnHyEDi49nFxeNAQEBAQNfB2cniQEBAQEBAQEBAQEBAQEBAydVTnEBAQEBA8fDw8PDy8vLV1tnEycNA48nUwsXZQMHCQEBAQEBAQEBAQEBAQEDZ8vDw9/D38PYARXAVaFEc8fbz8Pny8fTJH0v08/JAyMnHyEDi49nFxeNAQEBAQNPW1cTW1UBAQEBAQEBAQEBAQEBAx8JZLEBAQEBA8fDw8PDy9fnWwtnJxdVAUEDi1tXiQNPjxEBAQEBAQEBAQEBAQEDD8vDx8/D48fkAYwUhZxM88Pfz9/Pz9vXCBf359vhAyMnHyEDi49nFxeNAQEBAQNfB2cniQEBAQEBAQEBAQEBAQEBAydUIPEBAQEBA8fDw8PDy+fbB1dXBQNTkxdPTxdlAQEBAQEBAQEBAQEBAQEBAQEDD8vDx9vHw8vIAYxWWgiE88/D19Pjy8fLDGLD58PlAyMnHyEDi49nFxeNAQEBAQNfB2cniQEBAQEBAQEBAQEBAQEBAx8KJXEBAQEBA8fDw8PDz8/PWwtnJxdVAUEDi1tXiQNPjxEBAQEBAQEBAQEBAQEDZ8vDx9PDy8fYAJVIwEQcs8PDw8vXw8PDQEmXx8/NAyMnHyEDi49nFxeNAQEBAQOLj1sPSyNbT1EBAQEBAQEBAQEBAydV1DEBAQEBA8fDw8PDz9/DBw9TFQOPZwcTJ1cdAx9TCyEBAQEBAQEBAQEBAQEDZ8fn49fD48fMANiGVZIF8+fT49PL28fbGCMP48/lAyMnHyEDi49nFxeNAQEBAQMPIxdXVwclAQEBAQEBAQEBAQEBAxeJSDEBAQEBA8fDw8PD08PfSydRA4tbVx0BAQEBAQEBAQEBAQEBAQEBAQEBAQEDD8vDx+PD38PgACHOBNJc88fj58fHy8/TICa7y8/hAyMnHyEDi49nFxeNAQEBAQOLj1sPSyNbT1EBAQEBAQEBAQEBAx8KUPEBAQEBA8fDw8PD09PTRxcHVYNfB5NNAxOTC1sniQEBAQEBAQEBAQEBAQEDD8fn58/Dx8PUAdDE4BVUc8/n28/jz8PDDJwf1+PBAyMnHyEDi49nFxeNAQEBAQNfB2cniQEBAQEBAQEBAQEBAQEBA4sUGDEBAQEBA8fDw8PD0+PHBw9TFQOPZwcTJ1cdAx9TCyEBAQEBAQEBAQEBAQEDD8vDw8PD38fMAZDaRl4aM9vjw+fbz8vPEGaD29EDIycfIQOLj2cXF40BAQEBAQOLj1sPSyNbT1EBAQEBAQEBAQEBAx8I3fEBAQEBA8fDw8PD18fjBw9TFQOPZwcTJ1cdAx9TCyEBAQEBAQEBAQEBAQEDZ8fn48vD28vAAEmEHEkE88PDw8fXw9PjCJEbx9fVAyMnHyEDi49nFxeNAQEBAQNTBxNnJxEBAQEBAQEBAQEBAQEBAx8JpTEBAQEBA8fDw8PD19fXB1dXBQNTkxdPTxdlAQEBAQEBAQEBAQEBAQEBAQEDZ8fn4+PHw8fMAhgNzZUBc8vfw9/X59/DDFjv28fdAyMnHyEDi49nFxeNAQEBAQNfB2cniQEBAQEBAQEBAQEBAQEBAydUgHEBAQEBA8fDw8PD1+fLV1tnEycNA48nUwsXZQMHCQEBAQEBAQEBAQEBAQEDD8vDw9PD48fYACUKTMBEM8fX09vT0+fjCBor39vhAyMnHyEDi49nFxeNAQEBAQNfB2cniQEBAQEBAQEBAQEBAQEBAxtmTDEBAQEBA8fDw8PD28vnRxcHVYNfB5NNAxOTC1sniQEBAQEBAQEBAQEBAQEDZ8fn4+PD58fIAQEIpGEN89vnw8vL2+fXCBdP38fNAyMnHyEDi49nFxeNAQEBAQNfB2cniQEBAQEBAQEBAQEBAQEBAxeJwHEBAQEBA8fDw8PD29vbRxcHVYNfB5NNAxOTC1sniQEBAQEBAQEBAQEBAQEDD8vDy9PD08fgARGCHQCNc8PDw8vXw8PDQDkb28vhAyMnHyEDi49nFxeNAQEBAQOLj1sPSyNbT1EBAQEBAQEBAQEBA4sV3DEBAQEBA8fDw8PD38PPiyeXB4uTC2cHUwdXJwdVAw0BAQEBAQEBAQEBAQEDZ8vDw+PD48fIAAmOWOCYc8PL5+Pn38vDHEeH0+PRAyMnHyEDi49nFxeNAQEBAQNfB2cniQEBAQEBAQEBAQEBAQEBA4sVlXEBAQEBA8fDw8PD39PDBw9TFQOPZwcTJ1cdAx9TCyEBAQEBAQEBAQEBAQEDD8fn5+PDy8PgAMAA1Mmgc9fD09vT09fTBDJbz9PZAyMnHyEDi49nFxeNAQEBAQOLj1sPSyNbT1EBAQEBAQEBAQEBAydUEfUBAQEBA8fDw8PD39/fBw9TFQOPZwcTJ1cdAx9TCyEBAQEBAQEBAQEBAQEDD8vDx9vDy8vcAFSIglWc8+ff29/b19/bCGN348PJAyMnHyEDi49nFxeNAQEBAQOLj1sPSyNbT1EBAQEBAQEBAQEBAydUxXEBAQEBA8fDw8PD48fTSydRA4tbVx0BAQEBAQEBAQEBAQEBAQEBAQEBAQEDD8fn48PHy8fMAUwKIZpJ89/n48Pb4+PjJBW/39PNAyMnHyEDi49nFxeNAQEBAQOLj1sPSyNbT1EBAQEBAQEBAQEBA4sUhDEBAQEBA8fDw8PD49fHB1dXBQNTkxdPTxdlAQEBAQEBAQEBAQEBAQEBAQEDZ8vDx8vD48vYAGUlnWGg89vX29ffx+PbHJiL0+PZAyMnHyEDi49nFxeNAQEBAQNfB2cniQEBAQEBAQEBAQEBAQEBA4sUhjEBAQEBA8fDw8PD4+PjB1dXBQNTkxdPTxdlAQEBAQEBAQEBAQEBAQEBAQEDZ8vDy8fHx8PQAIGiXVxlc9Pb19vn58/PADHf49PZAyMnHyEDi49nFxeNAQEBAQOLj1sPSyNbT1EBAQEBAQEBAQEBAx8JGXEBAQEBA8fDw8PD58vXiyeXB4uTC2cHUwdXJwdVAw0BAQEBAQEBAQEBAQEDD8vDw9/D08vUARJaEAUIc8vf48/nw+PLIItb08/BAyMnHyEDi49nFxeNAQEBAQOLj1sPSyNbT1EBAQEBAQEBAQEBAx8JnTEBAQEBA8fDw8PD59vLBw9TFQOPZwcTJ1cdAx9TCyEBAQEBAQEBAQEBAQEDD8vDw9/Dz8fgAaIcWCQUc9fT48Pn19vjGATL4+fRAyMnHyEDi49nFxeNAQEBAQMPIxdXVwclAQEBAQEBAQEBAQEBA4sUELUBAQEBA8fDw8PD5+fnRxcHVYNfB5NNAxOTC1sniQEBAQEBAQEBAQEBAQEDZ8fn49PD48vAAFUmVgyeM8PDw8vXw8PDQI5329EDIycfIQOLj2cXF40BAQEBAQNfB2cniQEBAQEBAQEBAQEBAQEBAxeKTjEBAQEBA8fDw8PHw8/bV1tnEycNA48nUwsXZQMHCQEBAQEBAQEBAQEBAQEDZ8fn58PD08PkAaGOSiUic9Pj19PLw8vDDI/Py+UDIycfIQOLj2cXF40BAQEBAQNPW1cTW1UBAQEBAQEBAQEBAQEBAydVhbEBAQEBA8fDw8PHw9/PiyeXB4uTC2cHUwdXJwdVAw0BAQEBAQEBAQEBAQEDD8vDw8/D58fgAZzkhA0Rc9fT18Pn09PDHD9n38fZAyMnHyEDi49nFxeNAQEBAQNTBxNnJxEBAQEBAQEBAQEBAQEBAxtk2TEBAQEBA8fDw8PHx8fDBw9TFQOPZwcTJ1cdAx9TCyEBAQEBAQEBAQEBAQEDZ8vDw8fDy8fMARDSFVWmc8Pf39/n19/fHD2b08/lAyMnHyEDi49nFxeNAQEBAQNPW1cTW1UBAQEBAQEBAQEBAQEBA4sVXDEBAQEBA8fDw8PHx9PfV1tnEycNA48nUwsXZQMHCQEBAQEBAQEBAQEBAQEDZ8vDy8PHx8vIAGCUmFENc8vfx9vfy9PbICMj5+fFAyMnHyEDi49nFxeNAQEBAQMPIxdXVwclAQEBAQEBAQEBAQEBA4sUULEBAQEBA8fDw8PHx+PTSydRA4tbVx0BAQEBAQEBAQEBAQEBAQEBAQEBAQEDD8fn49fHx8vcAIZNWcpOc9/X48/D58fPGG5718vhAyMnHyEDi49nFxeNAQEBAQMPIxdXVwclAQEBAQEBAQEBAQEBAxtmBLEBAQEBA8fDw8PHy8vHiyeXB4uTC2cHUwdXJwdVAw0BAQEBAQEBAQEBAQEDD8fn59fDy8vQAAQcXVAk88/by+PDy+fLBI3X09/BAyMnHyEDi49nFxeNAQEBAQMPIxdXVwclAQEBAQEBAQEBAQEBAx8JzfEBAQEBA8fDw8PHy9fjWwtnJxdVAUEDi1tXiQNPjxEBAQEBAQEBAQEBAQEDD8vDw9/Dy8PQAMpUHZGJM+fTw+fH58PHCBrT490DIycfIQOLj2cXF40BAQEBAQNfB2cniQEBAQEBAQEBAQEBAQEBAxtkDHEBAQEBA8fDw8PHy+fXRxcHVYNfB5NNAxOTC1sniQEBAQEBAQEBAQEBAQEDD8vDy8/Dz8vcAUhUDJIIM8fbw8vjy9vHFIlf59PJAyMnHyEDi49nFxeNAQEBAQNTBxNnJxEBAQEBAQEBAQEBAQEBAxeKWLEBAQEBA8fDw8PHz8/LWwtnJxdVAUEDi1tXiQNPjxEBAQEBAQEBAQEBAQEDZ8fn58vDx8vYAI5MGVpCc8PDw8vXw8PDQGzj58fdAyMnHyEDi49nFxeNAQEBAQNPW1cTW1UBAQEBAQEBAQEBAQEBAxtkBbUBAQEBA8fDw8PHz9vnV1tnEycNA48nUwsXZQMHCQEBAQEBAQEBAQEBAQEDD8fn48PHw8vgACQRRaWQ88vjz+PXy8PjJB8n09vVAyMnHyEDi49nFxeNAQEBAQNPW1cTW1UBAQEBAQEBAQEBAQEBAxtmAXEBAQEBA8fDw8PH08PbUwdnJwUDHwdnDycFA09bXxelAQEBAQEBAQEBAQEDZ8fn39/D58vMANFUxVpVs8PXz+fn0+PHAC5fy8PdAyMnHyEDi49nFxeNAQEBAQNfB2cniQEBAQEBAQEBAQEBAQEBAxtk3HEBAQEBA8fDw8PH09PPUwdnJwUDHwdnDycFA09bXxelAQEBAQEBAQEBAQEDD8vDw9/Hx8ParR5BlJJZs+Pby+PTz9vnHASny9fdAyMnHyEDi49nFxeNAQEBAQNPW1cTW1UBAQEBAQEBAQEBAQEBAx8IBPUBAQEBA"};
+// Minimal, safe Markdown → HTML for the reports these tools produce (headings, tables, lists, checkboxes,
+// bold/italic/code, line breaks). All text is HTML-escaped first.
+function renderMarkdown(md) {
+  const esc = (s) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  const inline = (s) => esc(s)
+    .replace(/`([^`]+)`/g, "<code>$1</code>")
+    .replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>")
+    .replace(/(^|[\s(])_([^_]+)_(?=[\s).,:;]|$)/g, "$1<em>$2</em>")
+    .replace(/ {2}$/g, "<br>");
+  const lines = md.replace(/\r/g, "").split("\n");
+  const html = [];
+  let i = 0;
+  while (i < lines.length) {
+    const l = lines[i];
+    if (/^#{1,4} /.test(l)) { const n = l.match(/^#+/)[0].length; html.push(`<h${n + 1}>${inline(l.slice(n + 1))}</h${n + 1}>`); i++; continue; }
+    if (/^\|.*\|$/.test(l) && /^\|\s*-+/.test(lines[i + 1] || "")) {
+      const cells = (row) => row.slice(1, -1).split(/(?<!\\)\|/).map((c) => inline(c.trim().replace(/\\\|/g, "|")));
+      const head = cells(l);
+      i += 2;
+      const body = [];
+      while (i < lines.length && /^\|.*\|$/.test(lines[i])) body.push(cells(lines[i++]));
+      html.push(`<div class="tablewrap"><table><thead><tr>${head.map((c) => `<th>${c}</th>`).join("")}</tr></thead><tbody>${body.map((r) => `<tr>${r.map((c) => `<td>${c}</td>`).join("")}</tr>`).join("")}</tbody></table></div>`);
+      continue;
+    }
+    if (/^(\d+\.|-) /.test(l)) {
+      const ordered = /^\d+\./.test(l);
+      const items = [];
+      while (i < lines.length && (/^(\d+\.|-) /.test(lines[i]) || /^ {2,}\S/.test(lines[i]))) {
+        if (/^ {2,}\S/.test(lines[i]) && items.length) items[items.length - 1] += "<br>" + inline(lines[i].trim());
+        else items.push(inline(lines[i].replace(/^(\d+\.|-) /, "")).replace(/^\[ \] /, '<input type="checkbox"> ').replace(/^\[x\] /i, '<input type="checkbox" checked> '));
+        // keep "  " line-break markers inside items
+        if (/ {2}$/.test(lines[i])) items[items.length - 1] = items[items.length - 1].replace(/<br>$/, "");
+        i++;
+      }
+      html.push(`<${ordered ? "ol" : "ul"}>${items.map((x) => `<li>${x}</li>`).join("")}</${ordered ? "ol" : "ul"}>`);
+      continue;
+    }
+    if (!l.trim()) { i++; continue; }
+    const para = [];
+    while (i < lines.length && lines[i].trim() && !/^(#|\||\d+\. |- )/.test(lines[i])) para.push(inline(lines[i++]));
+    html.push(`<p>${para.join(" ")}</p>`);
+  }
+  return html.join("\n");
+}
+
+// Page UI for each Hub solution. Expects: __m (bundled modules), SAMPLES, renderMarkdown.
+(function () {
+  const $ = (sel, el = document) => el.querySelector(sel);
+  const h = (html) => { const t = document.createElement("template"); t.innerHTML = html.trim(); return t.content.firstElementChild; };
+  const app = $("#app");
+  const table = __m["shared/table.js"];
+  const solution = document.body.dataset.solution;
+
+  function download(name, text, type = "text/plain") {
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(new Blob([text], { type }));
+    a.download = name;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+  }
+  async function readFiles(input) {
+    return Promise.all([...input.files].map(async (f) => ({ name: f.webkitRelativePath || f.name, text: await f.text() })));
+  }
+  function fileInto(input, textarea) {
+    input.addEventListener("change", async () => { const [f] = await readFiles(input); if (f) textarea.value = f.text; });
+  }
+  const resultCard = h(`<section class="card"><div id="downloads" class="actions" style="margin:0 0 8px"></div><div id="report" class="empty">Your report will appear here.</div></section>`);
+  function show(md, downloads = []) {
+    const r = $("#report", resultCard);
+    r.className = "";
+    r.innerHTML = renderMarkdown(md);
+    const d = $("#downloads", resultCard);
+    d.innerHTML = "";
+    for (const [label, name, text, type] of [["Download report (.md)", "report.md", md, "text/markdown"], ...downloads]) {
+      const b = h(`<button>${label}</button>`);
+      b.onclick = () => download(name, text, type);
+      d.append(b);
+    }
+    resultCard.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+  function showError(e) {
+    const r = $("#report", resultCard);
+    r.className = "error";
+    r.textContent = e && e.message ? e.message : String(e);
+  }
+  const safe = (fn) => () => { try { fn(); } catch (e) { console.error(e); showError(e); } };
+
+  // ------------------------------------------------------------------ Agent Payment Mandate Checker
+  if (solution === "agent-payment-mandate-checker") {
+    const c = __m["agent-payment-mandate-checker/src/checker.js"], rep = __m["agent-payment-mandate-checker/src/report.js"];
+    const card = h(`<section class="card"><h2>1 · Mandates <span class="hint">(JSON: what each agent may pay, to whom, up to what limit)</span></h2>
+      <input type="file" id="mf" accept=".json"><textarea id="m" placeholder='{"mandates":[{"id":"M-1","agent_id":"ap-agent","per_payment_limit":5000}]}'></textarea>
+      <h2 style="margin-top:16px">2 · Agent payment log <span class="hint">(CSV: payment_id, timestamp, agent_id, mandate_id, payee, amount, currency, category, approved_by, approval_time, purpose, status)</span></h2>
+      <input type="file" id="pf" accept=".csv,.txt"><textarea id="p"></textarea>
+      <div class="actions"><button class="primary" id="run">Check payments</button><button id="sample">Load sample data</button></div></section>`);
+    app.append(card, resultCard);
+    fileInto($("#mf", card), $("#m", card)); fileInto($("#pf", card), $("#p", card));
+    $("#sample", card).onclick = () => { $("#m", card).value = SAMPLES.mandates; $("#p", card).value = SAMPLES.payments; };
+    $("#run", card).onclick = safe(() => {
+      let raw;
+      try { raw = JSON.parse($("#m", card).value); } catch (e) { throw new Error("Mandates must be valid JSON: " + e.message); }
+      const { file, errors } = c.validateMandateFile(raw);
+      if (!file || errors.length) throw new Error(errors.join("\n"));
+      const res = c.checkPayments(file, c.readPayments(table.parseCsv($("#p", card).value)));
+      show(rep.toMarkdown(res), [["Download results (.csv)", "mandate-check.csv", rep.toResultCsv(res), "text/csv"]]);
+    });
+  }
+
+  // ------------------------------------------------------------------ Verify-Before-You-Pay
+  if (solution === "verify-before-you-pay") {
+    const a = __m["verify-before-you-pay/src/assess.js"], rep = __m["verify-before-you-pay/src/report.js"];
+    const card = h(`<section class="card"><div class="tabs"><button aria-selected="true" data-t="one">Check one request</button><button aria-selected="false" data-t="log">Audit an approval log</button></div>
+      <label>Your company's and key suppliers' email domains <span class="hint">(comma-separated, so look-alikes can be spotted)</span></label><input type="text" id="dom" placeholder="yourbank.com, mainsupplier.com">
+      <div data-p="one"><label>Paste the message, email or call notes</label><textarea id="txt" placeholder="Paste the payment request here…"></textarea>
+        <div class="row"><div><label>Who is asking?</label><input type="text" id="from" placeholder="e.g. Jane Smith"></div><div><label>Their title</label><input type="text" id="title" placeholder="e.g. CFO, Supplier"></div>
+        <div><label>How did it arrive?</label><select id="ch"><option value="">(not sure)</option><option>email</option><option>phone</option><option>voice note</option><option>video</option><option>teams</option><option>whatsapp</option><option>sms</option><option>in person</option></select></div></div>
+        <div class="row"><div><label>Amount</label><input type="text" id="amt" placeholder="e.g. 48500"></div><div><label>Currency</label><input type="text" id="ccy" placeholder="USD"></div>
+        <div><label>New payee?</label><select id="np"><option value="">(not sure)</option><option value="yes">Yes</option><option value="no">No</option></select></div><div><label>Bank details changed?</label><select id="bc"><option value="">(not sure)</option><option value="yes">Yes</option><option value="no">No</option></select></div></div>
+        <div class="actions"><button class="primary" id="go1">Check this request</button><button id="ex">Try an example</button></div></div>
+      <div data-p="log" hidden><label>Approval log CSV <span class="hint">(request_id, received_at, requested_by, requester_title, channel, sender, amount, currency, payee, payee_new, bank_details_changed, bank_change_at, message, callback_done, callback_source, challenge_passed, approver_1, approver_2, released_by, paid_at)</span></label>
+        <input type="file" id="lf" accept=".csv,.txt"><textarea id="log"></textarea><div class="actions"><button class="primary" id="go2">Audit log</button><button id="sl">Load sample log</button></div></div></section>`);
+    app.append(card, resultCard);
+    card.querySelectorAll(".tabs button").forEach((b) => b.onclick = () => {
+      card.querySelectorAll(".tabs button").forEach((x) => x.setAttribute("aria-selected", x === b));
+      card.querySelectorAll("[data-p]").forEach((p) => (p.hidden = p.dataset.p !== b.dataset.t));
+    });
+    fileInto($("#lf", card), $("#log", card));
+    const policy = () => ({ ...a.DEFAULT_POLICY, company_domains: $("#dom", card).value.split(",").map((s) => s.trim()).filter(Boolean) });
+    $("#ex", card).onclick = () => {
+      $("#txt", card).value = "From: d.chen@northwind-group.co\nHi, are you at your desk? I need a favour. Please wire $48,500 today to our new legal counsel for a confidential acquisition. Don't discuss this with anyone yet. I'm in a board meeting so can't talk, just email me when it's done.";
+      $("#dom", card).value = "northwind.com"; $("#from", card).value = "David Chen"; $("#title", card).value = "CEO"; $("#ch", card).value = "email"; $("#np", card).value = "yes";
+    };
+    $("#sl", card).onclick = () => { $("#log", card).value = SAMPLES.log; if (!$("#dom", card).value) $("#dom", card).value = "northwind-demo.com, globex-logistics.com"; };
+    $("#go1", card).onclick = safe(() => {
+      const text = $("#txt", card).value;
+      if (!text.trim()) throw new Error("Paste the request text first.");
+      const yn = (v) => (v === "yes" ? true : v === "no" ? false : null);
+      const extra = { requested_by: $("#from", card).value, requester_title: $("#title", card).value, payee_new: yn($("#np", card).value) };
+      if ($("#ch", card).value) extra.channel = $("#ch", card).value;
+      if ($("#amt", card).value) extra.amount = table.parseAmount($("#amt", card).value);
+      if ($("#ccy", card).value) extra.currency = $("#ccy", card).value.toUpperCase();
+      if (yn($("#bc", card).value) !== null) extra.bank_details_changed = yn($("#bc", card).value);
+      const req = a.requestFromText(text, extra);
+      show("# Verify-Before-You-Pay\n\n" + rep.oneToMarkdown(a.assess(req, policy())));
+    });
+    $("#go2", card).onclick = safe(() => {
+      const list = a.readRequests(table.parseCsv($("#log", card).value)).map((r) => a.assess(r, policy()));
+      if (!list.length) throw new Error("No rows found in the log.");
+      show(rep.toMarkdown(list), [["Download results (.csv)", "verify-report.csv", rep.toResultCsv(list), "text/csv"]]);
+    });
+  }
+
+  // ------------------------------------------------------------------ AI Use Register
+  if (solution === "ai-use-register") {
+    const c = __m["ai-use-register/src/classify.js"], rep = __m["ai-use-register/src/report.js"];
+    const card = h(`<section class="card"><h2>Your AI inventory <span class="hint">(CSV. Only name and description are required; every other column sharpens the register.)</span></h2>
+      <input type="file" id="f" accept=".csv,.txt"><textarea id="t"></textarea>
+      <div class="actions"><button class="primary" id="go">Build register</button><button id="tpl">Download blank template</button><button id="s">Load sample inventory</button></div></section>`);
+    app.append(card, resultCard);
+    fileInto($("#f", card), $("#t", card));
+    $("#tpl", card).onclick = () => download("ai-inventory-template.csv", rep.templateCsv(), "text/csv");
+    $("#s", card).onclick = () => ($("#t", card).value = SAMPLES.inventory);
+    $("#go", card).onclick = safe(() => {
+      const rows = table.parseCsv($("#t", card).value).filter((r) => !/^your reference/i.test(Object.values(r)[0] || ""));
+      if (!rows.length) throw new Error("No rows found. Load a CSV or the sample.");
+      const list = c.readUseCases(rows).map((u) => c.classify(u));
+      show(rep.toMarkdown(list), [["Download register (.csv)", "ai-register.csv", rep.toRegisterCsv(list), "text/csv"]]);
+    });
+  }
+
+  // ------------------------------------------------------------------ PQC Crypto Inventory
+  if (solution === "pqc-crypto-inventory") {
+    const sc = __m["pqc-crypto-inventory/src/scan.js"], rep = __m["pqc-crypto-inventory/src/report.js"];
+    const card = h(`<section class="card"><h2>Choose a code folder or files <span class="hint">(source, configs, scripts, certificates; read locally, never uploaded)</span></h2>
+      <div class="row"><div><label>Folder</label><input type="file" id="dir" webkitdirectory multiple></div><div><label>Or individual files</label><input type="file" id="files" multiple></div></div>
+      <label>Or paste code / config</label><textarea id="t" placeholder='KeyPairGenerator.getInstance("RSA") …'></textarea>
+      <div class="actions"><button class="primary" id="go">Scan</button><button id="s">Scan the demo repo</button></div><p class="hint" id="status"></p></section>`);
+    app.append(card, resultCard);
+    const SKIP = /(^|\/)(node_modules|\.git|dist|build|target|vendor|\.venv|venv|__pycache__)\//;
+    async function run(inputs) {
+      const findings = [];
+      let n = 0;
+      for (const f of inputs) {
+        if (SKIP.test(f.name) || (!sc.isScannable(f.name) && f.name !== "pasted.txt") || f.text.length > 2000000 || f.text.includes("\u0000")) continue;
+        n++;
+        findings.push(...sc.scanText(f.name, f.text));
+      }
+      const s = sc.summarise(findings, n);
+      $("#status", card).textContent = `Scanned ${n} file(s).`;
+      show(rep.toMarkdown(findings, s), [["Download findings (.csv)", "pqc-inventory.csv", rep.toResultCsv(findings), "text/csv"], ["Download CBOM (.json)", "cbom.json", JSON.stringify(sc.toCbom(findings), null, 2), "application/json"]]);
+    }
+    $("#go", card).onclick = async () => {
+      try {
+        const inputs = [...(await readFiles($("#dir", card))), ...(await readFiles($("#files", card)))];
+        if ($("#t", card).value.trim()) inputs.push({ name: "pasted.txt", text: $("#t", card).value });
+        if (!inputs.length) throw new Error("Choose a folder, some files, or paste code first.");
+        $("#status", card).textContent = `Reading ${inputs.length} file(s)…`;
+        await run(inputs);
+      } catch (e) { showError(e); }
+    };
+    $("#s", card).onclick = () => run(Object.entries(SAMPLES).map(([name, text]) => ({ name, text }))).catch(showError);
+  }
+
+  // ------------------------------------------------------------------ Legacy Runbook Builder
+  if (solution === "legacy-runbook-builder") {
+    const x = __m["legacy-runbook-builder/src/extract.js"], rep = __m["legacy-runbook-builder/src/report.js"];
+    const card = h(`<section class="card"><h2>Old procedures, handover notes and scripts <span class="hint">(text, shell/batch scripts, JCL, crontabs, SQL)</span></h2>
+      <input type="file" id="files" multiple><label>Or paste text</label><textarea id="t" placeholder="Paste a handover email, procedure or script…"></textarea>
+      <label>Runbook title <span class="hint">(optional)</span></label><input type="text" id="title" placeholder="e.g. USD nostro reconciliation">
+      <div class="actions"><button class="primary" id="go">Build runbook</button><button id="s">Load sample handover</button></div></section>`);
+    app.append(card, resultCard);
+    let sampleLoaded = false;
+    $("#s", card).onclick = () => { sampleLoaded = true; $("#t", card).value = "(sample: nostro recon handover email + SWIFT batch script + JCL + crontab will be used)"; $("#title", card).value = "Payments ops: SWIFT batch, GL extract & USD nostro recon"; };
+    $("#go", card).onclick = async () => {
+      try {
+        let inputs = await readFiles($("#files", card));
+        const pasted = $("#t", card).value;
+        if (sampleLoaded && pasted.startsWith("(sample")) inputs = inputs.concat(Object.entries(SAMPLES).map(([name, text]) => ({ name, text })));
+        else if (pasted.trim()) inputs.push({ name: "pasted.txt", text: pasted });
+        if (!inputs.length) throw new Error("Choose files or paste text first.");
+        const rb = x.buildRunbook(inputs, $("#title", card).value || undefined);
+        const prompt = rep.aiPrompt(rb, inputs);
+        show(rep.toMarkdown(rb), [["Download knowledge gaps (.csv)", "knowledge-gaps.csv", rep.gapsCsv(rb), "text/csv"], ["Download AI prompt (.txt)", "ai-prompt.txt", prompt, "text/plain"]]);
+      } catch (e) { showError(e); }
+    };
+  }
+
+  // ------------------------------------------------------------------ helpers for the second batch
+  const fromB64 = (s) => Uint8Array.from(atob(s.replace(/^base64:/, "")), (c) => c.charCodeAt(0));
+  async function readBytes(input) { return Promise.all([...input.files].map(async (f) => ({ name: f.webkitRelativePath || f.name, bytes: new Uint8Array(await f.arrayBuffer()) }))); }
+  function simpleCard(html) { const c = h(`<section class="card">${html}</section>`); app.append(c, resultCard); return c; }
+  const csvBox = (id, label, hint) => `<label>${label} <span class="hint">${hint || ""}</span></label><input type="file" id="${id}f" accept=".csv,.txt"><textarea id="${id}"></textarea>`;
+  const wire = (card, ids) => ids.forEach((id) => fileInto($(`#${id}f`, card), $(`#${id}`, card)));
+
+  if (solution === "t1-settlement-predictor") {
+    const m = __m["t1-settlement-predictor/src/predict.js"], rep = __m["t1-settlement-predictor/src/report.js"];
+    const card = simpleCard(`<h2>Trades and SSIs</h2>${csvBox("tr", "Trade blotter (CSV)", "trade_id, trade_date, trade_time, settlement_date, isin, counterparty, place_of_settlement, currency, account_currency, allocation_time, affirmation_time, instruction_time")}${csvBox("ss", "Standing settlement instructions (CSV)", "counterparty, place_of_settlement, currency, agent_bic, account, valid_from, valid_to, last_verified")}
+      <div class="row"><div><label><input type="checkbox" id="t1"> Treat all trades as T+1 (test today's blotter)</label></div><div><label>Holidays <span class="hint">(YYYY-MM-DD, comma-separated)</span></label><input type="text" id="hol"></div></div>
+      <div class="actions"><button class="primary" id="go">Check trades</button><button id="s">Load sample</button></div>`);
+    wire(card, ["tr", "ss"]);
+    $("#s", card).onclick = () => { $("#tr", card).value = SAMPLES.trades; $("#ss", card).value = SAMPLES.ssis; };
+    $("#go", card).onclick = safe(() => {
+      const cfg = { ...m.DEFAULT_CONFIG, assume_t1: $("#t1", card).checked, holidays: $("#hol", card).value.split(",").map((x) => x.trim()).filter(Boolean) };
+      const list = m.assessTrades(m.readTrades(table.parseCsv($("#tr", card).value)), m.readSsis(table.parseCsv($("#ss", card).value)), cfg);
+      if (!list.length) throw new Error("No trades found.");
+      show(rep.toMarkdown(list), [["Download results (.csv)", "t1-report.csv", rep.toResultCsv(list), "text/csv"]]);
+    });
+  }
+
+  if (solution === "vop-precheck") {
+    const m = __m["vop-precheck/src/precheck.js"], rep = __m["vop-precheck/src/report.js"];
+    const card = simpleCard(`<h2>Payment file and supplier master</h2>${csvBox("pa", "Payment file (CSV)", "payee_name, iban, amount")}${csvBox("ma", "Supplier master (CSV, optional but recommended)", "iban, account_holder_name, trading_names")}
+      <div class="actions"><button class="primary" id="go">Check payments</button><button id="s">Load sample</button></div>`);
+    wire(card, ["pa", "ma"]);
+    $("#s", card).onclick = () => { $("#pa", card).value = SAMPLES.payments; $("#ma", card).value = SAMPLES.master; };
+    $("#go", card).onclick = safe(() => {
+      const list = m.precheck(m.readPayments(table.parseCsv($("#pa", card).value)), $("#ma", card).value.trim() ? m.readMaster(table.parseCsv($("#ma", card).value)) : []);
+      if (!list.length) throw new Error("No payments found.");
+      show(rep.toMarkdown(list), [["Download results (.csv)", "vop-precheck.csv", rep.toResultCsv(list), "text/csv"]]);
+    });
+  }
+
+  if (solution === "payment-investigation-assistant") {
+    const m = __m["payment-investigation-assistant/src/investigate.js"], rep = __m["payment-investigation-assistant/src/report.js"];
+    const card = simpleCard(`<h2>Payment query</h2><label>Paste an MT199/n99, an email or call notes</label><textarea id="t" style="min-height:200px"></textarea>
+      <div class="actions"><button class="primary" id="go">Analyse</button><button id="s1">Sample: MT199 non-receipt</button><button id="s2">Sample: fraud recall email</button></div>`);
+    $("#s1", card).onclick = () => ($("#t", card).value = SAMPLES.mt199);
+    $("#s2", card).onclick = () => ($("#t", card).value = SAMPLES.fraud);
+    $("#go", card).onclick = safe(() => { const t = $("#t", card).value; if (!t.trim()) throw new Error("Paste a query first."); show(rep.toMarkdown(m.analyse(t))); });
+  }
+
+  if (solution === "translation-loss-auditor") {
+    const m = __m["translation-loss-auditor/src/audit.js"], rep = __m["translation-loss-auditor/src/report.js"];
+    const card = simpleCard(`<h2>The two versions of one payment</h2><div class="row"><div><label>ISO 20022 pacs.008 (XML)</label><input type="file" id="mxf" accept=".xml,.txt"><textarea id="mx" style="min-height:220px"></textarea></div>
+      <div><label>MT103 (FIN text)</label><input type="file" id="mtf" accept=".txt,.fin,.mt"><textarea id="mt" style="min-height:220px"></textarea></div></div>
+      <div class="actions"><button class="primary" id="go">Compare</button><button id="s">Load sample</button></div>`);
+    wire(card, ["mx", "mt"]);
+    $("#s", card).onclick = () => { $("#mx", card).value = SAMPLES.mx; $("#mt", card).value = SAMPLES.mt; };
+    $("#go", card).onclick = safe(() => {
+      const mx = m.parsePacs008($("#mx", card).value), mt = m.parseMt103($("#mt", card).value);
+      const pairs = [{ name: "payment", uetr: mx.uetr, findings: m.audit(mx, mt) }];
+      show(rep.toMarkdown(pairs), [["Download findings (.csv)", "translation-audit.csv", rep.toResultCsv(pairs), "text/csv"]]);
+    });
+  }
+
+  if (solution === "sanctions-fp-analyser") {
+    const m = __m["sanctions-fp-analyser/src/analyse.js"], rep = __m["sanctions-fp-analyser/src/report.js"];
+    const card = simpleCard(`<h2>Closed alerts export</h2>${csvBox("al", "Alerts (CSV)", "alert_id, created_at, screened_name, matched_name, list, match_score, matched_field, message_type, disposition, handling_minutes, customer_id")}
+      <div class="row"><div><label>Cleared at least … times to count as a repeat pair</label><input type="text" id="mc" value="3"></div><div><label>Minutes per alert when not recorded</label><input type="text" id="mn" value="30"></div></div>
+      <div class="actions"><button class="primary" id="go">Analyse</button><button id="s">Load sample (invented names)</button></div>`);
+    wire(card, ["al"]);
+    $("#s", card).onclick = () => ($("#al", card).value = SAMPLES.alerts);
+    $("#go", card).onclick = safe(() => {
+      const a = m.analyse(m.readAlerts(table.parseCsv($("#al", card).value)), { minClears: Number($("#mc", card).value) || 3, defaultMinutes: Number($("#mn", card).value) || 30 });
+      if (!a.total) throw new Error("No alerts found.");
+      show(rep.toMarkdown(a), [["Download good-guy candidates (.csv)", "good-guy-candidates.csv", rep.goodGuysCsv(a), "text/csv"]]);
+    });
+  }
+
+  if (solution === "report-sanity-checker") {
+    const m = __m["report-sanity-checker/src/check.js"], rep = __m["report-sanity-checker/src/report.js"];
+    const card = simpleCard(`<h2>Report extract</h2>${csvBox("rp", "Report (CSV)", "columns are recognised by name: uti, *_lei, isin, notional, currency, *_date, country…")}
+      <div class="row"><div><label>Required columns <span class="hint">(comma-separated, optional)</span></label><input type="text" id="req"></div><div><label>Report date <span class="hint">(optional)</span></label><input type="text" id="rd" placeholder="YYYY-MM-DD"></div></div>
+      <div class="actions"><button class="primary" id="go">Check report</button><button id="s">Load sample</button></div>`);
+    wire(card, ["rp"]);
+    $("#s", card).onclick = () => ($("#rp", card).value = SAMPLES.report);
+    $("#go", card).onclick = safe(() => {
+      const res = m.checkReport(table.parseCsv($("#rp", card).value), { required: $("#req", card).value.split(",").map((x) => x.trim()).filter(Boolean), reportDate: $("#rd", card).value || undefined });
+      if (!res.rows) throw new Error("No rows found.");
+      show(rep.toMarkdown(res), [["Download issues (.csv)", "report-issues.csv", rep.toIssuesCsv(res.issues), "text/csv"]]);
+    });
+  }
+
+  if (solution === "dora-register-precheck") {
+    const m = __m["dora-register-precheck/src/precheck.js"], rep = __m["dora-register-precheck/src/report.js"];
+    const card = simpleCard(`<h2>Working register</h2>${csvBox("rg", "Register (CSV, one row per contractual arrangement)", "")}
+      <label>Reference date <span class="hint">(end of the reporting year)</span></label><input type="text" id="rd" placeholder="e.g. 2026-12-31">
+      <div class="actions"><button class="primary" id="go">Check register</button><button id="s">Load sample</button></div>`);
+    wire(card, ["rg"]);
+    $("#s", card).onclick = () => { $("#rg", card).value = SAMPLES.register; $("#rd", card).value = "2026-12-31"; };
+    $("#go", card).onclick = safe(() => {
+      const list = m.readRegister(table.parseCsv($("#rg", card).value));
+      if (!list.length) throw new Error("No arrangements found.");
+      const issues = m.precheck(list, { referenceDate: $("#rd", card).value || undefined });
+      show(rep.toMarkdown(list, issues), [["Download fix list (.csv)", "dora-issues.csv", rep.toIssuesCsv(issues), "text/csv"]]);
+    });
+  }
+
+  if (solution === "copybook-decoder") {
+    const m = __m["copybook-decoder/src/copybook.js"], rep = __m["copybook-decoder/src/report.js"];
+    const card = simpleCard(`<h2>Copybook and data file</h2><label>COBOL copybook</label><input type="file" id="cbf" accept=".cpy,.cbl,.cob,.txt"><textarea id="cb" style="min-height:200px"></textarea>
+      <label>Data file <span class="hint">(optional: fixed-length records; read locally)</span></label><input type="file" id="df">
+      <div class="row"><div><label>Encoding</label><select id="enc"><option value="ebcdic">EBCDIC (mainframe)</option><option value="ascii">ASCII</option></select></div><div><label>Record format</label><select id="fmt"><option value="fixed">Fixed length</option><option value="rdw">Variable (RDW)</option><option value="lines">One record per line</option></select></div></div>
+      <div class="actions"><button class="primary" id="go">Decode</button><button id="s">Load sample</button></div><p class="hint" id="st"></p>`);
+    fileInto($("#cbf", card), $("#cb", card));
+    let sampleData = null;
+    $("#s", card).onclick = () => { $("#cb", card).value = SAMPLES.copybook; sampleData = fromB64(SAMPLES.data); $("#st", card).textContent = `Sample data loaded (${sampleData.length} bytes, EBCDIC).`; };
+    $("#go", card).onclick = async () => {
+      try {
+        const { root, warnings } = m.parseCopybook($("#cb", card).value);
+        const l = m.layout(root);
+        let md = rep.dictionaryMarkdown(l.fields, l.recordLength, [...warnings, ...l.warnings]);
+        const dl = [["Download data dictionary (.csv)", "data-dictionary.csv", rep.dictionaryCsv(l.fields), "text/csv"]];
+        const [f] = await readBytes($("#df", card));
+        const bytes = f ? f.bytes : sampleData;
+        if (bytes) {
+          const fmt = $("#fmt", card).value;
+          const d = m.decodeData(l.fields, bytes, { encoding: $("#enc", card).value, recordLength: l.recordLength, rdw: fmt === "rdw", lineSeparated: fmt === "lines" });
+          md += "\n" + rep.decodeSummary(d);
+          dl.push(["Download decoded data (.csv)", "decoded.csv", rep.dataCsv(d), "text/csv"]);
+        }
+        show(md, dl);
+      } catch (e) { showError(e); }
+    };
+  }
+
+  if (solution === "migration-reconciler") {
+    const m = __m["migration-reconciler/src/reconcile.js"], rep = __m["migration-reconciler/src/report.js"];
+    const card = simpleCard(`<h2>Source and target extracts</h2><div class="row"><div>${csvBox("src", "Source (legacy) CSV", "")}</div><div>${csvBox("tgt", "Target (new system) CSV", "")}</div></div>
+      <div class="row"><div><label>Key column(s) in source</label><input type="text" id="key" placeholder="customer_id"></div><div><label>Column mapping <span class="hint">source:target, comma-separated</span></label><input type="text" id="map"></div></div>
+      <div class="row"><div><label>Numeric tolerance</label><input type="text" id="tol" value="0"></div><div><label>Ignore columns</label><input type="text" id="ign"></div></div>
+      <label><input type="checkbox" id="lz" checked> Ignore leading zeros in keys</label> <label><input type="checkbox" id="ic" checked> Ignore case in keys</label>
+      <div class="actions"><button class="primary" id="go">Reconcile</button><button id="s">Load sample</button></div>`);
+    wire(card, ["src", "tgt"]);
+    $("#s", card).onclick = () => { $("#src", card).value = SAMPLES.source; $("#tgt", card).value = SAMPLES.target; $("#key", card).value = "customer_id"; $("#map", card).value = "customer_id:cust_no,full_name:customer_name,address_line:address,postcode:post_code,date_of_birth:dob,balance:balance_amt,marketing_consent:consent_marketing"; };
+    $("#go", card).onclick = safe(() => {
+      const map = Object.fromEntries($("#map", card).value.split(",").filter(Boolean).map((p) => p.split(":").map((x) => x.trim())));
+      const r = m.reconcile(table.parseCsv($("#src", card).value), table.parseCsv($("#tgt", card).value), { key: $("#key", card).value.split(",").map((x) => x.trim()).filter(Boolean), map, tolerance: Number($("#tol", card).value) || 0, ignoreLeadingZeros: $("#lz", card).checked, ignoreCase: $("#ic", card).checked, ignoreFields: $("#ign", card).value.split(",").map((x) => x.trim()).filter(Boolean) });
+      show(rep.toMarkdown(r), [["Download differences (.csv)", "differences.csv", rep.diffsCsv(r), "text/csv"]]);
+    });
+  }
+
+  if (solution === "euc-risk-scanner") {
+    const m = __m["euc-risk-scanner/src/scan.js"], rep = __m["euc-risk-scanner/src/report.js"], zip = __m["shared/zip.js"];
+    const card = simpleCard(`<h2>Spreadsheets to scan</h2><div class="row"><div><label>Folder</label><input type="file" id="dir" webkitdirectory multiple></div><div><label>Or files</label><input type="file" id="files" multiple accept=".xlsx,.xlsm,.xls,.xltx,.xltm"></div></div>
+      <div class="actions"><button class="primary" id="go">Scan</button><button id="s">Scan samples</button></div><p class="hint" id="st"></p>`);
+    async function run(items) {
+      const reports = [];
+      for (const it of items.filter((x) => /\.(xlsx|xlsm|xls|xltx|xltm)$/i.test(x.name) && !/(^|\/)~\$/.test(x.name))) {
+        try { reports.push(await m.scanWorkbook(it.name, it.bytes, zip.browserInflate)); } catch (e) { console.warn(it.name, e); }
+      }
+      if (!reports.length) throw new Error("No Excel workbooks found.");
+      $("#st", card).textContent = `Scanned ${reports.length} workbook(s).`;
+      show(rep.toMarkdown(reports), [["Download EUC register (.csv)", "euc-register.csv", rep.registerCsv(reports), "text/csv"]]);
+    }
+    $("#go", card).onclick = async () => { try { await run([...(await readBytes($("#dir", card))), ...(await readBytes($("#files", card)))]); } catch (e) { showError(e); } };
+    $("#s", card).onclick = () => run(Object.entries(SAMPLES).map(([name, v]) => ({ name, bytes: fromB64(v) }))).catch(showError);
+  }
+
+  if (solution === "batch-dependency-mapper") {
+    const m = __m["batch-dependency-mapper/src/map.js"], rep = __m["batch-dependency-mapper/src/report.js"];
+    const card = simpleCard(`<h2>Batch files</h2><p class="hint">JCL, Control-M XML exports, crontabs and shell scripts.</p><div class="row"><div><label>Folder</label><input type="file" id="dir" webkitdirectory multiple></div><div><label>Or files</label><input type="file" id="files" multiple></div></div>
+      <div class="actions"><button class="primary" id="go">Map</button><button id="s">Load sample</button></div>`);
+    const diagram = h(`<section class="card" hidden><h2>Diagram</h2><div id="svg" style="overflow:auto"></div></section>`);
+    app.insertBefore(diagram, resultCard);
+    function run(files) {
+      const { jobs, skipped } = m.parseAll(files);
+      if (!jobs.length) throw new Error("No jobs found in these files.");
+      const g = m.buildGraph(jobs);
+      const svgText = rep.svg(g);
+      diagram.hidden = false;
+      $("#svg", diagram).innerHTML = svgText;
+      show(rep.toMarkdown(g, skipped).replace(/```mermaid[\s\S]*?```\n/, ""), [["Download diagram (.svg)", "batch-map.svg", svgText, "image/svg+xml"], ["Download dependencies (.csv)", "dependencies.csv", rep.edgesCsv(g), "text/csv"], ["Download Mermaid (.mmd)", "batch-map.mmd", rep.mermaid(g), "text/plain"]]);
+    }
+    $("#go", card).onclick = async () => { try { run([...(await readFiles($("#dir", card))), ...(await readFiles($("#files", card)))]); } catch (e) { showError(e); } };
+    $("#s", card).onclick = safe(() => run(Object.entries(SAMPLES).map(([name, text]) => ({ name, text }))));
+  }
+})();
+
+</script>
+</body>
+</html>

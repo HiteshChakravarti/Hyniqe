@@ -1,0 +1,21 @@
+name,description,users,expected
+Small business lending bot,Decides whether sole traders and individuals get a business loan and at what rate,customers,HIGH-RISK
+Student loan assessment,Assesses whether graduates can repay a student loan before granting it,customers,HIGH-RISK
+Rent-to-own affordability,Checks consumer affordability before offering a payment plan,customers,HIGH-RISK
+Fraud on loan applications,Detects fraudulent documents in loan applications,customers,MINIMAL
+Talent matching,Matches internal staff to open roles and suggests who should be moved,employees,HIGH-RISK
+Exit risk model,Predicts which employees are likely to resign and suggests who to let go in restructuring,employees,HIGH-RISK
+Workplace wellbeing camera,Camera system reads facial expressions of office staff to gauge mood,employees,PROHIBITED?
+Gambling nudges,Exploits addiction signals to push customers towards gambling-linked credit products,customers,PROHIBITED?
+Travel insurance pricing,Prices travel insurance policies,customers,MINIMAL
+Critical illness premiums,Sets premiums for critical illness and life cover using medical history,customers,HIGH-RISK
+WhatsApp support agent,Answers customer questions over WhatsApp using an LLM,customers,TRANSPARENCY
+Robo-adviser chat,Conversational robo-adviser that chats with investors about portfolios,customers,TRANSPARENCY
+Podcast voice cloning,Voice cloning of our CEO for an internal podcast,employees,TRANSPARENCY
+Spend categorisation,Categorises card spending for customers' budgeting view,customers,MINIMAL
+Cash demand forecasting,Predicts ATM cash demand,internal,MINIMAL
+Watchlist face matching,Matches faces in branch footage against a list of suspects,public,HIGH-RISK
+Selfie onboarding,Compares a selfie with the passport photo to verify identity at onboarding,customers,MINIMAL
+Learning assessments,Grades staff answers in mandatory compliance training to decide pass or fail,employees,HIGH-RISK
+Translation tool,Translates internal policy documents,internal,MINIMAL
+Mule account detection,Detects money mule accounts for financial crime teams,customers,MINIMAL
