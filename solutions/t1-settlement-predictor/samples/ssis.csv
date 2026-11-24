@@ -1,0 +1,8 @@
+counterparty,place_of_settlement,currency,agent_bic,account,valid_from,valid_to,last_verified
+Alpha Securities Ltd,CBF,EUR,DEUTDEFF,7001234,2025-01-01,,2027-03-01
+Alpha Securities Ltd,EOC,EUR,MGTCBEBE,99887,2025-01-01,,2025-02-01
+Alpha Securities Ltd,DTC,USD,IRVTUS3N,DTC-5521,2025-01-01,,2027-01-10
+Bravo Capital Markets,CREST,GBP,CRSTGB22,BRV01,2024-01-01,2027-06-30,2026-01-15
+Charlie Brokers,EOC,EUR,MGTCBEBE,CH-778,2025-01-01,,2027-05-05
+Charlie Brokers,EOC,EUR,MGTCBEBE,CH-779,2026-01-01,,2027-05-05
+Delta Bank AG,CBF,EUR,DEUT1EFF,,2025-01-01,,2027-04-01

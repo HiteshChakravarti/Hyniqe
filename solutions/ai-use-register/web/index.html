@@ -1,0 +1,863 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AI Use Register Generator · Hyniqe Hub</title>
+<style>:root { --ink:#14213d; --muted:#5b6475; --line:#e3e7ef; --bg:#f7f8fb; --card:#fff; --accent:#1f5eff; --accent-ink:#fff; --ok:#137a3f; --warn:#b26a00; --bad:#b3261e; }
+* { box-sizing: border-box; }
+body { margin:0; font:15px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; color:var(--ink); background:var(--bg); }
+header { padding:28px clamp(16px,5vw,56px) 18px; background:var(--card); border-bottom:1px solid var(--line); }
+.brand { font-weight:700; letter-spacing:.2px; color:var(--muted); font-size:13px; text-transform:uppercase; }
+.brand span { color:var(--accent); }
+h1 { margin:6px 0 4px; font-size:clamp(22px,3vw,30px); }
+.tagline { margin:0; color:var(--muted); max-width:760px; }
+.local { margin:10px 0 0; font-size:13px; color:var(--ok); }
+main { padding:20px clamp(16px,5vw,56px) 40px; display:grid; gap:18px; max-width:1180px; }
+.card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:18px; }
+.card h2 { margin:0 0 10px; font-size:17px; }
+label { display:block; font-weight:600; margin:10px 0 4px; font-size:14px; }
+.hint { color:var(--muted); font-size:13px; font-weight:400; }
+textarea, input[type=text], select { width:100%; font:13px/1.45 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; border:1px solid var(--line); border-radius:8px; padding:9px; background:#fbfcfe; color:var(--ink); }
+input[type=text], select { font-family:inherit; font-size:14px; }
+textarea { min-height:140px; resize:vertical; }
+.row { display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:12px; }
+.actions { display:flex; flex-wrap:wrap; gap:8px; margin-top:14px; }
+button { font:inherit; font-weight:600; border-radius:8px; padding:9px 14px; border:1px solid var(--line); background:#fff; color:var(--ink); cursor:pointer; }
+button.primary { background:var(--accent); border-color:var(--accent); color:var(--accent-ink); }
+button:disabled { opacity:.5; cursor:default; }
+.tabs { display:flex; gap:6px; margin-bottom:6px; }
+.tabs button[aria-selected=true] { background:var(--ink); color:#fff; border-color:var(--ink); }
+#report { overflow-wrap:anywhere; }
+#report h2 { font-size:22px; margin:4px 0 8px; } #report h3 { font-size:18px; margin:22px 0 8px; } #report h4, #report h5 { font-size:15px; margin:18px 0 6px; }
+#report p { margin:8px 0; }
+.tablewrap { overflow-x:auto; margin:10px 0; }
+table { border-collapse:collapse; width:100%; font-size:13.5px; }
+th, td { border:1px solid var(--line); padding:6px 8px; text-align:left; vertical-align:top; }
+th { background:#f1f4f9; }
+code { background:#f1f4f9; padding:1px 4px; border-radius:4px; font-size:12.5px; }
+.error { color:var(--bad); font-weight:600; white-space:pre-wrap; }
+.empty { color:var(--muted); }
+footer { padding:20px clamp(16px,5vw,56px) 36px; color:var(--muted); font-size:12.5px; }
+@media (prefers-color-scheme: dark) {
+  :root { --ink:#e8ecf5; --muted:#a3acbf; --line:#2b3345; --bg:#10141d; --card:#171c27; --accent:#5b8cff; }
+  textarea, input[type=text], select { background:#121722; }
+  th, code { background:#1f2634; } button { background:#1d2330; } .tabs button[aria-selected=true] { background:#e8ecf5; color:#10141d; }
+}
+</style>
+</head>
+<body data-solution="ai-use-register">
+<header><div class="brand">Hyniqe <span>Hub</span></div><h1>AI Use Register Generator</h1><p class="tagline">List where you use AI, get an indicative risk tier, the evidence you need, and what's missing.</p><p class="local">🔒 Runs entirely in your browser. Nothing you load here is uploaded.</p></header>
+<main id="app"></main>
+<footer>Hyniqe Hub · open-source tools for financial operations. Outputs support your judgement; they are not legal, audit or security advice.</footer>
+<script>
+const __m = {};
+__m["shared/table.js"] = (() => {
+// Small, dependency-free table helpers shared by the Hyniqe Hub solutions in this batch.
+// Runs unchanged in Node (22+, type stripping) and in the browser after `tsc`.
+/** Parse CSV text into rows keyed by lower-cased, trimmed headers (spaces → underscores).
+ *  Handles quoted fields, escaped quotes, BOM, CRLF, and comma / semicolon / tab separators. */
+function parseCsv(text) {
+    const clean = text.replace(/^﻿/, "");
+    const firstLine = clean.split(/\r?\n/, 1)[0] ?? "";
+    const sep = pickSeparator(firstLine);
+    const records = [];
+    let field = "";
+    let record = [];
+    let inQuotes = false;
+    for (let i = 0; i < clean.length; i++) {
+        const ch = clean[i];
+        if (inQuotes) {
+            if (ch === '"') {
+                if (clean[i + 1] === '"') {
+                    field += '"';
+                    i++;
+                }
+                else {
+                    inQuotes = false;
+                }
+            }
+            else {
+                field += ch;
+            }
+            continue;
+        }
+        if (ch === '"') {
+            inQuotes = true;
+            continue;
+        }
+        if (ch === sep) {
+            record.push(field);
+            field = "";
+            continue;
+        }
+        if (ch === "\n" || ch === "\r") {
+            if (ch === "\r" && clean[i + 1] === "\n")
+                i++;
+            record.push(field);
+            field = "";
+            if (record.some((f) => f.trim() !== ""))
+                records.push(record);
+            record = [];
+            continue;
+        }
+        field += ch;
+    }
+    record.push(field);
+    if (record.some((f) => f.trim() !== ""))
+        records.push(record);
+    if (records.length === 0)
+        return [];
+    const headers = records[0].map(normaliseHeader);
+    return records.slice(1).map((r) => {
+        const row = {};
+        headers.forEach((h, idx) => { row[h] = (r[idx] ?? "").trim(); });
+        return row;
+    });
+}
+function normaliseHeader(h) {
+    return h.trim().toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_|_$/g, "");
+}
+function pickSeparator(line) {
+    const counts = [",", ";", "\t"].map((s) => [s, line.split(s).length - 1]);
+    counts.sort((a, b) => b[1] - a[1]);
+    return counts[0][1] > 0 ? counts[0][0] : ",";
+}
+/** Serialise rows to CSV with a fixed column order. */
+function toCsv(rows, columns) {
+    const esc = (v) => {
+        const s = v === undefined || v === null ? "" : String(v);
+        return /[",\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+    };
+    return [columns.join(","), ...rows.map((r) => columns.map((c) => esc(r[c])).join(","))].join("\n") + "\n";
+}
+/** Render a simple Markdown table. */
+function mdTable(headers, rows) {
+    const cell = (v) => String(v).replace(/\|/g, "\\|").replace(/\n/g, " ");
+    return [
+        `| ${headers.map(cell).join(" | ")} |`,
+        `| ${headers.map(() => "---").join(" | ")} |`,
+        ...rows.map((r) => `| ${r.map(cell).join(" | ")} |`),
+    ].join("\n");
+}
+/** Read the first non-empty value among several possible column names. */
+function pick(row, ...names) {
+    for (const n of names) {
+        const v = row[normaliseHeader(n)];
+        if (v !== undefined && v !== "")
+            return v;
+    }
+    return "";
+}
+function parseAmount(raw) {
+    if (!raw)
+        return null;
+    let s = raw.replace(/[^\d.,\-]/g, "");
+    if (s.includes(",") && s.includes(".")) {
+        s = s.lastIndexOf(",") > s.lastIndexOf(".") ? s.replace(/\./g, "").replace(",", ".") : s.replace(/,/g, "");
+    }
+    else if (s.includes(",")) {
+        const parts = s.split(",");
+        s = parts.length === 2 && parts[1].length !== 3 ? s.replace(",", ".") : s.replace(/,/g, "");
+    }
+    const n = Number(s);
+    return Number.isFinite(n) ? n : null;
+}
+function parseBool(raw) {
+    const s = raw.trim().toLowerCase();
+    if (["y", "yes", "true", "1", "done", "passed", "pass"].includes(s))
+        return true;
+    if (["n", "no", "false", "0", "not done", "failed", "fail", ""].includes(s))
+        return s === "" ? null : false;
+    return null;
+}
+/** Parse ISO-ish timestamps ("2026-11-24 14:05", "2026-11-24T14:05:00Z", "24/11/2026 14:05"). */
+function parseTimestamp(raw) {
+    const s = raw.trim();
+    if (!s)
+        return null;
+    const dmy = s.match(/^(\d{1,2})[\/.](\d{1,2})[\/.](\d{4})(?:[ T](\d{1,2}):(\d{2})(?::(\d{2}))?)?$/);
+    if (dmy) {
+        const [, d, m, y, hh = "0", mm = "0", ss = "0"] = dmy;
+        return new Date(Date.UTC(+y, +m - 1, +d, +hh, +mm, +ss));
+    }
+    const iso = s.includes("T") ? s : s.replace(" ", "T");
+    const withZone = /[zZ]|[+\-]\d{2}:?\d{2}$/.test(iso) ? iso : iso + (iso.length > 10 ? "Z" : "T00:00:00Z");
+    const d = new Date(withZone);
+    return Number.isNaN(d.getTime()) ? null : d;
+}
+
+return { parseCsv, normaliseHeader, toCsv, mdTable, pick, parseAmount, parseBool, parseTimestamp };
+})();
+__m["ai-use-register/src/report.js"] = (() => {
+const { mdTable, toCsv } = __m["shared/table.js"];
+const TEMPLATE_COLUMNS = [
+    ["use_case_id", "Your reference, e.g. AI-001"],
+    ["name", "Short name, e.g. 'Mortgage affordability model'"],
+    ["description", "One or two sentences: what it does and what its output is used for"],
+    ["business_unit", "Team or function"],
+    ["owner", "Named accountable person"],
+    ["vendor", "Supplier, or 'in-house'"],
+    ["model", "Technology, e.g. gradient boosting, GPT-4o, Claude, rules + ML"],
+    ["users", "Who is affected: customers / employees / internal / public"],
+    ["decision", "assist (human decides) / automated (AI decides) / content (generates content)"],
+    ["personal_data", "yes / no"],
+    ["special_data", "yes / no: biometric, health, ethnicity, religion etc."],
+    ["human_in_loop", "yes / no: can a person review and overrule before it takes effect?"],
+    ["status", "idea / pilot / production / retired"],
+    ["jurisdictions", "Countries it is used in or affects"],
+    ["risk_assessment", "yes / no"],
+    ["dpia", "yes / no"],
+    ["last_validated", "Date of last independent validation (YYYY-MM-DD)"],
+    ["monitoring", "yes / no"],
+    ["bias_tested", "yes / no"],
+    ["transparency_notice", "yes / no: are people told it's AI / is content labelled?"],
+    ["vendor_due_diligence", "yes / no"],
+    ["documentation", "Link to model card / technical documentation"],
+    ["incident_process", "yes / no"],
+    ["logging", "yes / no"],
+];
+function templateCsv() {
+    return TEMPLATE_COLUMNS.map(([c]) => c).join(",") + "\n" + TEMPLATE_COLUMNS.map(([, h]) => `"${h.replace(/"/g, '""')}"`).join(",") + "\n";
+}
+function toRegisterCsv(list) {
+    return toCsv(list.map((e) => ({
+        use_case_id: e.uc.id, name: e.uc.name, business_unit: e.uc.business_unit, owner: e.uc.owner, vendor: e.uc.vendor, status: e.uc.status,
+        indicative_tier: e.tier, matched_area: e.matched_area, other_obligations: e.overlays.map((o) => o.title).join("; "),
+        priority: e.priority, readiness_pct: Math.round(e.readiness * 100),
+        missing_evidence: e.evidence.filter((x) => x.status !== "present").map((x) => x.label + (x.status === "stale" ? " (stale)" : "")).join("; "),
+        open_questions: e.questions.join(" | "), reason: e.tier_reason,
+    })), ["use_case_id", "name", "business_unit", "owner", "vendor", "status", "indicative_tier", "matched_area", "other_obligations", "priority", "readiness_pct", "missing_evidence", "open_questions", "reason"]);
+}
+function toMarkdown(list, title = "AI Use Register") {
+    const tiers = ["PROHIBITED?", "HIGH-RISK", "REVIEW", "TRANSPARENCY", "MINIMAL"];
+    const count = (t) => list.filter((e) => e.tier === t).length;
+    const avg = list.length ? list.reduce((s, e) => s + e.readiness, 0) / list.length : 1;
+    const out = [
+        `# ${title}`, "",
+        `**${list.length} AI use cases.** Indicative tiers: ${tiers.map((t) => `${count(t)} ${t.toLowerCase()}`).join(" · ")}.`,
+        `Average evidence readiness: **${Math.round(avg * 100)}%**. Priority actions: ${list.filter((e) => e.priority === "P1").length} P1, ${list.filter((e) => e.priority === "P2").length} P2.`, "",
+        mdTable(["ID", "Use case", "Tier", "Also", "Ready", "Priority"], [...list].sort((a, b) => a.priority.localeCompare(b.priority) || tiers.indexOf(a.tier) - tiers.indexOf(b.tier))
+            .map((e) => [e.uc.id, e.uc.name, e.tier, e.overlays.map((o) => o.id.replace(/_/g, " ").toLowerCase()).join(", ") || "-", `${Math.round(e.readiness * 100)}%`, e.priority])), "",
+    ];
+    const urgent = list.filter((e) => e.priority !== "P3");
+    if (urgent.length) {
+        out.push("## What to fix first", "");
+        for (const e of [...urgent].sort((a, b) => a.priority.localeCompare(b.priority))) {
+            const missing = e.evidence.filter((x) => x.status !== "present");
+            out.push(`### ${e.priority} · ${e.uc.id} ${e.uc.name} (${e.tier})`, "", e.tier_reason, "");
+            if (e.tier === "PROHIBITED?")
+                out.push("**Stop and get legal review now.** This looks like a practice the EU AI Act bans outright.", "");
+            if (missing.length)
+                out.push("Missing evidence: " + missing.map((x) => x.label + (x.status === "stale" ? " (out of date)" : "")).join("; ") + ".", "");
+            for (const o of e.overlays)
+                out.push(`- ${o.title}: ${o.why}`);
+            if (e.questions.length)
+                out.push("", "Ask the owner:", ...e.questions.map((q) => `- ${q}`));
+            out.push("");
+        }
+    }
+    out.push("## How to read this", "", "- **REVIEW** means it makes or supports decisions about people but matched no listed area. A person must look at it before it is treated as minimal.", "- **Tier** is an indicative first pass based on the EU AI Act's categories (prohibited practices, high-risk areas, transparency duties). It is a starting point for your legal and compliance team, not a legal classification. Check current application dates for each obligation.", "- **Also** lists other obligations that commonly apply to banks: automated decision rules, model risk management, third-party/outsourcing registers, data protection, and generative-AI controls.", "- **Ready** is the share of the evidence each use case needs that you have recorded.", "", "_Generated by Hyniqe Hub · AI Use Register Generator. Runs locally. Not legal advice._");
+    return out.join("\n") + "\n";
+}
+
+return { TEMPLATE_COLUMNS, templateCsv, toRegisterCsv, toMarkdown };
+})();
+__m["ai-use-register/src/classify.js"] = (() => {
+// AI Use Register Generator
+// Turns a rough list of "where we use AI" into a regulator-ready register: an indicative EU AI Act tier,
+// overlapping obligations (automated decisions, model risk, third-party/outsourcing, personal data),
+// the evidence each use case needs, and what is missing.
+//
+// The tier is an INDICATIVE first pass from keywords and answers. Final classification needs legal review.
+const { pick, parseBool, parseTimestamp } = __m["shared/table.js"];
+function readUseCases(rows) {
+    return rows.map((r, i) => ({
+        id: pick(r, "use_case_id", "id", "ref") || `AI-${String(i + 1).padStart(3, "0")}`,
+        name: pick(r, "name", "use_case", "system", "title"),
+        description: pick(r, "description", "purpose", "what_it_does", "details"),
+        business_unit: pick(r, "business_unit", "department", "team", "function"),
+        owner: pick(r, "owner", "business_owner", "accountable"),
+        vendor: pick(r, "vendor", "provider", "supplier"),
+        model: pick(r, "model", "technology", "ai_model", "tool"),
+        users: pick(r, "users", "affected", "audience", "who_is_affected").toLowerCase(),
+        decision: pick(r, "decision", "decision_type", "autonomy", "role_of_ai").toLowerCase(),
+        personal_data: parseBool(pick(r, "personal_data", "uses_personal_data", "pii")),
+        special_data: parseBool(pick(r, "special_data", "special_category_data", "sensitive_data", "biometric_or_health")),
+        human_in_loop: parseBool(pick(r, "human_in_loop", "human_review", "human_oversight")),
+        status: pick(r, "status", "stage", "lifecycle").toLowerCase(),
+        jurisdictions: pick(r, "jurisdictions", "regions", "countries", "markets"),
+        risk_assessment: parseBool(pick(r, "risk_assessment", "risk_assessed", "ai_risk_assessment")),
+        dpia: parseBool(pick(r, "dpia", "dpia_done", "privacy_assessment")),
+        last_validated: parseTimestamp(pick(r, "last_validated", "validated_on", "last_validation", "model_validation_date")),
+        monitoring: parseBool(pick(r, "monitoring", "performance_monitoring", "monitored")),
+        bias_tested: parseBool(pick(r, "bias_tested", "fairness_tested", "bias_testing")),
+        transparency_notice: parseBool(pick(r, "transparency_notice", "ai_disclosure", "users_told")),
+        vendor_due_diligence: parseBool(pick(r, "vendor_due_diligence", "third_party_assessment", "vendor_dd")),
+        documentation: pick(r, "documentation", "documentation_link", "model_card", "tech_docs"),
+        incident_process: parseBool(pick(r, "incident_process", "incident_response", "escalation_process")),
+        logging: parseBool(pick(r, "logging", "audit_logs", "record_keeping")),
+    }));
+}
+const PEOPLE = /\b(customer|client|applicant|borrower|individual|consumer|person|people|retail|employee|staff|candidate|student|citizen|patient|policyholder|member)s?\b/i;
+// Order matters: first match wins within a tier; tiers are evaluated most-severe first.
+const AREAS = [
+    // ---- possibly prohibited practices ----
+    { id: "SOCIAL_SCORING", tier: "PROHIBITED?", label: "Social scoring of people based on behaviour or personality", re: /\bsocial (score|scoring|credit)\b|\b(trustworthiness|behaviou?ral) score\b.*\b(social media|personal life|lifestyle)\b/i },
+    { id: "WORKPLACE_EMOTION", tier: "PROHIBITED?", label: "Emotion recognition of employees or students", re: /\b(emotion|sentiment|mood|stress|facial expressions?|affect|wellbeing)\b.{0,40}\b(recogni[sz]|detect|analys|track|monitor|infer|read|gauge|measur|assess|scor)|\b(recogni[sz]|detect|analys|track|monitor|infer|read|gauge|measur|assess|scor)\w*\b.{0,40}\b(emotion|mood|stress|facial expressions?)/i, needs: (uc, t) => /\b(employee|staff|agent|worker|student|call centre agent|call center agent|teller)s?\b/i.test(t + " " + uc.users) && !/\b(medical|safety)\b/i.test(t) },
+    { id: "MANIPULATION", tier: "PROHIBITED?", label: "Manipulative techniques or exploiting vulnerabilities", re: /\bsubliminal\b|\bexploit\w*\b.{0,30}\b(vulnerab\w*|addiction|distress|elderly|age|disabilit\w*|gambling)|\bdark[- ]pattern|\bmanipulat\w+ (customers|users|people|behaviou?r)|\b(target\w*|push\w*)\b.{0,30}\bvulnerable\b|\b(distress|vulnerab\w*|addiction|gambling)\b.{0,40}\b(steer|nudg|push|upsell|sell|target)\w*|\b(steer|nudg|push|upsell|target)\w*\b.{0,40}\b(distress|vulnerab\w*|addiction)/i },
+    { id: "SENSITIVE_BIOMETRIC_CATEGORISATION", tier: "PROHIBITED?", label: "Biometric categorisation inferring sensitive traits", re: /\b(infer|predict|categori[sz]e|classify)\w*\b.{0,40}\b(race|ethnicity|religio|sexual orientation|political|trade union)/i, needs: (_uc, t) => /\b(face|facial|biometric|voice|image|photo)/i.test(t) },
+    { id: "FACE_SCRAPING", tier: "PROHIBITED?", label: "Untargeted scraping of facial images", re: /\bscrap\w*\b.{0,40}\b(face|facial|images|photos)\b/i },
+    // ---- high-risk areas (EU AI Act Annex III style) ----
+    { id: "CREDITWORTHINESS", tier: "HIGH-RISK", label: "Creditworthiness / credit scoring of individuals", re: /\b(credit ?(worthiness|score|scoring|decision|limit|risk (rating|grading|model))|creditworth|loan (approval|decision|underwriting|eligibility)|underwrit\w+|affordability|lending decision|probability of default|pd model|bnpl approval|mortgage (approval|decision))\b|\b(loans?|finance|credit) applications?\b|\bloans?\b.{0,40}\b(decid|grant|approv|declin|eligib|repay|rate|interest)|\b(decid|grant|approv|assess)\w*\b.{0,60}\bloans?\b|\b(payment plan|credit (line|offer))\b.{0,40}\b(afford|eligib|approv|offer)/i, unless: /\b(fraud\w*|aml|money laundering|mule)\b/i, needs: (uc, t) => PEOPLE.test(t + " " + uc.users) && !/\b(corporate|sme|wholesale|counterparty|commercial)\b(?!.*\b(retail|individual|consumer|sole trader))/i.test(t) },
+    { id: "INSURANCE_PRICING", tier: "HIGH-RISK", label: "Risk assessment / pricing for life or health insurance", re: /\b(life|health|medical)\b.{0,30}\binsurance\b.{0,40}\b(pric|premium|underwrit|risk)|\b(pric|premium|underwrit)\w*\b.{0,40}\b(life|health) (insurance|cover|policy)/i },
+    { id: "EMPLOYMENT", tier: "HIGH-RISK", label: "Recruitment, promotion, termination, task allocation or performance monitoring of workers", re: /\b(cv|resume|r[ée]sum[ée]|candidate|applicant|recruit\w*|hiring|interview)\b.{0,40}\b(screen|rank|score|shortlist|filter|assess|select)|\b(screen|rank|score|shortlist|filter|assess|select)\w*\b.{0,40}\b(cv|resume|candidates|applicants)|\b(promotion|termination|dismissal|performance (review|rating|monitoring)|productivity monitoring|employee monitoring|workforce (scoring|allocation)|task allocation|shift allocation)\b|\b(let go|lay ?offs?|redundanc\w*|restructuring|attrition|resign\w*|internal mobility|succession|talent (matching|management))\b|\bmatch\w*\b.{0,30}\b(staff|employees|people)\b.{0,20}\broles?\b/i, needs: (uc, t) => /\b(employee|staff|worker|candidate|applicant|people|workforce|talent|role)s?\b/i.test(t + " " + uc.users) },
+    { id: "BIOMETRIC_ID", tier: "HIGH-RISK", label: "Remote biometric identification", re: /\b(facial recognition|face recognition|face match\w*|biometric identification|voice ?print identification|identify (people|customers|individuals) (from|by|using) (face|voice|cctv))\b/i, unless: /\b(verification|verify|1:1|one-to-one|liveness|unlock|login|authenticat)\w*\b/i },
+    { id: "ESSENTIAL_SERVICES", tier: "HIGH-RISK", label: "Eligibility for essential public services or benefits", re: /\b(benefit eligibility|social (benefit|welfare|assistance)|public (assistance|benefit)s?|housing allocation|emergency (call|dispatch) (triage|priorit))/i },
+    { id: "EDUCATION", tier: "HIGH-RISK", label: "Education admission, grading or proctoring", re: /\b(admission|exams?|grad(e|es|ing)|proctoring|assess students|student (assessment|grading)|learning outcome|pass or fail|certification (test|exam)|training (assessment|test))\b/i },
+    { id: "CRITICAL_INFRA", tier: "HIGH-RISK", label: "Safety component of critical infrastructure", re: /\b(safety component|grid (control|stability)|water supply|gas supply|electricity (supply|network)|traffic control)\b/i },
+    // ---- transparency obligations ----
+    { id: "CHATBOT", tier: "TRANSPARENCY", label: "AI that talks directly with people (chatbot / voice assistant)", re: /\b(chat ?bot|virtual (assistant|agent)|conversational|voice ?bot|voice assistant|ai assistant|digital assistant|customer (chat|support bot)|ivr)\b|\b(answers?|responds? to|replies to)\b.{0,40}\bquestions\b|\b(chats?|talks?) (with|to) (customers|clients|users|investors|employees|staff|the public|members)\b/i },
+    { id: "SYNTHETIC_CONTENT", tier: "TRANSPARENCY", label: "Generates synthetic images, audio, video or published text", re: /\b(deepfake|synthetic (voice|video|image|media)|generat\w+ (images?|videos?|audio|voice|avatars?|marketing (copy|content|images)|social media (posts|content))|ai[- ]generated (video|images?|content|avatars?)|text[- ]to[- ](speech|video|image)|voice clon)\w*|\bgenerat\w*\b.{0,30}\b(articles?|newsletters?|posts?|blogs?|press releases?)\b.{0,40}\b(publish\w*|customers|public|website)/i },
+    { id: "EMOTION_OTHER", tier: "TRANSPARENCY", label: "Emotion recognition / biometric categorisation (outside work or education)", re: /\b(emotion|sentiment from (voice|face)|facial expression|mood detection)\b/i, needs: (_uc, t) => /\b(face|facial|voice|biometric|camera|video)\b/i.test(t) },
+];
+const MODEL_RISK = /\b(pric\w*|credit|loan|lending|aml|anti[- ]money|transaction monitoring|sanction\w*|fraud|kyc|capital|liquidity|valuation|trading|hedg\w*|ifrs ?9|expected credit loss|ecl|stress test\w*|provision\w*|forecast\w*|risk (model|rating|score)|collections|limit setting|market risk|alm|treasury)\b/i;
+const AUTOMATED = /\b(automat\w+ (decision|approval|decline|reject\w*)|auto[- ](approve|decline|reject)|without human (review|intervention)|fully automat\w+|straight[- ]through decision)\b/i;
+function classify(uc, today = new Date()) {
+    const text = `${uc.name}. ${uc.description}. ${uc.business_unit}`;
+    let tier = "MINIMAL";
+    let reason = "No high-risk, prohibited or transparency pattern found: likely minimal risk (still record it).";
+    let area = "-";
+    for (const a of AREAS) {
+        if (!a.re.test(text))
+            continue;
+        if (a.unless && a.unless.test(text))
+            continue;
+        if (a.needs && !a.needs(uc, text))
+            continue;
+        tier = a.tier;
+        area = a.label;
+        const m = text.match(a.re)?.[0] ?? "";
+        reason = `Matches "${area}" (from: "${m.trim()}").`;
+        break;
+    }
+    // Safety net: decisions about people that matched no known area are never silently "minimal".
+    const DECIDES = /\b(accept\w*|refus\w*|decid\w*|determin\w*|grant\w*|approv\w*|declin\w*|reject\w*|eligib\w*|select\w*|shortlist\w*|let go|dismiss\w*|grad(e|es|ing)|pass or fail|rank\w*|set\w* (premiums?|prices?|limits?)|who (gets|should|can))\b/i;
+    if ((tier === "MINIMAL") && DECIDES.test(text) && PEOPLE.test(text + " " + uc.users) && !/\b(fraud\w*|aml|money laundering|sanction\w*|mule|surveillance|market abuse)\b/i.test(text)) {
+        tier = "REVIEW";
+        area = "Decision about individuals (unmatched)";
+        reason = `Makes or supports decisions about individuals ("${text.match(DECIDES)?.[0]}") but matches no listed area: needs human review before you treat it as minimal.`;
+    }
+    // ---- overlapping obligations ----
+    const overlays = [];
+    const affectsPeople = PEOPLE.test(text + " " + uc.users);
+    const automated = uc.decision.includes("automat") || AUTOMATED.test(text) || (uc.human_in_loop === false && uc.decision !== "content");
+    if (automated && affectsPeople && (tier === "HIGH-RISK" || /\b(declin|reject|approv|eligib|limit|block|freez|terminat|price|pricing)\w*/i.test(text))) {
+        overlays.push({ id: "AUTOMATED_DECISION", title: "Automated decisions about individuals", why: "Decisions with significant effects on people made without meaningful human review usually need a legal basis, an explanation and a way to contest (e.g. GDPR Art. 22)." });
+    }
+    if (MODEL_RISK.test(text)) {
+        overlays.push({ id: "MODEL_RISK", title: "Model risk management", why: "Used in financial decisions or risk measurement: belongs in the model inventory with independent validation and monitoring (e.g. US SR 11-7, UK PRA SS1/23)." });
+    }
+    if (uc.vendor && !/^(in[- ]?house|internal|none|n\/a|-)$/i.test(uc.vendor)) {
+        overlays.push({ id: "THIRD_PARTY", title: "Third-party / outsourcing", why: `Supplied by ${uc.vendor}: record it in your third-party / ICT register and keep due diligence and exit plans (e.g. EU DORA, outsourcing rules).` });
+    }
+    if (uc.personal_data || uc.special_data) {
+        overlays.push({ id: "PERSONAL_DATA", title: uc.special_data ? "Special-category personal data" : "Personal data", why: uc.special_data ? "Biometric, health or other sensitive data: needs a DPIA and a specific legal basis." : "Processes personal data: check lawful basis, retention and whether a DPIA is needed." });
+    }
+    if (/\b(llm|gpt|claude|gemini|llama|mistral|copilot|generative|genai|gen ai|foundation model)\b/i.test(uc.model + " " + text)) {
+        overlays.push({ id: "GENAI", title: "Generative AI controls", why: "LLM-based: control prompt-injection, data leakage, hallucination and output review; log prompts/outputs where lawful." });
+    }
+    // ---- evidence ----
+    const needs = evidenceNeeded(tier, overlays, uc);
+    const evidence = needs.map(([id, label]) => ({ id, label, status: evidenceStatus(id, uc, today) }));
+    const present = evidence.filter((e) => e.status === "present").length;
+    const readiness = evidence.length ? present / evidence.length : 1;
+    // pilots on real people count as live
+    const live = /prod|live|use|pilot|trial|poc/.test(uc.status) || uc.status === "";
+    const staleValidation = evidence.some((e) => e.id === "validation" && e.status !== "present");
+    const priority = tier === "PROHIBITED?" || (tier === "HIGH-RISK" && live && readiness < 0.8) ? "P1"
+        : tier === "HIGH-RISK" || tier === "REVIEW" || (overlays.some((o) => o.id === "AUTOMATED_DECISION" || o.id === "MODEL_RISK") && (readiness < 0.6 || staleValidation)) || (tier === "TRANSPARENCY" && uc.transparency_notice !== true) ? "P2"
+            : "P3";
+    return { uc, tier, tier_reason: reason, matched_area: area, overlays, evidence, readiness, priority, questions: followUps(uc, tier, text) };
+}
+function evidenceNeeded(tier, overlays, uc) {
+    const list = [["owner", "Named accountable owner"], ["purpose", "Clear description of purpose"], ["risk_assessment", "AI risk assessment"]];
+    const has = (id) => overlays.some((o) => o.id === id);
+    if (tier === "HIGH-RISK" || tier === "PROHIBITED?" || tier === "REVIEW") {
+        list.push(["human_oversight", "Human oversight defined"], ["documentation", "Technical documentation / model card"], ["logging", "Automatic logs kept"], ["monitoring", "Accuracy & performance monitoring"], ["bias_tested", "Bias / fairness testing"], ["incident_process", "Serious-incident process"]);
+    }
+    if (tier === "TRANSPARENCY")
+        list.push(["transparency_notice", "People told they are dealing with AI / content labelled"]);
+    if (has("MODEL_RISK")) {
+        if (!list.some(([id]) => id === "monitoring"))
+            list.push(["monitoring", "Performance monitoring"]);
+        list.push(["validation", "Independent validation in last 12 months"]);
+        if (!list.some(([id]) => id === "documentation"))
+            list.push(["documentation", "Model documentation"]);
+    }
+    if (has("AUTOMATED_DECISION") && !list.some(([id]) => id === "human_oversight"))
+        list.push(["human_oversight", "Human review / right to contest"]);
+    if (has("PERSONAL_DATA") && (uc.special_data || tier !== "MINIMAL" || has("AUTOMATED_DECISION")))
+        list.push(["dpia", "DPIA completed"]);
+    if (has("THIRD_PARTY"))
+        list.push(["vendor_due_diligence", "Vendor due diligence"]);
+    if (has("GENAI") && !list.some(([id]) => id === "logging"))
+        list.push(["logging", "Prompt/output logging"]);
+    return list;
+}
+function evidenceStatus(id, uc, today) {
+    const b = (v) => (v ? "present" : "missing");
+    switch (id) {
+        case "owner": return uc.owner ? "present" : "missing";
+        case "purpose": return uc.description.length >= 15 ? "present" : "missing";
+        case "risk_assessment": return b(uc.risk_assessment);
+        case "human_oversight": return b(uc.human_in_loop);
+        case "documentation": return uc.documentation && !/^(no|none|n\/a|-)$/i.test(uc.documentation) ? "present" : "missing";
+        case "logging": return b(uc.logging);
+        case "monitoring": return b(uc.monitoring);
+        case "bias_tested": return b(uc.bias_tested);
+        case "incident_process": return b(uc.incident_process);
+        case "transparency_notice": return b(uc.transparency_notice);
+        case "dpia": return b(uc.dpia);
+        case "vendor_due_diligence": return b(uc.vendor_due_diligence);
+        case "validation": {
+            if (!uc.last_validated)
+                return "missing";
+            const months = (today.getTime() - uc.last_validated.getTime()) / (30.44 * 86400000);
+            return months <= 12 ? "present" : "stale";
+        }
+        default: return "missing";
+    }
+}
+function followUps(uc, tier, text) {
+    const q = [];
+    if (!uc.users)
+        q.push("Who uses it, and who is affected by its output: customers, employees, or only internal teams?");
+    if (!uc.decision)
+        q.push("Does the AI make or recommend the decision? Can a person overrule it before it takes effect?");
+    if (uc.personal_data === null)
+        q.push("Does it process personal data? Any biometric, health or other sensitive data?");
+    if (tier === "MINIMAL" && /\b(score|rank|decide|eligib|approve|declin)\w*/i.test(text))
+        q.push("It scores or decides something: about individuals? If yes, re-check whether it is high-risk.");
+    if (tier === "HIGH-RISK" && /\b(fraud)\b/i.test(text))
+        q.push("Is it used only to detect fraud (usually not high-risk), or also to decide credit?");
+    if (!uc.jurisdictions)
+        q.push("Which countries is it used in, or do its outputs affect people in? (EU rules can apply even if you are outside the EU.)");
+    return q;
+}
+
+return { readUseCases, AREAS, classify };
+})();
+const SAMPLES = {"inventory":"use_case_id,name,description,business_unit,owner,vendor,model,users,decision,personal_data,special_data,human_in_loop,status,jurisdictions,risk_assessment,dpia,last_validated,monitoring,bias_tested,transparency_notice,vendor_due_diligence,documentation,incident_process,logging\nAI-001,Personal loan auto-decision,Scores retail loan applicants for creditworthiness and auto-approves or declines applications under 10k,Retail Lending,Head of Retail Credit,in-house,gradient boosting,customers,automated,yes,no,no,production,\"UK, Ireland, Germany\",yes,yes,2025-03-10,yes,no,,,confluence/credit-model-v4,yes,yes\nAI-002,Card fraud detection,Flags suspicious card transactions in real time for fraud analysts to review,Fraud Ops,Fraud Lead,FICO,neural network,customers,assist,yes,no,yes,production,Global,yes,yes,2026-02-01,yes,,,yes,vendor model card,yes,yes\nAI-003,Website chatbot,Customer-facing chatbot on the website and app answering account and product questions,Digital,Head of Digital,OpenAI,GPT-4o,customers,assist,yes,no,yes,production,\"UK, EU\",yes,no,,yes,,no,yes,,no,yes\nAI-004,CV screening assistant,Ranks and shortlists candidates for graduate roles based on CVs,HR,Talent Acquisition Lead,HireFast Inc,LLM,candidates,assist,yes,no,yes,pilot,\"UK, Poland\",no,no,,,,,no,,,\nAI-005,Call centre agent mood tracker,Analyses call centre agents' voice to detect stress and emotion during calls for team leaders,Operations,Ops Director,VoiceSense,speech analytics,employees,assist,yes,yes,yes,pilot,Germany,no,no,,,,,no,,,\nAI-006,AML transaction monitoring,Machine learning model that scores transactions for money laundering risk and creates alerts for investigators,Financial Crime,MLRO,in-house,random forest,customers,assist,yes,no,yes,production,Global,yes,yes,2024-06-30,yes,no,,,model-docs/aml-tm,yes,yes\nAI-007,Internal coding copilot,Developers use an AI coding assistant to write and review internal code,Technology,CTO,GitHub,Copilot,internal,assist,no,no,yes,production,Global,yes,,,,,,yes,,,\nAI-008,Marketing image generator,Generates marketing images and social media posts for campaigns,Marketing,CMO,Adobe,Firefly,public,content,no,no,yes,production,\"UK, EU, US\",no,,,,,no,yes,,,\nAI-009,Mortgage affordability model,Estimates affordability for mortgage applicants and recommends a maximum loan amount to underwriters,Mortgages,Head of Mortgages,in-house,logistic regression,customers,assist,yes,no,yes,production,UK,yes,yes,2026-05-15,yes,yes,,,model-docs/mortgage-aff,yes,yes\nAI-010,Meeting notes summariser,Summarises internal meeting transcripts into action items,Group,COO Office,Microsoft,Copilot,internal,assist,yes,no,yes,production,Global,no,,,,,,yes,,,\nAI-011,Branch facial recognition,Facial recognition on branch CCTV to identify known fraudsters entering branches,Security,Head of Security,FaceWatch,computer vision,customers,assist,yes,yes,yes,idea,UK,no,no,,,,,no,,,\nAI-012,Liquidity forecasting,Forecasts daily liquidity and cash positions for treasury,Treasury,Group Treasurer,in-house,time series,internal,assist,no,no,yes,production,Global,yes,,2026-08-01,yes,,,,model-docs/liq-fcst,yes,yes\n"};
+// Minimal, safe Markdown → HTML for the reports these tools produce (headings, tables, lists, checkboxes,
+// bold/italic/code, line breaks). All text is HTML-escaped first.
+function renderMarkdown(md) {
+  const esc = (s) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  const inline = (s) => esc(s)
+    .replace(/`([^`]+)`/g, "<code>$1</code>")
+    .replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>")
+    .replace(/(^|[\s(])_([^_]+)_(?=[\s).,:;]|$)/g, "$1<em>$2</em>")
+    .replace(/ {2}$/g, "<br>");
+  const lines = md.replace(/\r/g, "").split("\n");
+  const html = [];
+  let i = 0;
+  while (i < lines.length) {
+    const l = lines[i];
+    if (/^#{1,4} /.test(l)) { const n = l.match(/^#+/)[0].length; html.push(`<h${n + 1}>${inline(l.slice(n + 1))}</h${n + 1}>`); i++; continue; }
+    if (/^\|.*\|$/.test(l) && /^\|\s*-+/.test(lines[i + 1] || "")) {
+      const cells = (row) => row.slice(1, -1).split(/(?<!\\)\|/).map((c) => inline(c.trim().replace(/\\\|/g, "|")));
+      const head = cells(l);
+      i += 2;
+      const body = [];
+      while (i < lines.length && /^\|.*\|$/.test(lines[i])) body.push(cells(lines[i++]));
+      html.push(`<div class="tablewrap"><table><thead><tr>${head.map((c) => `<th>${c}</th>`).join("")}</tr></thead><tbody>${body.map((r) => `<tr>${r.map((c) => `<td>${c}</td>`).join("")}</tr>`).join("")}</tbody></table></div>`);
+      continue;
+    }
+    if (/^(\d+\.|-) /.test(l)) {
+      const ordered = /^\d+\./.test(l);
+      const items = [];
+      while (i < lines.length && (/^(\d+\.|-) /.test(lines[i]) || /^ {2,}\S/.test(lines[i]))) {
+        if (/^ {2,}\S/.test(lines[i]) && items.length) items[items.length - 1] += "<br>" + inline(lines[i].trim());
+        else items.push(inline(lines[i].replace(/^(\d+\.|-) /, "")).replace(/^\[ \] /, '<input type="checkbox"> ').replace(/^\[x\] /i, '<input type="checkbox" checked> '));
+        // keep "  " line-break markers inside items
+        if (/ {2}$/.test(lines[i])) items[items.length - 1] = items[items.length - 1].replace(/<br>$/, "");
+        i++;
+      }
+      html.push(`<${ordered ? "ol" : "ul"}>${items.map((x) => `<li>${x}</li>`).join("")}</${ordered ? "ol" : "ul"}>`);
+      continue;
+    }
+    if (!l.trim()) { i++; continue; }
+    const para = [];
+    while (i < lines.length && lines[i].trim() && !/^(#|\||\d+\. |- )/.test(lines[i])) para.push(inline(lines[i++]));
+    html.push(`<p>${para.join(" ")}</p>`);
+  }
+  return html.join("\n");
+}
+
+// Page UI for each Hub solution. Expects: __m (bundled modules), SAMPLES, renderMarkdown.
+(function () {
+  const $ = (sel, el = document) => el.querySelector(sel);
+  const h = (html) => { const t = document.createElement("template"); t.innerHTML = html.trim(); return t.content.firstElementChild; };
+  const app = $("#app");
+  const table = __m["shared/table.js"];
+  const solution = document.body.dataset.solution;
+
+  function download(name, text, type = "text/plain") {
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(new Blob([text], { type }));
+    a.download = name;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+  }
+  async function readFiles(input) {
+    return Promise.all([...input.files].map(async (f) => ({ name: f.webkitRelativePath || f.name, text: await f.text() })));
+  }
+  function fileInto(input, textarea) {
+    input.addEventListener("change", async () => { const [f] = await readFiles(input); if (f) textarea.value = f.text; });
+  }
+  const resultCard = h(`<section class="card"><div id="downloads" class="actions" style="margin:0 0 8px"></div><div id="report" class="empty">Your report will appear here.</div></section>`);
+  function show(md, downloads = []) {
+    const r = $("#report", resultCard);
+    r.className = "";
+    r.innerHTML = renderMarkdown(md);
+    const d = $("#downloads", resultCard);
+    d.innerHTML = "";
+    for (const [label, name, text, type] of [["Download report (.md)", "report.md", md, "text/markdown"], ...downloads]) {
+      const b = h(`<button>${label}</button>`);
+      b.onclick = () => download(name, text, type);
+      d.append(b);
+    }
+    resultCard.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+  function showError(e) {
+    const r = $("#report", resultCard);
+    r.className = "error";
+    r.textContent = e && e.message ? e.message : String(e);
+  }
+  const safe = (fn) => () => { try { fn(); } catch (e) { console.error(e); showError(e); } };
+
+  // ------------------------------------------------------------------ Agent Payment Mandate Checker
+  if (solution === "agent-payment-mandate-checker") {
+    const c = __m["agent-payment-mandate-checker/src/checker.js"], rep = __m["agent-payment-mandate-checker/src/report.js"];
+    const card = h(`<section class="card"><h2>1 · Mandates <span class="hint">(JSON: what each agent may pay, to whom, up to what limit)</span></h2>
+      <input type="file" id="mf" accept=".json"><textarea id="m" placeholder='{"mandates":[{"id":"M-1","agent_id":"ap-agent","per_payment_limit":5000}]}'></textarea>
+      <h2 style="margin-top:16px">2 · Agent payment log <span class="hint">(CSV: payment_id, timestamp, agent_id, mandate_id, payee, amount, currency, category, approved_by, approval_time, purpose, status)</span></h2>
+      <input type="file" id="pf" accept=".csv,.txt"><textarea id="p"></textarea>
+      <div class="actions"><button class="primary" id="run">Check payments</button><button id="sample">Load sample data</button></div></section>`);
+    app.append(card, resultCard);
+    fileInto($("#mf", card), $("#m", card)); fileInto($("#pf", card), $("#p", card));
+    $("#sample", card).onclick = () => { $("#m", card).value = SAMPLES.mandates; $("#p", card).value = SAMPLES.payments; };
+    $("#run", card).onclick = safe(() => {
+      let raw;
+      try { raw = JSON.parse($("#m", card).value); } catch (e) { throw new Error("Mandates must be valid JSON: " + e.message); }
+      const { file, errors } = c.validateMandateFile(raw);
+      if (!file || errors.length) throw new Error(errors.join("\n"));
+      const res = c.checkPayments(file, c.readPayments(table.parseCsv($("#p", card).value)));
+      show(rep.toMarkdown(res), [["Download results (.csv)", "mandate-check.csv", rep.toResultCsv(res), "text/csv"]]);
+    });
+  }
+
+  // ------------------------------------------------------------------ Verify-Before-You-Pay
+  if (solution === "verify-before-you-pay") {
+    const a = __m["verify-before-you-pay/src/assess.js"], rep = __m["verify-before-you-pay/src/report.js"];
+    const card = h(`<section class="card"><div class="tabs"><button aria-selected="true" data-t="one">Check one request</button><button aria-selected="false" data-t="log">Audit an approval log</button></div>
+      <label>Your company's and key suppliers' email domains <span class="hint">(comma-separated, so look-alikes can be spotted)</span></label><input type="text" id="dom" placeholder="yourbank.com, mainsupplier.com">
+      <div data-p="one"><label>Paste the message, email or call notes</label><textarea id="txt" placeholder="Paste the payment request here…"></textarea>
+        <div class="row"><div><label>Who is asking?</label><input type="text" id="from" placeholder="e.g. Jane Smith"></div><div><label>Their title</label><input type="text" id="title" placeholder="e.g. CFO, Supplier"></div>
+        <div><label>How did it arrive?</label><select id="ch"><option value="">(not sure)</option><option>email</option><option>phone</option><option>voice note</option><option>video</option><option>teams</option><option>whatsapp</option><option>sms</option><option>in person</option></select></div></div>
+        <div class="row"><div><label>Amount</label><input type="text" id="amt" placeholder="e.g. 48500"></div><div><label>Currency</label><input type="text" id="ccy" placeholder="USD"></div>
+        <div><label>New payee?</label><select id="np"><option value="">(not sure)</option><option value="yes">Yes</option><option value="no">No</option></select></div><div><label>Bank details changed?</label><select id="bc"><option value="">(not sure)</option><option value="yes">Yes</option><option value="no">No</option></select></div></div>
+        <div class="actions"><button class="primary" id="go1">Check this request</button><button id="ex">Try an example</button></div></div>
+      <div data-p="log" hidden><label>Approval log CSV <span class="hint">(request_id, received_at, requested_by, requester_title, channel, sender, amount, currency, payee, payee_new, bank_details_changed, bank_change_at, message, callback_done, callback_source, challenge_passed, approver_1, approver_2, released_by, paid_at)</span></label>
+        <input type="file" id="lf" accept=".csv,.txt"><textarea id="log"></textarea><div class="actions"><button class="primary" id="go2">Audit log</button><button id="sl">Load sample log</button></div></div></section>`);
+    app.append(card, resultCard);
+    card.querySelectorAll(".tabs button").forEach((b) => b.onclick = () => {
+      card.querySelectorAll(".tabs button").forEach((x) => x.setAttribute("aria-selected", x === b));
+      card.querySelectorAll("[data-p]").forEach((p) => (p.hidden = p.dataset.p !== b.dataset.t));
+    });
+    fileInto($("#lf", card), $("#log", card));
+    const policy = () => ({ ...a.DEFAULT_POLICY, company_domains: $("#dom", card).value.split(",").map((s) => s.trim()).filter(Boolean) });
+    $("#ex", card).onclick = () => {
+      $("#txt", card).value = "From: d.chen@northwind-group.co\nHi, are you at your desk? I need a favour. Please wire $48,500 today to our new legal counsel for a confidential acquisition. Don't discuss this with anyone yet. I'm in a board meeting so can't talk, just email me when it's done.";
+      $("#dom", card).value = "northwind.com"; $("#from", card).value = "David Chen"; $("#title", card).value = "CEO"; $("#ch", card).value = "email"; $("#np", card).value = "yes";
+    };
+    $("#sl", card).onclick = () => { $("#log", card).value = SAMPLES.log; if (!$("#dom", card).value) $("#dom", card).value = "northwind-demo.com, globex-logistics.com"; };
+    $("#go1", card).onclick = safe(() => {
+      const text = $("#txt", card).value;
+      if (!text.trim()) throw new Error("Paste the request text first.");
+      const yn = (v) => (v === "yes" ? true : v === "no" ? false : null);
+      const extra = { requested_by: $("#from", card).value, requester_title: $("#title", card).value, payee_new: yn($("#np", card).value) };
+      if ($("#ch", card).value) extra.channel = $("#ch", card).value;
+      if ($("#amt", card).value) extra.amount = table.parseAmount($("#amt", card).value);
+      if ($("#ccy", card).value) extra.currency = $("#ccy", card).value.toUpperCase();
+      if (yn($("#bc", card).value) !== null) extra.bank_details_changed = yn($("#bc", card).value);
+      const req = a.requestFromText(text, extra);
+      show("# Verify-Before-You-Pay\n\n" + rep.oneToMarkdown(a.assess(req, policy())));
+    });
+    $("#go2", card).onclick = safe(() => {
+      const list = a.readRequests(table.parseCsv($("#log", card).value)).map((r) => a.assess(r, policy()));
+      if (!list.length) throw new Error("No rows found in the log.");
+      show(rep.toMarkdown(list), [["Download results (.csv)", "verify-report.csv", rep.toResultCsv(list), "text/csv"]]);
+    });
+  }
+
+  // ------------------------------------------------------------------ AI Use Register
+  if (solution === "ai-use-register") {
+    const c = __m["ai-use-register/src/classify.js"], rep = __m["ai-use-register/src/report.js"];
+    const card = h(`<section class="card"><h2>Your AI inventory <span class="hint">(CSV. Only name and description are required; every other column sharpens the register.)</span></h2>
+      <input type="file" id="f" accept=".csv,.txt"><textarea id="t"></textarea>
+      <div class="actions"><button class="primary" id="go">Build register</button><button id="tpl">Download blank template</button><button id="s">Load sample inventory</button></div></section>`);
+    app.append(card, resultCard);
+    fileInto($("#f", card), $("#t", card));
+    $("#tpl", card).onclick = () => download("ai-inventory-template.csv", rep.templateCsv(), "text/csv");
+    $("#s", card).onclick = () => ($("#t", card).value = SAMPLES.inventory);
+    $("#go", card).onclick = safe(() => {
+      const rows = table.parseCsv($("#t", card).value).filter((r) => !/^your reference/i.test(Object.values(r)[0] || ""));
+      if (!rows.length) throw new Error("No rows found. Load a CSV or the sample.");
+      const list = c.readUseCases(rows).map((u) => c.classify(u));
+      show(rep.toMarkdown(list), [["Download register (.csv)", "ai-register.csv", rep.toRegisterCsv(list), "text/csv"]]);
+    });
+  }
+
+  // ------------------------------------------------------------------ PQC Crypto Inventory
+  if (solution === "pqc-crypto-inventory") {
+    const sc = __m["pqc-crypto-inventory/src/scan.js"], rep = __m["pqc-crypto-inventory/src/report.js"];
+    const card = h(`<section class="card"><h2>Choose a code folder or files <span class="hint">(source, configs, scripts, certificates; read locally, never uploaded)</span></h2>
+      <div class="row"><div><label>Folder</label><input type="file" id="dir" webkitdirectory multiple></div><div><label>Or individual files</label><input type="file" id="files" multiple></div></div>
+      <label>Or paste code / config</label><textarea id="t" placeholder='KeyPairGenerator.getInstance("RSA") …'></textarea>
+      <div class="actions"><button class="primary" id="go">Scan</button><button id="s">Scan the demo repo</button></div><p class="hint" id="status"></p></section>`);
+    app.append(card, resultCard);
+    const SKIP = /(^|\/)(node_modules|\.git|dist|build|target|vendor|\.venv|venv|__pycache__)\//;
+    async function run(inputs) {
+      const findings = [];
+      let n = 0;
+      for (const f of inputs) {
+        if (SKIP.test(f.name) || (!sc.isScannable(f.name) && f.name !== "pasted.txt") || f.text.length > 2000000 || f.text.includes("\u0000")) continue;
+        n++;
+        findings.push(...sc.scanText(f.name, f.text));
+      }
+      const s = sc.summarise(findings, n);
+      $("#status", card).textContent = `Scanned ${n} file(s).`;
+      show(rep.toMarkdown(findings, s), [["Download findings (.csv)", "pqc-inventory.csv", rep.toResultCsv(findings), "text/csv"], ["Download CBOM (.json)", "cbom.json", JSON.stringify(sc.toCbom(findings), null, 2), "application/json"]]);
+    }
+    $("#go", card).onclick = async () => {
+      try {
+        const inputs = [...(await readFiles($("#dir", card))), ...(await readFiles($("#files", card)))];
+        if ($("#t", card).value.trim()) inputs.push({ name: "pasted.txt", text: $("#t", card).value });
+        if (!inputs.length) throw new Error("Choose a folder, some files, or paste code first.");
+        $("#status", card).textContent = `Reading ${inputs.length} file(s)…`;
+        await run(inputs);
+      } catch (e) { showError(e); }
+    };
+    $("#s", card).onclick = () => run(Object.entries(SAMPLES).map(([name, text]) => ({ name, text }))).catch(showError);
+  }
+
+  // ------------------------------------------------------------------ Legacy Runbook Builder
+  if (solution === "legacy-runbook-builder") {
+    const x = __m["legacy-runbook-builder/src/extract.js"], rep = __m["legacy-runbook-builder/src/report.js"];
+    const card = h(`<section class="card"><h2>Old procedures, handover notes and scripts <span class="hint">(text, shell/batch scripts, JCL, crontabs, SQL)</span></h2>
+      <input type="file" id="files" multiple><label>Or paste text</label><textarea id="t" placeholder="Paste a handover email, procedure or script…"></textarea>
+      <label>Runbook title <span class="hint">(optional)</span></label><input type="text" id="title" placeholder="e.g. USD nostro reconciliation">
+      <div class="actions"><button class="primary" id="go">Build runbook</button><button id="s">Load sample handover</button></div></section>`);
+    app.append(card, resultCard);
+    let sampleLoaded = false;
+    $("#s", card).onclick = () => { sampleLoaded = true; $("#t", card).value = "(sample: nostro recon handover email + SWIFT batch script + JCL + crontab will be used)"; $("#title", card).value = "Payments ops: SWIFT batch, GL extract & USD nostro recon"; };
+    $("#go", card).onclick = async () => {
+      try {
+        let inputs = await readFiles($("#files", card));
+        const pasted = $("#t", card).value;
+        if (sampleLoaded && pasted.startsWith("(sample")) inputs = inputs.concat(Object.entries(SAMPLES).map(([name, text]) => ({ name, text })));
+        else if (pasted.trim()) inputs.push({ name: "pasted.txt", text: pasted });
+        if (!inputs.length) throw new Error("Choose files or paste text first.");
+        const rb = x.buildRunbook(inputs, $("#title", card).value || undefined);
+        const prompt = rep.aiPrompt(rb, inputs);
+        show(rep.toMarkdown(rb), [["Download knowledge gaps (.csv)", "knowledge-gaps.csv", rep.gapsCsv(rb), "text/csv"], ["Download AI prompt (.txt)", "ai-prompt.txt", prompt, "text/plain"]]);
+      } catch (e) { showError(e); }
+    };
+  }
+
+  // ------------------------------------------------------------------ helpers for the second batch
+  const fromB64 = (s) => Uint8Array.from(atob(s.replace(/^base64:/, "")), (c) => c.charCodeAt(0));
+  async function readBytes(input) { return Promise.all([...input.files].map(async (f) => ({ name: f.webkitRelativePath || f.name, bytes: new Uint8Array(await f.arrayBuffer()) }))); }
+  function simpleCard(html) { const c = h(`<section class="card">${html}</section>`); app.append(c, resultCard); return c; }
+  const csvBox = (id, label, hint) => `<label>${label} <span class="hint">${hint || ""}</span></label><input type="file" id="${id}f" accept=".csv,.txt"><textarea id="${id}"></textarea>`;
+  const wire = (card, ids) => ids.forEach((id) => fileInto($(`#${id}f`, card), $(`#${id}`, card)));
+
+  if (solution === "t1-settlement-predictor") {
+    const m = __m["t1-settlement-predictor/src/predict.js"], rep = __m["t1-settlement-predictor/src/report.js"];
+    const card = simpleCard(`<h2>Trades and SSIs</h2>${csvBox("tr", "Trade blotter (CSV)", "trade_id, trade_date, trade_time, settlement_date, isin, counterparty, place_of_settlement, currency, account_currency, allocation_time, affirmation_time, instruction_time")}${csvBox("ss", "Standing settlement instructions (CSV)", "counterparty, place_of_settlement, currency, agent_bic, account, valid_from, valid_to, last_verified")}
+      <div class="row"><div><label><input type="checkbox" id="t1"> Treat all trades as T+1 (test today's blotter)</label></div><div><label>Holidays <span class="hint">(YYYY-MM-DD, comma-separated)</span></label><input type="text" id="hol"></div></div>
+      <div class="actions"><button class="primary" id="go">Check trades</button><button id="s">Load sample</button></div>`);
+    wire(card, ["tr", "ss"]);
+    $("#s", card).onclick = () => { $("#tr", card).value = SAMPLES.trades; $("#ss", card).value = SAMPLES.ssis; };
+    $("#go", card).onclick = safe(() => {
+      const cfg = { ...m.DEFAULT_CONFIG, assume_t1: $("#t1", card).checked, holidays: $("#hol", card).value.split(",").map((x) => x.trim()).filter(Boolean) };
+      const list = m.assessTrades(m.readTrades(table.parseCsv($("#tr", card).value)), m.readSsis(table.parseCsv($("#ss", card).value)), cfg);
+      if (!list.length) throw new Error("No trades found.");
+      show(rep.toMarkdown(list), [["Download results (.csv)", "t1-report.csv", rep.toResultCsv(list), "text/csv"]]);
+    });
+  }
+
+  if (solution === "vop-precheck") {
+    const m = __m["vop-precheck/src/precheck.js"], rep = __m["vop-precheck/src/report.js"];
+    const card = simpleCard(`<h2>Payment file and supplier master</h2>${csvBox("pa", "Payment file (CSV)", "payee_name, iban, amount")}${csvBox("ma", "Supplier master (CSV, optional but recommended)", "iban, account_holder_name, trading_names")}
+      <div class="actions"><button class="primary" id="go">Check payments</button><button id="s">Load sample</button></div>`);
+    wire(card, ["pa", "ma"]);
+    $("#s", card).onclick = () => { $("#pa", card).value = SAMPLES.payments; $("#ma", card).value = SAMPLES.master; };
+    $("#go", card).onclick = safe(() => {
+      const list = m.precheck(m.readPayments(table.parseCsv($("#pa", card).value)), $("#ma", card).value.trim() ? m.readMaster(table.parseCsv($("#ma", card).value)) : []);
+      if (!list.length) throw new Error("No payments found.");
+      show(rep.toMarkdown(list), [["Download results (.csv)", "vop-precheck.csv", rep.toResultCsv(list), "text/csv"]]);
+    });
+  }
+
+  if (solution === "payment-investigation-assistant") {
+    const m = __m["payment-investigation-assistant/src/investigate.js"], rep = __m["payment-investigation-assistant/src/report.js"];
+    const card = simpleCard(`<h2>Payment query</h2><label>Paste an MT199/n99, an email or call notes</label><textarea id="t" style="min-height:200px"></textarea>
+      <div class="actions"><button class="primary" id="go">Analyse</button><button id="s1">Sample: MT199 non-receipt</button><button id="s2">Sample: fraud recall email</button></div>`);
+    $("#s1", card).onclick = () => ($("#t", card).value = SAMPLES.mt199);
+    $("#s2", card).onclick = () => ($("#t", card).value = SAMPLES.fraud);
+    $("#go", card).onclick = safe(() => { const t = $("#t", card).value; if (!t.trim()) throw new Error("Paste a query first."); show(rep.toMarkdown(m.analyse(t))); });
+  }
+
+  if (solution === "translation-loss-auditor") {
+    const m = __m["translation-loss-auditor/src/audit.js"], rep = __m["translation-loss-auditor/src/report.js"];
+    const card = simpleCard(`<h2>The two versions of one payment</h2><div class="row"><div><label>ISO 20022 pacs.008 (XML)</label><input type="file" id="mxf" accept=".xml,.txt"><textarea id="mx" style="min-height:220px"></textarea></div>
+      <div><label>MT103 (FIN text)</label><input type="file" id="mtf" accept=".txt,.fin,.mt"><textarea id="mt" style="min-height:220px"></textarea></div></div>
+      <div class="actions"><button class="primary" id="go">Compare</button><button id="s">Load sample</button></div>`);
+    wire(card, ["mx", "mt"]);
+    $("#s", card).onclick = () => { $("#mx", card).value = SAMPLES.mx; $("#mt", card).value = SAMPLES.mt; };
+    $("#go", card).onclick = safe(() => {
+      const mx = m.parsePacs008($("#mx", card).value), mt = m.parseMt103($("#mt", card).value);
+      const pairs = [{ name: "payment", uetr: mx.uetr, findings: m.audit(mx, mt) }];
+      show(rep.toMarkdown(pairs), [["Download findings (.csv)", "translation-audit.csv", rep.toResultCsv(pairs), "text/csv"]]);
+    });
+  }
+
+  if (solution === "sanctions-fp-analyser") {
+    const m = __m["sanctions-fp-analyser/src/analyse.js"], rep = __m["sanctions-fp-analyser/src/report.js"];
+    const card = simpleCard(`<h2>Closed alerts export</h2>${csvBox("al", "Alerts (CSV)", "alert_id, created_at, screened_name, matched_name, list, match_score, matched_field, message_type, disposition, handling_minutes, customer_id")}
+      <div class="row"><div><label>Cleared at least … times to count as a repeat pair</label><input type="text" id="mc" value="3"></div><div><label>Minutes per alert when not recorded</label><input type="text" id="mn" value="30"></div></div>
+      <div class="actions"><button class="primary" id="go">Analyse</button><button id="s">Load sample (invented names)</button></div>`);
+    wire(card, ["al"]);
+    $("#s", card).onclick = () => ($("#al", card).value = SAMPLES.alerts);
+    $("#go", card).onclick = safe(() => {
+      const a = m.analyse(m.readAlerts(table.parseCsv($("#al", card).value)), { minClears: Number($("#mc", card).value) || 3, defaultMinutes: Number($("#mn", card).value) || 30 });
+      if (!a.total) throw new Error("No alerts found.");
+      show(rep.toMarkdown(a), [["Download good-guy candidates (.csv)", "good-guy-candidates.csv", rep.goodGuysCsv(a), "text/csv"]]);
+    });
+  }
+
+  if (solution === "report-sanity-checker") {
+    const m = __m["report-sanity-checker/src/check.js"], rep = __m["report-sanity-checker/src/report.js"];
+    const card = simpleCard(`<h2>Report extract</h2>${csvBox("rp", "Report (CSV)", "columns are recognised by name: uti, *_lei, isin, notional, currency, *_date, country…")}
+      <div class="row"><div><label>Required columns <span class="hint">(comma-separated, optional)</span></label><input type="text" id="req"></div><div><label>Report date <span class="hint">(optional)</span></label><input type="text" id="rd" placeholder="YYYY-MM-DD"></div></div>
+      <div class="actions"><button class="primary" id="go">Check report</button><button id="s">Load sample</button></div>`);
+    wire(card, ["rp"]);
+    $("#s", card).onclick = () => ($("#rp", card).value = SAMPLES.report);
+    $("#go", card).onclick = safe(() => {
+      const res = m.checkReport(table.parseCsv($("#rp", card).value), { required: $("#req", card).value.split(",").map((x) => x.trim()).filter(Boolean), reportDate: $("#rd", card).value || undefined });
+      if (!res.rows) throw new Error("No rows found.");
+      show(rep.toMarkdown(res), [["Download issues (.csv)", "report-issues.csv", rep.toIssuesCsv(res.issues), "text/csv"]]);
+    });
+  }
+
+  if (solution === "dora-register-precheck") {
+    const m = __m["dora-register-precheck/src/precheck.js"], rep = __m["dora-register-precheck/src/report.js"];
+    const card = simpleCard(`<h2>Working register</h2>${csvBox("rg", "Register (CSV, one row per contractual arrangement)", "")}
+      <label>Reference date <span class="hint">(end of the reporting year)</span></label><input type="text" id="rd" placeholder="e.g. 2026-12-31">
+      <div class="actions"><button class="primary" id="go">Check register</button><button id="s">Load sample</button></div>`);
+    wire(card, ["rg"]);
+    $("#s", card).onclick = () => { $("#rg", card).value = SAMPLES.register; $("#rd", card).value = "2026-12-31"; };
+    $("#go", card).onclick = safe(() => {
+      const list = m.readRegister(table.parseCsv($("#rg", card).value));
+      if (!list.length) throw new Error("No arrangements found.");
+      const issues = m.precheck(list, { referenceDate: $("#rd", card).value || undefined });
+      show(rep.toMarkdown(list, issues), [["Download fix list (.csv)", "dora-issues.csv", rep.toIssuesCsv(issues), "text/csv"]]);
+    });
+  }
+
+  if (solution === "copybook-decoder") {
+    const m = __m["copybook-decoder/src/copybook.js"], rep = __m["copybook-decoder/src/report.js"];
+    const card = simpleCard(`<h2>Copybook and data file</h2><label>COBOL copybook</label><input type="file" id="cbf" accept=".cpy,.cbl,.cob,.txt"><textarea id="cb" style="min-height:200px"></textarea>
+      <label>Data file <span class="hint">(optional: fixed-length records; read locally)</span></label><input type="file" id="df">
+      <div class="row"><div><label>Encoding</label><select id="enc"><option value="ebcdic">EBCDIC (mainframe)</option><option value="ascii">ASCII</option></select></div><div><label>Record format</label><select id="fmt"><option value="fixed">Fixed length</option><option value="rdw">Variable (RDW)</option><option value="lines">One record per line</option></select></div></div>
+      <div class="actions"><button class="primary" id="go">Decode</button><button id="s">Load sample</button></div><p class="hint" id="st"></p>`);
+    fileInto($("#cbf", card), $("#cb", card));
+    let sampleData = null;
+    $("#s", card).onclick = () => { $("#cb", card).value = SAMPLES.copybook; sampleData = fromB64(SAMPLES.data); $("#st", card).textContent = `Sample data loaded (${sampleData.length} bytes, EBCDIC).`; };
+    $("#go", card).onclick = async () => {
+      try {
+        const { root, warnings } = m.parseCopybook($("#cb", card).value);
+        const l = m.layout(root);
+        let md = rep.dictionaryMarkdown(l.fields, l.recordLength, [...warnings, ...l.warnings]);
+        const dl = [["Download data dictionary (.csv)", "data-dictionary.csv", rep.dictionaryCsv(l.fields), "text/csv"]];
+        const [f] = await readBytes($("#df", card));
+        const bytes = f ? f.bytes : sampleData;
+        if (bytes) {
+          const fmt = $("#fmt", card).value;
+          const d = m.decodeData(l.fields, bytes, { encoding: $("#enc", card).value, recordLength: l.recordLength, rdw: fmt === "rdw", lineSeparated: fmt === "lines" });
+          md += "\n" + rep.decodeSummary(d);
+          dl.push(["Download decoded data (.csv)", "decoded.csv", rep.dataCsv(d), "text/csv"]);
+        }
+        show(md, dl);
+      } catch (e) { showError(e); }
+    };
+  }
+
+  if (solution === "migration-reconciler") {
+    const m = __m["migration-reconciler/src/reconcile.js"], rep = __m["migration-reconciler/src/report.js"];
+    const card = simpleCard(`<h2>Source and target extracts</h2><div class="row"><div>${csvBox("src", "Source (legacy) CSV", "")}</div><div>${csvBox("tgt", "Target (new system) CSV", "")}</div></div>
+      <div class="row"><div><label>Key column(s) in source</label><input type="text" id="key" placeholder="customer_id"></div><div><label>Column mapping <span class="hint">source:target, comma-separated</span></label><input type="text" id="map"></div></div>
+      <div class="row"><div><label>Numeric tolerance</label><input type="text" id="tol" value="0"></div><div><label>Ignore columns</label><input type="text" id="ign"></div></div>
+      <label><input type="checkbox" id="lz" checked> Ignore leading zeros in keys</label> <label><input type="checkbox" id="ic" checked> Ignore case in keys</label>
+      <div class="actions"><button class="primary" id="go">Reconcile</button><button id="s">Load sample</button></div>`);
+    wire(card, ["src", "tgt"]);
+    $("#s", card).onclick = () => { $("#src", card).value = SAMPLES.source; $("#tgt", card).value = SAMPLES.target; $("#key", card).value = "customer_id"; $("#map", card).value = "customer_id:cust_no,full_name:customer_name,address_line:address,postcode:post_code,date_of_birth:dob,balance:balance_amt,marketing_consent:consent_marketing"; };
+    $("#go", card).onclick = safe(() => {
+      const map = Object.fromEntries($("#map", card).value.split(",").filter(Boolean).map((p) => p.split(":").map((x) => x.trim())));
+      const r = m.reconcile(table.parseCsv($("#src", card).value), table.parseCsv($("#tgt", card).value), { key: $("#key", card).value.split(",").map((x) => x.trim()).filter(Boolean), map, tolerance: Number($("#tol", card).value) || 0, ignoreLeadingZeros: $("#lz", card).checked, ignoreCase: $("#ic", card).checked, ignoreFields: $("#ign", card).value.split(",").map((x) => x.trim()).filter(Boolean) });
+      show(rep.toMarkdown(r), [["Download differences (.csv)", "differences.csv", rep.diffsCsv(r), "text/csv"]]);
+    });
+  }
+
+  if (solution === "euc-risk-scanner") {
+    const m = __m["euc-risk-scanner/src/scan.js"], rep = __m["euc-risk-scanner/src/report.js"], zip = __m["shared/zip.js"];
+    const card = simpleCard(`<h2>Spreadsheets to scan</h2><div class="row"><div><label>Folder</label><input type="file" id="dir" webkitdirectory multiple></div><div><label>Or files</label><input type="file" id="files" multiple accept=".xlsx,.xlsm,.xls,.xltx,.xltm"></div></div>
+      <div class="actions"><button class="primary" id="go">Scan</button><button id="s">Scan samples</button></div><p class="hint" id="st"></p>`);
+    async function run(items) {
+      const reports = [];
+      for (const it of items.filter((x) => /\.(xlsx|xlsm|xls|xltx|xltm)$/i.test(x.name) && !/(^|\/)~\$/.test(x.name))) {
+        try { reports.push(await m.scanWorkbook(it.name, it.bytes, zip.browserInflate)); } catch (e) { console.warn(it.name, e); }
+      }
+      if (!reports.length) throw new Error("No Excel workbooks found.");
+      $("#st", card).textContent = `Scanned ${reports.length} workbook(s).`;
+      show(rep.toMarkdown(reports), [["Download EUC register (.csv)", "euc-register.csv", rep.registerCsv(reports), "text/csv"]]);
+    }
+    $("#go", card).onclick = async () => { try { await run([...(await readBytes($("#dir", card))), ...(await readBytes($("#files", card)))]); } catch (e) { showError(e); } };
+    $("#s", card).onclick = () => run(Object.entries(SAMPLES).map(([name, v]) => ({ name, bytes: fromB64(v) }))).catch(showError);
+  }
+
+  if (solution === "batch-dependency-mapper") {
+    const m = __m["batch-dependency-mapper/src/map.js"], rep = __m["batch-dependency-mapper/src/report.js"];
+    const card = simpleCard(`<h2>Batch files</h2><p class="hint">JCL, Control-M XML exports, crontabs and shell scripts.</p><div class="row"><div><label>Folder</label><input type="file" id="dir" webkitdirectory multiple></div><div><label>Or files</label><input type="file" id="files" multiple></div></div>
+      <div class="actions"><button class="primary" id="go">Map</button><button id="s">Load sample</button></div>`);
+    const diagram = h(`<section class="card" hidden><h2>Diagram</h2><div id="svg" style="overflow:auto"></div></section>`);
+    app.insertBefore(diagram, resultCard);
+    function run(files) {
+      const { jobs, skipped } = m.parseAll(files);
+      if (!jobs.length) throw new Error("No jobs found in these files.");
+      const g = m.buildGraph(jobs);
+      const svgText = rep.svg(g);
+      diagram.hidden = false;
+      $("#svg", diagram).innerHTML = svgText;
+      show(rep.toMarkdown(g, skipped).replace(/```mermaid[\s\S]*?```\n/, ""), [["Download diagram (.svg)", "batch-map.svg", svgText, "image/svg+xml"], ["Download dependencies (.csv)", "dependencies.csv", rep.edgesCsv(g), "text/csv"], ["Download Mermaid (.mmd)", "batch-map.mmd", rep.mermaid(g), "text/plain"]]);
+    }
+    $("#go", card).onclick = async () => { try { run([...(await readFiles($("#dir", card))), ...(await readFiles($("#files", card)))]); } catch (e) { showError(e); } };
+    $("#s", card).onclick = safe(() => run(Object.entries(SAMPLES).map(([name, text]) => ({ name, text }))));
+  }
+})();
+
+</script>
+</body>
+</html>

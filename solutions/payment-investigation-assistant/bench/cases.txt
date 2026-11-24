@@ -1,0 +1,41 @@
+# EXPECTED_TYPE <TAB> message. Written before the first run; varied wording from banks, corporates and call notes.
+NON_RECEIPT	Beneficiary claims they have not received USD 12,400 sent on 2026-11-18. Please confirm credit.
+NON_RECEIPT	Our supplier says the money never arrived. Can you check? Ref INV-2231.
+NON_RECEIPT	Funds not credited to beneficiary account, please investigate urgently
+NON_RECEIPT	Client is still waiting for the transfer of EUR 3,000 from last Monday.
+NON_RECEIPT	Pls confirm whether the funds have been credited to the beneficiary, they say nothing has come in.
+NON_RECEIPT	Customer called: payment to landlord hasn't arrived after 4 days.
+RECALL_FRAUD	We believe this payment was made due to a scam. Customer was tricked by a fake supplier email. Recall please.
+RECALL_FRAUD	URGENT: account takeover - payment of GBP 9,800 not authorised by our client
+RECALL_FRAUD	Customer fell victim to an impersonation scam (caller pretended to be the bank). Please freeze funds.
+RECALL_FRAUD	Invoice fraud: the supplier mailbox was hacked and bank details changed. Request recall of USD 50,000.
+RECALL_FRAUD	Unauthorised transfer reported by the account holder this morning
+RECALL_CANCEL	Please cancel our MT103 ref ABC123456, it was a duplicate payment.
+RECALL_CANCEL	The customer paid this invoice twice. Kindly return the second payment.
+RECALL_CANCEL	Payment sent in error to the wrong beneficiary, please recall.
+RECALL_CANCEL	Request to stop payment FT26110045 - sent by mistake
+RECALL_CANCEL	We request a refund of the payment made on 21 Nov as the order was cancelled.
+AMENDMENT	Please amend the beneficiary account number to DE89370400440532013000.
+AMENDMENT	Wrong IBAN was used, the correct one is NL91ABNA0417164300. Can you correct?
+AMENDMENT	Kindly change the beneficiary name to Nordic Timber AB as the name was incorrect.
+AMENDMENT	Correction of the beneficiary address requested by the ordering customer.
+UNABLE_TO_APPLY	We are unable to apply the funds: account closed.
+UNABLE_TO_APPLY	Beneficiary account is dormant, cannot credit. Please advise.
+UNABLE_TO_APPLY	Name does not match the account holder; unable to credit, please provide correct details.
+UNABLE_TO_APPLY	No such account at our bank. Please send corrected instructions or we will return.
+REQUEST_FOR_INFO	Please provide the purpose of payment and the full address of the ordering customer.
+REQUEST_FOR_INFO	RFI: kindly provide invoice and relationship between remitter and beneficiary
+REQUEST_FOR_INFO	Compliance query on this payment - please provide source of funds.
+REQUEST_FOR_INFO	Sanctions screening hit: please confirm the beneficiary's country and purpose.
+RETURN	The funds were returned by the beneficiary bank with reason AC04.
+RETURN	Payment has been returned to us, why?
+RETURN	Our payment bounced back today, please explain the return reason.
+FEES	Beneficiary received less than the invoiced amount, charges were deducted although we paid OUR.
+FEES	Why were fees taken? We sent 10,000 but 9,965 arrived.
+FEES	Please refund the deducted charges on this payment.
+STATUS	Can you give me the status of transfer ref TRX778899?
+STATUS	Where is my payment? Sent Tuesday.
+STATUS	Any update on our previous query? Please trace the payment.
+STATUS	Please track UETR 3b2a7c1e-9f4d-4c2a-8e6b-1d2f3a4b5c6d and confirm status.
+UNCLEAR	Hello, please call me back about my account.
+UNCLEAR	Following our conversation, see attached.

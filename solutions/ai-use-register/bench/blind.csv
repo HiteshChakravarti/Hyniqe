@@ -1,0 +1,16 @@
+name,description,users,expected
+Car finance decisioning,Automatically accepts or refuses car finance applications from members of the public,customers,HIGH-RISK
+Credit builder card,Sets the starting credit limit for new-to-credit consumers,customers,HIGH-RISK
+Graduate assessment centre,Video game style tests that rank graduate applicants,candidates,HIGH-RISK
+Sales performance ranking,Ranks branch advisers by sales performance and flags bottom 10% for performance improvement plans,employees,HIGH-RISK
+Branch queue analytics,Counts people waiting in branch queues from CCTV without identifying them,public,MINIMAL
+Customer distress nudging,Uses signs of financial distress to steer customers towards expensive add-ons,customers,PROHIBITED?
+Pension guidance assistant,An AI assistant that chats with pension members about retirement options,customers,TRANSPARENCY
+AI-written newsletters,Generates newsletter articles published to customers under staff names,customers,TRANSPARENCY
+Fraud call scoring,Scores inbound calls for social engineering fraud risk,customers,MINIMAL
+Dividend forecasting,Forecasts dividend income for the investment book,internal,MINIMAL
+Loan pricing engine,Sets the interest rate offered to each personal loan applicant based on risk,customers,HIGH-RISK
+Insurance claims fraud,Flags suspicious home insurance claims for investigators,customers,MINIMAL
+Employee background screening,Screens job applicants' public records and decides who passes vetting,candidates,HIGH-RISK
+IT ticket routing,Routes IT service desk tickets to the right team,internal,MINIMAL
+Tenant screening,Decides whether rental applicants for bank-owned properties are accepted,customers,REVIEW

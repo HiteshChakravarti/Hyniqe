@@ -1,0 +1,45 @@
+# EXPECTED_GAP_TYPES (comma-separated or NONE) <TAB> line from an ops procedure. Written before the first run.
+VAGUE_CHECK	Check the file looks ok before sending.
+VAGUE_CHECK	Do the usual checks on the balances.
+VAGUE_CHECK	Make sure everything is fine with the totals.
+VAGUE_CHECK	Quickly eyeball the report for anything strange.
+VAGUE_CHECK	Adjust the rates if needed.
+VAGUE_CHECK	Use your judgement on small breaks.
+VAGUE_CHECK	Normally the file arrives before 8.
+KEY_PERSON	If the totals don't match, ask Priya.
+KEY_PERSON	Only Tom knows the password for the vendor portal.
+KEY_PERSON	Call Ahmed if the SWIFT link is down.
+KEY_PERSON	Steve usually does the month-end accruals.
+KEY_PERSON	Wait for Jenny to sign off before release.
+HARDCODED_SECRET	Login with user=opsadmin password=Welcome1
+HARDCODED_SECRET	sshpass -p S3cretPw sftp ops@host
+HARDCODED_SECRET	export API_KEY=ab12cd34ef56
+HARDCODED_SECRET	sqlplus scott/tiger@PROD @run.sql
+MANUAL_SPREADSHEET	Paste the extract into the Excel workbook and refresh the pivot.
+MANUAL_SPREADSHEET	Run the VBA macro in recon_tool.xlsm.
+MANUAL_SPREADSHEET	Do a vlookup against yesterday's file.
+TODO_WORKAROUND	TODO: remove this once the vendor fixes the bug
+TODO_WORKAROUND	This is a workaround for the duplicate file issue.
+TODO_WORKAROUND	Don't touch this setting, nobody knows why it's there.
+LEGACY_TECH	The job runs on the old Windows 2003 server.
+LEGACY_TECH	Results are loaded into the MS Access database.
+LEGACY_TECH	Confirmations are sent by fax to the custodian.
+DESTRUCTIVE_COMMAND	rm -rf /data/inbound/*
+DESTRUCTIVE_COMMAND	DELETE FROM payments_staging;
+DESTRUCTIVE_COMMAND	TRUNCATE TABLE gl_feed;
+HARDCODED_ENV	scp report.csv ops@10.1.2.33:/drop/
+HARDCODED_ENV	copy \\fileserver02\recs\out.csv D:\temp\
+NONE	Log into TLM and open the USD queue.
+NONE	Run the NOSTRO_USD_AM match.
+NONE	Email the breaks report to treasury.
+NONE	Confirm the total equals the control total in the header record.
+NONE	If the file has not arrived by 07:30, raise a P2 incident with the SWIFT support team.
+NONE	Reconcile the GL balance to the statement closing balance; tolerance is zero.
+NONE	Upload the file to the Treasury SharePoint folder.
+NONE	Release the payments in GPP after four-eyes approval.
+NONE	The Payments Ops team owns this process.
+NONE	Escalate to the Payments Operations Manager on call.
+NONE	Archive the file to /archive/payments.
+NONE	UPDATE payments SET status='SENT' WHERE batch_id = :batch;
+NONE	Check the record count matches the trailer count.
+NONE	Send the confirmation to the Settlements desk.

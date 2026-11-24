@@ -1,7 +1,7 @@
 // The Hyniqe Hub tool catalogue. scripts/build-site.ts turns each entry into its own page
 // (docs/tools/<slug>/index.html) so every tool can be found by the words people search for.
 
-export type Group = 'fix' | 'find' | 'ready' | 'measure';
+export type Group = 'fix' | 'find' | 'ready' | 'measure' | 'comply' | 'legacy';
 
 export interface ToolPage {
   slug: string;
@@ -35,7 +35,38 @@ export const GROUPS: Record<Group, { title: string; blurb: string }> = {
   find: { title: 'Find costly errors', blurb: 'Money paid twice, to the wrong place, or bounced back.' },
   ready: { title: 'Get ready for T+1', blurb: 'Europe settles trades in one day from 11 October 2027.' },
   measure: { title: 'Measure data quality', blurb: 'Know how good your data is before a regulator asks.' },
+  comply: { title: 'Stay compliant', blurb: 'New rules on sanctions, DORA, AI and quantum-safe crypto. Have the answers ready.' },
+  legacy: { title: 'Untangle legacy systems', blurb: 'Old files, batch jobs and spreadsheets nobody fully understands any more.' },
 };
+
+/** A tool that ships its own self-contained page (solutions/<slug>/web/index.html) instead of a site adapter. */
+export interface StandaloneTool {
+  slug: string;
+  name: string;
+  group: Group;
+  status: 'live' | 'building';
+  short: string;
+  keywords: string[];
+}
+
+export const STANDALONE: StandaloneTool[] = [
+  { slug: 't1-settlement-predictor', name: 'T+1 Settlement Fail Predictor', group: 'ready', status: 'live', short: 'Trades that will fail to settle under T+1, and why: SSIs, late allocations, affirmations, FX funding.', keywords: ['t+1', 'settlement fail', 'trades', 'ssi', 'allocation', 'affirmation', 'csdr', 'penalties'] },
+  { slug: 'vop-precheck', name: 'VoP Pre-Checker', group: 'find', status: 'live', short: 'Predicts the Verification of Payee result for every payment in a bulk file before you send it.', keywords: ['verification of payee', 'vop', 'name check', 'close match', 'no match', 'sepa', 'bulk payment', 'supplier'] },
+  { slug: 'payment-investigation-assistant', name: 'Payment Investigation Assistant', group: 'find', status: 'live', short: 'Turns a payment query or MT199 into a case: type, references, what is missing, next steps and a draft reply.', keywords: ['investigation', 'payment query', 'mt199', 'recall', 'fraud', 'not received', 'uetr', 'case'] },
+  { slug: 'translation-loss-auditor', name: 'Translation Data-Loss Auditor', group: 'find', status: 'live', short: 'Data lost or changed when a pacs.008 is translated to MT103: truncated names, dropped LEIs, changed amounts.', keywords: ['pacs.008', 'mt103', 'translation', 'truncation', 'cbpr+', 'iso 20022', 'data loss', 'coexistence'] },
+  { slug: 'agent-payment-mandate-checker', name: 'Agent Payment Mandate Checker', group: 'find', status: 'live', short: 'Checks payments made by AI agents against their mandates: limits, payees, categories and audit trail.', keywords: ['ai agent', 'agentic payments', 'mandate', 'limits', 'audit trail', 'block', 'review'] },
+  { slug: 'verify-before-you-pay', name: 'Verify-Before-You-Pay', group: 'find', status: 'live', short: 'Scores a payment request for deepfake and impersonation fraud and gives a callback script.', keywords: ['deepfake', 'ceo fraud', 'impersonation', 'bec', 'callback', 'payment fraud', 'urgent request'] },
+  { slug: 'sanctions-fp-analyser', name: 'Sanctions False-Positive Analyser', group: 'comply', status: 'live', short: 'Finds what drives sanctions screening false positives and which tuning changes are safe to test.', keywords: ['sanctions', 'screening', 'false positives', 'alerts', 'good guy list', 'tuning', 'aml'] },
+  { slug: 'report-sanity-checker', name: '"Valid but Wrong" Report Checker', group: 'comply', status: 'live', short: 'Errors in regulatory reports that pass validation: check digits, dates, duplicates, outliers, placeholders.', keywords: ['regulatory reporting', 'emir', 'mifir', 'lei', 'isin', 'data quality', 'report'] },
+  { slug: 'dora-register-precheck', name: 'DORA Register Pre-Check', group: 'comply', status: 'live', short: 'Fixes your DORA Register of Information before submission, including critical-function gaps.', keywords: ['dora', 'register of information', 'ict third party', 'lei', 'euid', 'outsourcing', 'eba'] },
+  { slug: 'ai-use-register', name: 'AI Use Register', group: 'comply', status: 'live', short: 'Turns an AI inventory into an EU AI Act register with indicative risk tiers, obligations and evidence gaps.', keywords: ['eu ai act', 'ai inventory', 'high risk', 'ai governance', 'register', 'compliance'] },
+  { slug: 'pqc-crypto-inventory', name: 'Post-Quantum Crypto Inventory', group: 'comply', status: 'live', short: 'Finds cryptography in code that is broken today or vulnerable to quantum computers, with a CBOM.', keywords: ['post-quantum', 'pqc', 'cryptography', 'rsa', 'cbom', 'quantum', 'crypto inventory'] },
+  { slug: 'copybook-decoder', name: 'Copybook Decoder', group: 'legacy', status: 'live', short: 'Reads a COBOL copybook and decodes mainframe data files (EBCDIC, packed decimal) into a spreadsheet.', keywords: ['cobol', 'copybook', 'mainframe', 'ebcdic', 'comp-3', 'packed decimal', 'data dictionary'] },
+  { slug: 'migration-reconciler', name: 'Migration Reconciler', group: 'legacy', status: 'live', short: 'Compares source and target extracts after a migration: lost, truncated and changed data, control totals, sign-off.', keywords: ['data migration', 'reconciliation', 'core banking', 'control totals', 'sign-off', 'cutover'] },
+  { slug: 'euc-risk-scanner', name: 'Spreadsheet (EUC) Risk Scanner', group: 'legacy', status: 'live', short: 'Scans workbooks for macros, external links, hidden sheets and errors and builds an EUC risk register.', keywords: ['euc', 'spreadsheet risk', 'excel', 'macros', 'end user computing', 'model risk'] },
+  { slug: 'batch-dependency-mapper', name: 'Batch Dependency Mapper', group: 'legacy', status: 'live', short: 'Maps how JCL, Control-M, cron and scripts depend on each other: run order, risks and a diagram.', keywords: ['batch', 'jcl', 'control-m', 'cron', 'dependencies', 'mainframe', 'job scheduling'] },
+  { slug: 'legacy-runbook-builder', name: 'Legacy Runbook Builder', group: 'legacy', status: 'live', short: 'Turns handover notes and scripts into a runbook, with knowledge gaps and questions for the owner.', keywords: ['runbook', 'handover', 'knowledge transfer', 'legacy', 'operations', 'retiring staff'] },
+];
 
 const PRIVATE: [string, string] = ['Is my file uploaded anywhere?', 'No. The check runs inside this browser tab. Nothing is sent to a server, stored or tracked, and the code is open for anyone to inspect on GitHub.'];
 const FREE: [string, string] = ['Is it really free?', 'Yes, for unlimited use. Teams that want it run on their real data with a written fix plan can book a paid Health Check.'];

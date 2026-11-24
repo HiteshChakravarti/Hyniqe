@@ -20,7 +20,7 @@ import { generateRun } from '../solutions/bank-detail-change-check/src/sample.ts
 import { generateInvoice } from '../solutions/e-invoice-checker/src/sample.ts';
 import { generatePair, ledgerCsv } from '../solutions/bank-reconciliation/src/sample.ts';
 import { homePage, searchIndex, toolPage } from '../site/render.ts';
-import { TOOLS } from '../site/tools.ts';
+import { STANDALONE, TOOLS } from '../site/tools.ts';
 
 const root = join(import.meta.dirname, '..');
 const SOURCES = [
@@ -78,6 +78,12 @@ const outputs = new Map<string, string>();
 // Pages: one home page and one page per tool, plus the site's own scripts and styles.
 outputs.set('docs/index.html', homePage());
 for (const t of TOOLS) outputs.set(`docs/tools/${t.slug}/index.html`, toolPage(t));
+// Standalone tools ship a self-contained page; add a link back to the Hub at the top.
+const BACK = '<div style="font:14px system-ui,sans-serif;padding:10px 16px;border-bottom:1px solid #8884"><a href="../../" style="color:inherit">&larr; All Hyniqe Hub tools</a></div>';
+for (const t of STANDALONE) {
+  const page = readFileSync(join(root, 'solutions', t.slug, 'web', 'index.html'), 'utf8');
+  outputs.set(`docs/tools/${t.slug}/index.html`, page.replace(/<body([^>]*)>/, (m) => m + BACK));
+}
 outputs.set('docs/assets/tool-index.js', searchIndex());
 const copyDir = (from: string, to: string): void => {
   for (const e of readdirSync(join(root, from), { withFileTypes: true })) {

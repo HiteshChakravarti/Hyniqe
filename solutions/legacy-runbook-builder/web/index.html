@@ -1,0 +1,1053 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Legacy Runbook Builder · Hyniqe Hub</title>
+<style>:root { --ink:#14213d; --muted:#5b6475; --line:#e3e7ef; --bg:#f7f8fb; --card:#fff; --accent:#1f5eff; --accent-ink:#fff; --ok:#137a3f; --warn:#b26a00; --bad:#b3261e; }
+* { box-sizing: border-box; }
+body { margin:0; font:15px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; color:var(--ink); background:var(--bg); }
+header { padding:28px clamp(16px,5vw,56px) 18px; background:var(--card); border-bottom:1px solid var(--line); }
+.brand { font-weight:700; letter-spacing:.2px; color:var(--muted); font-size:13px; text-transform:uppercase; }
+.brand span { color:var(--accent); }
+h1 { margin:6px 0 4px; font-size:clamp(22px,3vw,30px); }
+.tagline { margin:0; color:var(--muted); max-width:760px; }
+.local { margin:10px 0 0; font-size:13px; color:var(--ok); }
+main { padding:20px clamp(16px,5vw,56px) 40px; display:grid; gap:18px; max-width:1180px; }
+.card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:18px; }
+.card h2 { margin:0 0 10px; font-size:17px; }
+label { display:block; font-weight:600; margin:10px 0 4px; font-size:14px; }
+.hint { color:var(--muted); font-size:13px; font-weight:400; }
+textarea, input[type=text], select { width:100%; font:13px/1.45 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; border:1px solid var(--line); border-radius:8px; padding:9px; background:#fbfcfe; color:var(--ink); }
+input[type=text], select { font-family:inherit; font-size:14px; }
+textarea { min-height:140px; resize:vertical; }
+.row { display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:12px; }
+.actions { display:flex; flex-wrap:wrap; gap:8px; margin-top:14px; }
+button { font:inherit; font-weight:600; border-radius:8px; padding:9px 14px; border:1px solid var(--line); background:#fff; color:var(--ink); cursor:pointer; }
+button.primary { background:var(--accent); border-color:var(--accent); color:var(--accent-ink); }
+button:disabled { opacity:.5; cursor:default; }
+.tabs { display:flex; gap:6px; margin-bottom:6px; }
+.tabs button[aria-selected=true] { background:var(--ink); color:#fff; border-color:var(--ink); }
+#report { overflow-wrap:anywhere; }
+#report h2 { font-size:22px; margin:4px 0 8px; } #report h3 { font-size:18px; margin:22px 0 8px; } #report h4, #report h5 { font-size:15px; margin:18px 0 6px; }
+#report p { margin:8px 0; }
+.tablewrap { overflow-x:auto; margin:10px 0; }
+table { border-collapse:collapse; width:100%; font-size:13.5px; }
+th, td { border:1px solid var(--line); padding:6px 8px; text-align:left; vertical-align:top; }
+th { background:#f1f4f9; }
+code { background:#f1f4f9; padding:1px 4px; border-radius:4px; font-size:12.5px; }
+.error { color:var(--bad); font-weight:600; white-space:pre-wrap; }
+.empty { color:var(--muted); }
+footer { padding:20px clamp(16px,5vw,56px) 36px; color:var(--muted); font-size:12.5px; }
+@media (prefers-color-scheme: dark) {
+  :root { --ink:#e8ecf5; --muted:#a3acbf; --line:#2b3345; --bg:#10141d; --card:#171c27; --accent:#5b8cff; }
+  textarea, input[type=text], select { background:#121722; }
+  th, code { background:#1f2634; } button { background:#1d2330; } .tabs button[aria-selected=true] { background:#e8ecf5; color:#10141d; }
+}
+</style>
+</head>
+<body data-solution="legacy-runbook-builder">
+<header><div class="brand">Hyniqe <span>Hub</span></div><h1>Legacy Runbook Builder</h1><p class="tagline">Turn handover notes and old scripts into a runbook, and see the knowledge gaps before people leave.</p><p class="local">🔒 Runs entirely in your browser. Nothing you load here is uploaded.</p></header>
+<main id="app"></main>
+<footer>Hyniqe Hub · open-source tools for financial operations. Outputs support your judgement; they are not legal, audit or security advice.</footer>
+<script>
+const __m = {};
+__m["shared/table.js"] = (() => {
+// Small, dependency-free table helpers shared by the Hyniqe Hub solutions in this batch.
+// Runs unchanged in Node (22+, type stripping) and in the browser after `tsc`.
+/** Parse CSV text into rows keyed by lower-cased, trimmed headers (spaces → underscores).
+ *  Handles quoted fields, escaped quotes, BOM, CRLF, and comma / semicolon / tab separators. */
+function parseCsv(text) {
+    const clean = text.replace(/^﻿/, "");
+    const firstLine = clean.split(/\r?\n/, 1)[0] ?? "";
+    const sep = pickSeparator(firstLine);
+    const records = [];
+    let field = "";
+    let record = [];
+    let inQuotes = false;
+    for (let i = 0; i < clean.length; i++) {
+        const ch = clean[i];
+        if (inQuotes) {
+            if (ch === '"') {
+                if (clean[i + 1] === '"') {
+                    field += '"';
+                    i++;
+                }
+                else {
+                    inQuotes = false;
+                }
+            }
+            else {
+                field += ch;
+            }
+            continue;
+        }
+        if (ch === '"') {
+            inQuotes = true;
+            continue;
+        }
+        if (ch === sep) {
+            record.push(field);
+            field = "";
+            continue;
+        }
+        if (ch === "\n" || ch === "\r") {
+            if (ch === "\r" && clean[i + 1] === "\n")
+                i++;
+            record.push(field);
+            field = "";
+            if (record.some((f) => f.trim() !== ""))
+                records.push(record);
+            record = [];
+            continue;
+        }
+        field += ch;
+    }
+    record.push(field);
+    if (record.some((f) => f.trim() !== ""))
+        records.push(record);
+    if (records.length === 0)
+        return [];
+    const headers = records[0].map(normaliseHeader);
+    return records.slice(1).map((r) => {
+        const row = {};
+        headers.forEach((h, idx) => { row[h] = (r[idx] ?? "").trim(); });
+        return row;
+    });
+}
+function normaliseHeader(h) {
+    return h.trim().toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_|_$/g, "");
+}
+function pickSeparator(line) {
+    const counts = [",", ";", "\t"].map((s) => [s, line.split(s).length - 1]);
+    counts.sort((a, b) => b[1] - a[1]);
+    return counts[0][1] > 0 ? counts[0][0] : ",";
+}
+/** Serialise rows to CSV with a fixed column order. */
+function toCsv(rows, columns) {
+    const esc = (v) => {
+        const s = v === undefined || v === null ? "" : String(v);
+        return /[",\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+    };
+    return [columns.join(","), ...rows.map((r) => columns.map((c) => esc(r[c])).join(","))].join("\n") + "\n";
+}
+/** Render a simple Markdown table. */
+function mdTable(headers, rows) {
+    const cell = (v) => String(v).replace(/\|/g, "\\|").replace(/\n/g, " ");
+    return [
+        `| ${headers.map(cell).join(" | ")} |`,
+        `| ${headers.map(() => "---").join(" | ")} |`,
+        ...rows.map((r) => `| ${r.map(cell).join(" | ")} |`),
+    ].join("\n");
+}
+/** Read the first non-empty value among several possible column names. */
+function pick(row, ...names) {
+    for (const n of names) {
+        const v = row[normaliseHeader(n)];
+        if (v !== undefined && v !== "")
+            return v;
+    }
+    return "";
+}
+function parseAmount(raw) {
+    if (!raw)
+        return null;
+    let s = raw.replace(/[^\d.,\-]/g, "");
+    if (s.includes(",") && s.includes(".")) {
+        s = s.lastIndexOf(",") > s.lastIndexOf(".") ? s.replace(/\./g, "").replace(",", ".") : s.replace(/,/g, "");
+    }
+    else if (s.includes(",")) {
+        const parts = s.split(",");
+        s = parts.length === 2 && parts[1].length !== 3 ? s.replace(",", ".") : s.replace(/,/g, "");
+    }
+    const n = Number(s);
+    return Number.isFinite(n) ? n : null;
+}
+function parseBool(raw) {
+    const s = raw.trim().toLowerCase();
+    if (["y", "yes", "true", "1", "done", "passed", "pass"].includes(s))
+        return true;
+    if (["n", "no", "false", "0", "not done", "failed", "fail", ""].includes(s))
+        return s === "" ? null : false;
+    return null;
+}
+/** Parse ISO-ish timestamps ("2026-11-24 14:05", "2026-11-24T14:05:00Z", "24/11/2026 14:05"). */
+function parseTimestamp(raw) {
+    const s = raw.trim();
+    if (!s)
+        return null;
+    const dmy = s.match(/^(\d{1,2})[\/.](\d{1,2})[\/.](\d{4})(?:[ T](\d{1,2}):(\d{2})(?::(\d{2}))?)?$/);
+    if (dmy) {
+        const [, d, m, y, hh = "0", mm = "0", ss = "0"] = dmy;
+        return new Date(Date.UTC(+y, +m - 1, +d, +hh, +mm, +ss));
+    }
+    const iso = s.includes("T") ? s : s.replace(" ", "T");
+    const withZone = /[zZ]|[+\-]\d{2}:?\d{2}$/.test(iso) ? iso : iso + (iso.length > 10 ? "Z" : "T00:00:00Z");
+    const d = new Date(withZone);
+    return Number.isNaN(d.getTime()) ? null : d;
+}
+
+return { parseCsv, normaliseHeader, toCsv, mdTable, pick, parseAmount, parseBool, parseTimestamp };
+})();
+__m["legacy-runbook-builder/src/report.js"] = (() => {
+const { mdTable, toCsv } = __m["shared/table.js"];
+const GAP_TITLE = {
+    HARDCODED_SECRET: "Password or key written in the document/script",
+    KEY_PERSON: "Depends on one named person",
+    DESTRUCTIVE_COMMAND: "Deletes or overwrites data",
+    NO_FAILURE_PATH: "No failure / escalation steps",
+    VAGUE_CHECK: "Check with no clear pass/fail rule",
+    MANUAL_SPREADSHEET: "Manual spreadsheet / macro step",
+    HARDCODED_ENV: "Hard-coded server, IP or share",
+    NO_OWNER: "No owner named",
+    NO_SCHEDULE: "No schedule or cut-off",
+    TODO_WORKAROUND: "Workaround or TODO nobody explained",
+    LEGACY_TECH: "End-of-life technology",
+    UNEXPLAINED_ACRONYM: "Acronym with no explanation",
+};
+const ORDER = ["HARDCODED_SECRET", "KEY_PERSON", "DESTRUCTIVE_COMMAND", "NO_FAILURE_PATH", "VAGUE_CHECK", "MANUAL_SPREADSHEET", "HARDCODED_ENV", "NO_OWNER", "NO_SCHEDULE", "TODO_WORKAROUND", "LEGACY_TECH", "UNEXPLAINED_ACRONYM"];
+function toMarkdown(rb) {
+    const out = [];
+    out.push(`# Runbook: ${rb.title}`, "");
+    out.push(`_Draft generated from ${rb.sources.map((s) => `${s.name} (${s.kind})`).join(", ")}. Review every step with the current process owner before relying on it._`, "");
+    out.push(`**Documentation completeness: ${Math.round(rb.completeness.score * 100)}%**  `, rb.completeness.checks.map((c) => `${c.ok ? "✅" : "❌"} ${c.label}`).join(" · "), "");
+    if (rb.purpose)
+        out.push("## Purpose", "", rb.purpose, "");
+    if (rb.schedule.length)
+        out.push("## When it runs and cut-offs", "", ...rb.schedule.map((s) => `- ${s.text} _(${s.source}:${s.line})_`), "");
+    if (rb.steps.length) {
+        out.push("## Steps", "");
+        for (const s of rb.steps) {
+            const tag = s.kind === "check" ? " ✔︎ **check**" : s.kind === "decision" ? " ⑂ **decision**" : "";
+            out.push(`${s.n}. ${s.text}${tag}${s.command ? `  \n   \`${s.command.slice(0, 140)}\`` : ""}  \n   _source: ${s.source}:${s.line}_`);
+        }
+        out.push("");
+    }
+    if (rb.systems.length || rb.hosts.length || rb.files.length) {
+        out.push("## Systems, servers and files", "");
+        if (rb.systems.length)
+            out.push(`**Systems:** ${rb.systems.join(", ")}`, "");
+        if (rb.hosts.length)
+            out.push(`**Servers / shares:** ${rb.hosts.join(", ")}`, "");
+        if (rb.files.length)
+            out.push(`**Files / datasets:** ${rb.files.map((f) => "`" + f + "`").join(", ")}`, "");
+    }
+    if (rb.contacts.length)
+        out.push("## People this process depends on", "", ...rb.contacts.map((c) => `- **${c.who}**: "${c.context}"`), "");
+    const gapsByType = ORDER.map((t) => [t, rb.gaps.filter((g) => g.type === t)]).filter(([, l]) => l.length);
+    if (gapsByType.length) {
+        out.push(`## Knowledge gaps to close (${rb.gaps.length})`, "", "These are the things that would break if the person who knows this process left.", "");
+        for (const [t, list] of gapsByType) {
+            out.push(`### ${GAP_TITLE[t]} (${list.length})`, "", `_Fix: ${list[0].advice}_`, "");
+            for (const g of list.slice(0, 12))
+                out.push(`- ${g.line ? `${g.source}:${g.line}: ` : ""}${g.text.length > 160 ? g.text.slice(0, 160) + "…" : g.text}`);
+            if (list.length > 12)
+                out.push(`- …and ${list.length - 12} more`);
+            out.push("");
+        }
+    }
+    if (rb.glossary.length)
+        out.push("## Glossary", "", mdTable(["Term", "Meaning"], rb.glossary.map((g) => [g.term, g.meaning || "❓ unknown: ask the team"])), "");
+    out.push("## Questions for the process owner", "", ...ownerQuestions(rb).map((q) => `- [ ] ${q}`), "");
+    out.push("_Generated by Hyniqe Hub · Legacy Runbook Builder. Runs locally. Extraction is rule-based. Use the AI prompt (`--prompt`) to have Claude turn this draft into polished prose._");
+    return out.join("\n") + "\n";
+}
+function ownerQuestions(rb) {
+    const q = [];
+    const has = (t) => rb.gaps.some((g) => g.type === t);
+    if (has("NO_OWNER"))
+        q.push("Who owns this process, and who is the backup?");
+    if (has("NO_SCHEDULE"))
+        q.push("When does this run, and what are the hard cut-offs?");
+    if (has("NO_FAILURE_PATH"))
+        q.push("What happens if a file is late, a job fails or a system is down? Who do we call, and what's the business impact?");
+    for (const g of rb.gaps.filter((x) => x.type === "VAGUE_CHECK").slice(0, 5))
+        q.push(`"${g.text.slice(0, 100)}": what exactly counts as OK? Which fields, values or tolerances?`);
+    for (const c of rb.contacts.slice(0, 5))
+        q.push(`What does ${c.who} know or do here that isn't written down? Who else can do it?`);
+    if (has("MANUAL_SPREADSHEET"))
+        q.push("Where does the spreadsheet/macro live, what does it calculate, and who can maintain it?");
+    if (has("HARDCODED_SECRET"))
+        q.push("Which credentials are embedded? Can they move to a vault and be rotated?");
+    for (const g of rb.glossary.filter((x) => !x.known).slice(0, 5))
+        q.push(`What does "${g.term}" mean here?`);
+    return q;
+}
+/** A ready-to-paste prompt so an AI assistant can turn the extracted structure into a polished runbook. */
+function aiPrompt(rb, originals) {
+    const masked = originals.map((o) => `--- ${o.name} ---\n${o.text.replace(/((?:password|passwd|pwd|pass|secret|token|api[_-]?key)\s*[:=]\s*)\S+/gi, "$1****").replace(/(sshpass\s+-p\s+)\S+/g, "$1****")}`).join("\n\n");
+    return [
+        "You are an operations documentation specialist at a bank. Turn the material below into a clear runbook a new team member could follow on their first day.",
+        "",
+        "Rules:",
+        "- Use only facts in the material. Where something is missing or vague, write [ASK OWNER: question] instead of guessing.",
+        "- Sections: Purpose · When it runs & cut-offs · Prerequisites & access · Step-by-step (numbered, one action per step, with the system used and what 'done' looks like) · Checks & controls (exact pass/fail rules) · If something goes wrong (by failure type) · Contacts & escalation · Glossary · Open questions.",
+        "- Never include passwords or keys; note that a credential exists and must move to a vault.",
+        "- Plain English. Explain every acronym the first time.",
+        "",
+        "Pre-extracted structure (from an automated scan; may be incomplete):",
+        "```json",
+        JSON.stringify({ title: rb.title, schedule: rb.schedule.map((s) => s.text), steps: rb.steps.map((s) => s.text), systems: rb.systems, hosts: rb.hosts, files: rb.files, contacts: rb.contacts.map((c) => c.who), gaps: rb.gaps.map((g) => `${g.type}: ${g.text.slice(0, 120)}`), glossary: rb.glossary }, null, 2),
+        "```",
+        "",
+        "Original material (secrets masked):",
+        masked,
+    ].join("\n");
+}
+function gapsCsv(rb) {
+    return toCsv(rb.gaps.map((g) => ({ type: g.type, title: GAP_TITLE[g.type], source: g.source, line: g.line || "", text: g.text, advice: g.advice })), ["type", "title", "source", "line", "text", "advice"]);
+}
+
+return { toMarkdown, ownerQuestions, aiPrompt, gapsCsv };
+})();
+__m["legacy-runbook-builder/src/extract.js"] = (() => {
+// Legacy Runbook Builder
+// Reads old procedure notes, emails, SOPs and scripts (shell, batch, JCL, cron, SQL) and turns them into a structured
+// runbook: steps, schedule and cut-offs, systems, inputs/outputs, contacts, glossary, and the knowledge gaps that
+// would hurt if the one person who knows this process left.
+// ------------------------------------------------------------------ detection helpers
+function detectKind(name, text) {
+    const n = name.toLowerCase();
+    if (/\.(sh|bash|ksh|zsh)$/.test(n) || /^#!.*\b(ba|k|z)?sh\b/.test(text))
+        return "shell";
+    if (/\.(bat|cmd|ps1)$/.test(n))
+        return "batch";
+    if (/\.(jcl|jcls)$/.test(n) || /^\/\/\S+\s+(JOB|EXEC)\b/m.test(text))
+        return "jcl";
+    if (/crontab|\.cron$/.test(n) || /^\s*([\d*\/,-]+\s+){4}[\d*\/,-]+\s+\S/m.test(text) && text.split("\n").filter((l) => /^\s*([\d*\/,-]+\s+){4}/.test(l)).length >= 1 && !/[a-z]{4,} [a-z]{4,} [a-z]{4,}/i.test(text.split("\n")[0]))
+        return "cron";
+    if (/\.sql$/.test(n))
+        return "sql";
+    if (/\.py$/.test(n))
+        return "python";
+    return "notes";
+}
+const SYSTEMS = [
+    "SWIFT", "SWIFT Alliance", "Alliance Access", "Alliance Lite2", "SWIFTNet", "FIN", "CHAPS", "BACS", "Faster Payments", "Fedwire", "CHIPS", "ACH", "SEPA", "TARGET2", "T2S", "RTGS", "CLS",
+    "Euroclear", "Clearstream", "DTCC", "DTC", "CREST", "Bloomberg", "Reuters", "Refinitiv", "Murex", "Calypso", "Summit", "Kondor", "Finacle", "Flexcube", "T24", "Temenos", "SAP", "Oracle", "PeopleSoft",
+    "DB2", "Sybase", "SQL Server", "Postgres", "mainframe", "CICS", "IMS", "MQ", "IBM MQ", "Kafka", "Control-M", "Autosys", "Tivoli", "cron", "SFTP", "FTP", "Connect:Direct", "NDM", "Axway",
+    "Excel", "Access", "Outlook", "SharePoint", "Jira", "ServiceNow", "Remedy", "Citrix", "Unix", "Linux", "Windows", "Putty", "WinSCP", "TLM", "SmartStream", "Intellimatch", "Duco", "Fircosoft", "Actimize", "GPP", "Volante", "Finastra",
+];
+const BANKING_GLOSSARY = {
+    SSI: "Standing Settlement Instructions", BIC: "Bank Identifier Code (SWIFT code)", IBAN: "International Bank Account Number", EOD: "End of day", SOD: "Start of day", BOD: "Beginning of day",
+    STP: "Straight-through processing", RTGS: "Real-time gross settlement", CHAPS: "UK high-value payment system", BACS: "UK bulk payment system", ACH: "Automated Clearing House", FX: "Foreign exchange",
+    KYC: "Know your customer", AML: "Anti-money laundering", OFAC: "US sanctions office", GL: "General ledger", PNL: "Profit and loss", "P&L": "Profit and loss", BAU: "Business as usual", SLA: "Service level agreement",
+    CSD: "Central securities depository", DVP: "Delivery versus payment", FOP: "Free of payment", NOSTRO: "Our account held at another bank", VOSTRO: "Another bank's account held with us", CCY: "Currency",
+    RECON: "Reconciliation", RECS: "Reconciliations", MT103: "SWIFT single customer credit transfer", MT202: "SWIFT bank-to-bank transfer", MT940: "SWIFT customer statement", MT950: "SWIFT statement message",
+    PACS: "ISO 20022 payments clearing & settlement messages", CAMT: "ISO 20022 cash management messages", PAIN: "ISO 20022 payment initiation messages", JCL: "Job Control Language (mainframe jobs)",
+    DSN: "Dataset name (mainframe)", SFTP: "Secure file transfer", NDM: "Network Data Mover (Connect:Direct)", MI: "Management information", UAT: "User acceptance testing", PROD: "Production", DR: "Disaster recovery",
+    RCA: "Root cause analysis", OPS: "Operations", FO: "Front office", MO: "Middle office", BO: "Back office", CUTOFF: "Cut-off time", TPS: "Third-party system", CSV: "Comma-separated values file",
+    DB: "Database", AIX: "IBM's Unix operating system", CSA: "Credit Support Annex (collateral agreement)", MT950S: "SWIFT statement messages", ISIN: "Securities identifier", CUSIP: "US securities identifier", LEI: "Legal Entity Identifier", MTM: "Mark to market", NAV: "Net asset value", CA: "Corporate actions", TLM: "SmartStream reconciliation platform",
+};
+const VERBS = /^(?:please\s+|then\s+|next,?\s+|first,?\s+|finally,?\s+|now\s+|also\s+)?(check|run|open|log ?in(?:to)?|login|start|stop|restart|send|copy|move|verify|validate|upload|download|reconcile|approve|authori[sz]e|release|email|e-mail|call|phone|export|import|update|confirm|review|compare|wait|submit|save|print|filter|sort|paste|delete|rename|raise|escalate|notify|inform|close|refresh|load|extract|transfer|ftp|sftp|schedule|trigger|book|post|match|investigate|tick|sign|archive|go to|navigate|select|click|enter|type|key in|look at|make sure|ensure|create|prepare|generate|forward|chase|monitor|kick off|rerun|re-run|clear|block|unblock|cancel|amend|repair|fix)\b/i;
+const GAP_ADVICE = {
+    VAGUE_CHECK: "Write the exact pass/fail rule (which field, what value, what tolerance) so someone new can do it.",
+    KEY_PERSON: "Write down what this person knows or decides, and name a backup.",
+    HARDCODED_SECRET: "Remove the credential from the document/script, rotate it, and store it in a vault.",
+    HARDCODED_ENV: "Record which environment this points to, and how to change it for DR or a server move.",
+    NO_FAILURE_PATH: "Add what to do when this step fails: who to call, how to retry, when to escalate, and the business impact.",
+    MANUAL_SPREADSHEET: "Document the spreadsheet (location, formulas, macros) or replace it with a controlled tool. These are often single points of failure.",
+    TODO_WORKAROUND: "Find out why the workaround exists and whether it is still needed.",
+    UNEXPLAINED_ACRONYM: "Add the meaning to the glossary.",
+    NO_OWNER: "Name the accountable owner and a backup for this process.",
+    NO_SCHEDULE: "State when this runs and its cut-off times.",
+    DESTRUCTIVE_COMMAND: "Explain what this deletes or overwrites, and how to recover if it runs on the wrong files.",
+    LEGACY_TECH: "Note the support status of this technology and who can still maintain it.",
+};
+const VAGUE = /\b(looks? (ok|okay|fine|right|good|normal)|seems? (ok|okay|fine|right)|as usual|the usual (way|place|checks?|steps?|folder|file)|like (we always do|normal|last time)|you('ll)? know|if needed|if necessary|when required|as appropriate|sometimes|normally(?!\s+does)|usually(?!\s+(does|do|handles?|runs?))|eyeball|sanity check|quick check|make sure (it'?s|everything is) (ok|okay|fine|correct)|nothing (weird|strange|odd)|etc\.?|and so on|whatever|roughly|more or less|ballpark|common sense|use (your )?judg(e)?ment)\b/i;
+const KEY_PERSON = /\b([Aa]sk|[Cc]all|[Pp]ing|[Cc]heck with|[Ss]peak to|[Tt]alk to|[Ee]mail|[Cc]ontact|[Gg]et|[Ee]scalate to|[Ww]ait for|[Oo]nly)\s+((?:[A-Z][a-z]+)(?:\s+[A-Z][a-z]+)?)\b(?!\s+(?:team|desk|ops|support|service|system|file|report|queue))|\b([A-Z][a-z]+)\s+(knows|will know|usually does|is the only one|has the (password|access|spreadsheet|macro))\b|\bonly\s+([A-Z][a-z]+)\s+(can|knows|has)\b/;
+const SECRET = /\b(password|passwd|pwd|pass|passphrase|secret|api[_-]?key|token)\b\s*[:=]\s*\S+|\b-p\s*['"]?[^\s'"-]{4,}|\b(user(name)?)\s*[:=]\s*\S+\s+(password|pwd|pass)\s*[:=]\s*\S+|\bsshpass\s+-p\s+\S+|\/\/\S+:[^@\s/]+@|\b(sqlplus|isql|sqlcmd|mysql|psql)\s+(-\S+\s+)*\w+\/[^@\s/]+@/i;
+const HOST = /\b((?:\d{1,3}\.){3}\d{1,3})\b|\b([a-z][a-z0-9-]*(?:\.[a-z0-9-]+)*\.(?:internal|corp|local|lan|intra|bank|net|com|co\.uk|org))\b|(\\\\[A-Za-z0-9_-]+)\\/i;
+const FILEPAT = /(?:[A-Za-z]:\\|\/)(?:[\w.$ -]+[\\/])*[\w.$*-]+\.(?:csv|txt|xlsx?|xlsm|dat|xml|json|pdf|zip|gz|out|log|rpt|fin|swift|mt\d{3})\b|\b[\w$*-]+\.(?:csv|txt|xlsx?|xlsm|dat|xml|json|pdf|zip|gz|out|rpt|fin)\b|\b[A-Z0-9$#@]{1,8}(?:\.[A-Z0-9$#@]{1,8}){2,}(?:\(\+?\d+\))?/g;
+const TIMES = /\b(?:by|before|after|at|until|no later than|cut-?off(?: is| time)?:?|from)\s+\d{1,2}(?::\d{2})?\s*(?:am|pm)?\b(?:\s*(?:gmt|bst|cet|est|et|ist|utc|uk time|ny time|local))?|\b\d{1,2}:\d{2}\s*(?:am|pm)?\b(?:\s*(?:gmt|bst|cet|est|et|ist|utc))?|\b(?:eod|end of day|sod|start of day|close of business|cob|t\+\d|month[- ]end|quarter[- ]end|year[- ]end|first business day|last business day|every (?:day|morning|evening|night|monday|tuesday|wednesday|thursday|friday|week|month)|daily|weekly|monthly|on (?:mondays|fridays|weekdays))\b/gi;
+const FAILURE = /\b(if\s+(?:\w+\s+){0,3}(fails?|errors?|abends?|breaks?|is late|is missing|hasn'?t (arrived|come)|doesn'?t (arrive|run|work|come))|if not\b|on (failure|error)|in case of (failure|error|issues?)|escalat\w+|abend|rc\s*[!=]=?\s*0|\$\?\s*-ne\s*0|\|\|\s*(exit|echo|mail)|errorlevel|exit 1|retry|rerun|re-run|fallback|contingency|dr site)\b/i;
+const OWNER = /\b(owner|owned by|responsible|accountable|raci|process owner|contact(s)?:|support team|escalation contacts?)\b/i;
+const SPREADSHEET = /\b(excel|spreadsheet|workbook|\.xlsx?m?|macro|vba|pivot|vlookup|copy (and|&) paste|paste (it|them|the data) into)\b/i;
+const TODO = /\b(todo|fixme|hack|workaround|temporary fix|temp fix|don'?t touch|do not change|nobody knows why|legacy reasons?|for some reason|not sure why)\b/i;
+const LEGACY = /\b(windows (xp|7|2003|2008)|excel 2003|ms access|access database|lotus notes|cobol|fortran|vb6|visual basic 6|solaris|aix 5|as\/?400|iseries|perl 5\.8|python 2|java 6|java 1\.6|internet explorer|ie11|fax)\b/i;
+// ------------------------------------------------------------------ command explanations
+function explainCommand(cmd, kind) {
+    const c = cmd.trim();
+    if (!c || /^(#|rem\b|::|\/\/\*|--)/i.test(c))
+        return undefined;
+    if (/^(set\s+-[a-z]+|export\s+\w+=|echo\b|fi|done|esac|then|else|do|\{|\}|exit 0)\s*$/i.test(c))
+        return undefined;
+    const m = (re) => c.match(re);
+    let r;
+    if (kind === "jcl") {
+        if ((r = m(/^\/\/(\S+)\s+JOB\b/)))
+            return `Mainframe job ${r[1]} starts.`;
+        if ((r = m(/^\/\/(\S+)\s+EXEC\s+(?:PGM=)?(\S+?)(?:,|\s|$)/))) {
+            const cond = c.match(/COND=\((\d+),(LT|LE|EQ|NE|GT|GE)\)/);
+            const condText = cond ? ` (skipped if the test "${cond[1]} ${cond[2]} return code of an earlier step" is true${cond[2] === "LT" ? `, i.e. runs only if earlier steps ended with code ${cond[1]} or lower` : ""})` : "";
+            return `Step ${r[1]}: run program ${r[2].replace(/^PROC=/, "procedure ")}${condText}.`;
+        }
+        if ((r = m(/^\/\/(\S+)\s+DD\s+.*DSN=([^,\s]+)(?:.*DISP=\(?(\w+))?/)))
+            return `${r[1]} uses dataset ${r[2]}${r[3] ? ` (${{ SHR: "read, shared", OLD: "exclusive", NEW: "created new", MOD: "appended" }[r[3]] ?? r[3]})` : ""}.`;
+        if (/^\/\/\s*IF\b/.test(c))
+            return "Condition: only continue if the previous step's return code allows it.";
+        return undefined;
+    }
+    if (kind === "cron") {
+        if ((r = m(/^((?:[\d*\/,-]+\s+){4}[\d*\/,-]+)\s+(.+)$/))) {
+            const cmd = r[2].replace(/\s*\d?>>?\s*\S+/g, "").replace(/\s*2>&1/g, "").trim();
+            const log = r[2].match(/>>?\s*(\S+)/)?.[1];
+            return `Scheduled (${describeCron(r[1])}): ${explainCommand(cmd, "shell") ?? "run " + cmd}${log ? ` (output logged to ${log})` : ""}`;
+        }
+        return undefined;
+    }
+    if ((r = m(/^(?:sftp|ftp|lftp)\b.*?(\S+@)?([\w.-]+\.[\w.-]+|\d+\.\d+\.\d+\.\d+)/)))
+        return `Connect by ${c.split(/\s/)[0].toUpperCase()} to ${r[2]}.`;
+    if ((r = m(/^scp\s+(?:-\S+\s+)*(\S+)\s+(\S+)/)))
+        return `Securely copy ${r[1]} to ${r[2]}.`;
+    if ((r = m(/^(?:put|mput)\s+(\S+)/)))
+        return `Upload ${r[1]}.`;
+    if ((r = m(/^(?:get|mget)\s+(\S+)/)))
+        return `Download ${r[1]}.`;
+    if ((r = m(/^(?:cp|copy|xcopy|robocopy)\s+(?:-\S+\s+|\/\S+\s+)*(\S+)\s+(.+?)\s*$/i)))
+        return `Copy ${r[1]} to ${r[2]}.`;
+    if ((r = m(/^(?:mv|move|ren|rename)\s+(?:-\S+\s+)*(\S+)\s+(\S+)/i)))
+        return `Move/rename ${r[1]} to ${r[2]}.`;
+    if ((r = m(/^(?:rm|del|erase)\s+(?:-\S+\s+|\/\S+\s+)*(.+)/i)))
+        return `Delete ${r[1].trim()}.`;
+    if ((r = m(/^(?:mkdir|md)\s+(?:-p\s+)?(\S+)/i)))
+        return `Create folder ${r[1]}.`;
+    if ((r = m(/^(?:zip|gzip|tar\s+-?c\S*)\s+(?:-\S+\s+)*(\S+)/)))
+        return `Compress ${r[1]}.`;
+    if ((r = m(/^(?:unzip|gunzip|tar\s+-?x\S*)\s+(?:-\S+\s+)*(\S+)/)))
+        return `Extract ${r[1]}.`;
+    if ((r = m(/^(?:mail|mailx|sendmail|blat)\b.*?-s\s+["']([^"']+)["']\s*(\S+@\S+)?/)))
+        return `Email "${r[1]}"${r[2] ? " to " + r[2] : ""}.`;
+    if ((r = m(/^(?:sqlplus|sqlcmd|isql|psql|mysql|db2)\b.*?(@\S+\.sql|-i\s+\S+|-f\s+\S+)?/)))
+        return `Run database script${r[1] ? " " + r[1].replace(/^(-i|-f)\s+/, "").replace(/^@/, "") : ""} (${c.split(/\s/)[0]}).`;
+    if ((r = m(/^java\b.*?-jar\s+(\S+)/)))
+        return `Run Java program ${r[1]}.`;
+    if ((r = m(/^(?:python3?|perl|ruby|node|Rscript)\s+(\S+)/)))
+        return `Run script ${r[1]}.`;
+    if ((r = m(/^(?:\.\/|sh\s+|bash\s+|ksh\s+|call\s+|\.\s+)(\S+)/i)))
+        return `Run ${r[1]}.`;
+    if ((r = m(/^(?:wc\s+-l)\s+(\S+)/)))
+        return `Count lines in ${r[1]} (record count check).`;
+    if ((r = m(/^(?:grep|findstr)\s+(?:-\S+\s+)*["']?([^"'\s]+)["']?\s+(\S+)/i)))
+        return `Search ${r[2]} for "${r[1]}".`;
+    if ((r = m(/^(?:sleep|timeout)\s+(?:\/t\s+)?(\d+)/i)))
+        return `Wait ${r[1]} seconds.`;
+    if ((r = m(/^if\s+\[\s*!?\s*-[fesd]\s+(\S+)/)))
+        return `Check whether ${r[1]} exists before continuing.`;
+    if ((r = m(/^if\s+(?:\[|test)\s+.*(\$\?|\$rc|\$RC|errorlevel)/i)))
+        return "Check whether the previous command succeeded.";
+    if (/^if\b/i.test(c))
+        return "Decision: " + c.replace(/^if\s+/i, "").replace(/;?\s*then$/, "") + ".";
+    if ((r = m(/^(?:ctmorder|ctmrun|sendevent|autorep)\b(.*)/)))
+        return `Scheduler command: ${c}.`;
+    if ((r = m(/^(?:curl|wget)\s+.*?(https?:\/\/\S+)/)))
+        return `Call ${r[1]}.`;
+    if ((r = m(/^(?:chmod|chown)\s+(\S+)\s+(\S+)/)))
+        return `Change permissions of ${r[2]} (${r[1]}).`;
+    if ((r = m(/^cd\s+(\S+)/i)))
+        return `Go to folder ${r[1]}.`;
+    if ((r = m(/^(?:SELECT|UPDATE|INSERT|DELETE|MERGE|TRUNCATE)\b/i)))
+        return `Database ${r[0].toUpperCase()} statement${/^(UPDATE|DELETE|TRUNCATE)/i.test(c) && !/\bWHERE\b/i.test(c) ? " (affects the whole table!)" : ""}.`;
+    return undefined;
+}
+function describeCron(expr) {
+    const [min, hour, dom, mon, dow] = expr.trim().split(/\s+/);
+    const days = { "0": "Sun", "1": "Mon", "2": "Tue", "3": "Wed", "4": "Thu", "5": "Fri", "6": "Sat", "7": "Sun", "1-5": "Mon–Fri" };
+    const time = /^\d+$/.test(hour) && /^\d+$/.test(min) ? `${hour.padStart(2, "0")}:${min.padStart(2, "0")}` : `minute ${min}, hour ${hour}`;
+    const d = dow !== "*" ? (days[dow] ?? `weekday ${dow}`) : dom !== "*" ? `day ${dom} of month` : "every day";
+    return `${d} at ${time}${mon !== "*" ? `, month ${mon}` : ""}`;
+}
+// ------------------------------------------------------------------ main
+function buildRunbook(inputs, title) {
+    const steps = [];
+    const gaps = [];
+    const schedule = [];
+    const systems = new Set();
+    const files = new Set();
+    const hosts = new Set();
+    const contacts = new Map();
+    const acronyms = new Map(); // term → meaning found in text ("" if none)
+    const sources = [];
+    let allText = "";
+    let purpose = "";
+    for (const { name, text } of inputs) {
+        const kind = detectKind(name, text);
+        const lines = text.replace(/\r/g, "").split("\n");
+        sources.push({ name, kind, lines: lines.length });
+        allText += "\n" + text;
+        if (!purpose && kind === "notes")
+            purpose = firstSentence(text);
+        // join JCL / shell continuation lines
+        for (let i = 0; i < lines.length; i++) {
+            const raw = lines[i];
+            const line = raw.trim();
+            if (!line)
+                continue;
+            const where = { source: name, line: i + 1 };
+            const isComment = /^(#(?!!)|rem\b|::|\/\/\*|--|')/i.test(line);
+            const content = isComment ? line.replace(/^(#|rem\b|::|\/\/\*|--|')\s*/i, "") : line;
+            // ---- steps
+            if (kind === "notes") {
+                const bullet = line.match(/^(?:\d+[.)]|[-*•]|step\s*\d+[:.)]?|[a-z][.)])\s+(.*)$/i);
+                const body = (bullet ? bullet[1] : line).trim();
+                if (bullet || VERBS.test(body)) {
+                    if (bullet || body.length < 220) {
+                        const kindOf = /^(if|when|unless|in case)\b/i.test(body) ? "decision" : /^(check|verify|validate|make sure|ensure|confirm|compare|review|reconcile|look at)\b/i.test(body.replace(/^(please|then|next,?|first,?|now|also)\s+/i, "")) ? "check" : "manual";
+                        steps.push({ n: 0, text: maskSecret(body), kind: kindOf, ...where });
+                    }
+                }
+            }
+            else if (!isComment) {
+                const explanation = explainCommand(line, kind);
+                if (explanation)
+                    steps.push({ n: 0, text: maskSecret(explanation), kind: /^(Check|Decision|Condition)/.test(explanation) ? "decision" : "command", command: maskSecret(line), ...where });
+            }
+            // ---- schedule / cut-offs (comments count too: that's where people write them)
+            for (const t of content.matchAll(TIMES))
+                schedule.push({ text: t[0].trim(), ...where });
+            if (kind === "cron" && !isComment) {
+                const c = line.match(/^((?:[\d*\/,-]+\s+){4}[\d*\/,-]+)\s+/);
+                if (c)
+                    schedule.push({ text: describeCron(c[1]), ...where });
+            }
+            if (kind === "jcl") {
+                const s = line.match(/SCHENV=(\S+)|TIME=\(?([\d,]+)\)?/);
+                if (s)
+                    schedule.push({ text: s[0], ...where });
+            }
+            // ---- inventory
+            for (const sys of SYSTEMS) {
+                const re = new RegExp(`(^|[^A-Za-z])${sys.replace(/[.*+?^${}()|[\]\\]/g, "\\$&").replace(/\s+/g, "\\s+")}(?![A-Za-z])`, sys === sys.toUpperCase() ? "" : "i");
+                if (re.test(content))
+                    systems.add(sys);
+            }
+            for (const f of content.matchAll(FILEPAT))
+                if (!/^[@\d.]+$/.test(f[0]))
+                    files.add(/\([^)]*\)$/.test(f[0]) ? f[0] : f[0].replace(/[),;]+$/, ""));
+            const h = content.match(HOST);
+            if (h && !isComment) {
+                const host = (h[1] ?? h[2] ?? h[3] ?? h[0]).replace(/[,;.)]$/, "");
+                const isIp = !!h[1];
+                const afterAt = /@/.test(content.slice(Math.max(0, (h.index ?? 0) - 1), h.index ?? 0));
+                if (!/\.(csv|txt|xlsx?|dat|xml|json|pdf|zip|gz|sh|py|sql|jar|log)$/i.test(host) && (isIp || !afterAt) && !/^(e\.g|i\.e)$/i.test(host))
+                    hosts.add(host);
+            }
+            const kp = content.match(KEY_PERSON);
+            if (kp) {
+                const who = (kp[2] ?? kp[3] ?? kp[6] ?? "").trim();
+                if (who && !/^(The|This|That|It|If|When|Then|Ops|Team|Support|Treasury|Desk|Front|Back|Middle|Payments|Finance|Settlements|Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday|January|February|March|April|May|June|July|August|September|October|November|December|Excel|Outlook|Control|Bloomberg|Swift|SWIFT)$/.test(who.split(" ")[0])) {
+                    contacts.set(who, (contacts.get(who) ? contacts.get(who) + " | " : "") + maskSecret(content).slice(0, 120));
+                    gaps.push({ type: "KEY_PERSON", text: maskSecret(content), advice: GAP_ADVICE.KEY_PERSON, ...where });
+                }
+            }
+            // ---- gaps
+            if (VAGUE.test(content))
+                gaps.push({ type: "VAGUE_CHECK", text: maskSecret(content), advice: GAP_ADVICE.VAGUE_CHECK, ...where });
+            if (SECRET.test(line))
+                gaps.push({ type: "HARDCODED_SECRET", text: maskSecret(line), advice: GAP_ADVICE.HARDCODED_SECRET, ...where });
+            if (SPREADSHEET.test(content))
+                gaps.push({ type: "MANUAL_SPREADSHEET", text: maskSecret(content), advice: GAP_ADVICE.MANUAL_SPREADSHEET, ...where });
+            if (TODO.test(content))
+                gaps.push({ type: "TODO_WORKAROUND", text: maskSecret(content), advice: GAP_ADVICE.TODO_WORKAROUND, ...where });
+            if (LEGACY.test(content))
+                gaps.push({ type: "LEGACY_TECH", text: maskSecret(content), advice: GAP_ADVICE.LEGACY_TECH, ...where });
+            if (!isComment && kind !== "notes" && (/^(rm\s+-r?f|del\s+\/[sqf]|rd\s+\/s|truncate\b|drop\s+table)/i.test(line) || /^(delete|update)\s+(?!.*\bwhere\b)/i.test(line) || /\brm\s+-rf?\s+\S*\*/.test(line))) {
+                gaps.push({ type: "DESTRUCTIVE_COMMAND", text: line, advice: GAP_ADVICE.DESTRUCTIVE_COMMAND, ...where });
+            }
+            if (!isComment && h && kind !== "notes" && /(\d{1,3}\.){3}\d{1,3}|\\\\/.test(line))
+                gaps.push({ type: "HARDCODED_ENV", text: maskSecret(line), advice: GAP_ADVICE.HARDCODED_ENV, ...where });
+            // ---- acronyms
+            const letters = content.replace(/[^A-Za-z]/g, "");
+            const mostlyUpper = letters.length > 8 && letters.replace(/[^A-Z]/g, "").length / letters.length > 0.6;
+            if (kind !== "jcl" && !mostlyUpper)
+                for (const a of content.matchAll(/\b([A-Z][A-Z0-9&]{1,5})\b(?:\s*\(([^)]{3,60})\))?/g)) {
+                    const term = a[1];
+                    if (/^\d|^[A-Z]$|^(AM|PM|OK|ID|NO|IF|THEN|ELSE|AND|OR|NOT|THE|TO|IN|ON|AT|BY|FROM|IS|IT|DD|DSN|PGM|JOB|EXEC|DISP|SHR|NEW|OLD|MOD|SYSOUT|SYSIN|SPACE|CYL|TRK|DCB|LRECL|RECFM|FB|COND|RC|ECHO|EXIT|SET|CD|PUT|GET|TBC|TBD|FYI|ASAP|NB|PS|EOF|FW|FWD|RE|CC|BCC|TODO|FIXME|IMPORTANT|DO|NOT|NEVER|ALWAYS|SELECT|UPDATE|INSERT|DELETE|WHERE|FROM|INTO|VALUES|COUNT|SUM|AS|GMT|BST|CET|EST|UTC|IST|UK|US|EU|USD|EUR|GBP|JPY|CHF|INR|AUD|CAD|SGD|HKD|ALL)$/.test(term))
+                        continue;
+                    if (SYSTEMS.some((s) => s.toUpperCase() === term))
+                        continue;
+                    if (a[2] && !acronyms.get(term))
+                        acronyms.set(term, a[2].trim());
+                    else if (!acronyms.has(term))
+                        acronyms.set(term, "");
+                }
+        }
+    }
+    // ---- whole-document gaps
+    const docName = inputs.map((i) => i.name).join(", ");
+    if (!FAILURE.test(allText))
+        gaps.push({ type: "NO_FAILURE_PATH", text: "No instructions for what to do if something fails or is late.", source: docName, line: 0, advice: GAP_ADVICE.NO_FAILURE_PATH });
+    if (!OWNER.test(allText))
+        gaps.push({ type: "NO_OWNER", text: "No process owner or support contacts named.", source: docName, line: 0, advice: GAP_ADVICE.NO_OWNER });
+    if (!schedule.length)
+        gaps.push({ type: "NO_SCHEDULE", text: "No timing, frequency or cut-off found.", source: docName, line: 0, advice: GAP_ADVICE.NO_SCHEDULE });
+    const glossary = [...acronyms.entries()]
+        .map(([term, meaning]) => ({ term, meaning: meaning || BANKING_GLOSSARY[term] || BANKING_GLOSSARY[term.replace(/S$/, "")] || "", known: !!(meaning || BANKING_GLOSSARY[term] || BANKING_GLOSSARY[term.replace(/S$/, "")]) }))
+        .sort((a, b) => a.term.localeCompare(b.term));
+    for (const g of glossary.filter((x) => !x.known))
+        gaps.push({ type: "UNEXPLAINED_ACRONYM", text: g.term, source: docName, line: 0, advice: GAP_ADVICE.UNEXPLAINED_ACRONYM });
+    steps.forEach((s, i) => (s.n = i + 1));
+    const dedupSched = [...new Map(schedule.map((s) => [s.text.toLowerCase(), s])).values()];
+    const checks = [
+        { label: "Purpose stated", ok: purpose.length > 20 },
+        { label: "Schedule / cut-offs", ok: dedupSched.length > 0 },
+        { label: "Steps written down", ok: steps.length >= 3 },
+        { label: "Systems identified", ok: systems.size > 0 },
+        { label: "Owner / contacts", ok: OWNER.test(allText) },
+        { label: "Failure handling", ok: FAILURE.test(allText) },
+        { label: "Clear checks (no vague 'looks ok')", ok: !gaps.some((g) => g.type === "VAGUE_CHECK") },
+        { label: "No single-person dependency", ok: !gaps.some((g) => g.type === "KEY_PERSON") },
+        { label: "No credentials in documents", ok: !gaps.some((g) => g.type === "HARDCODED_SECRET") },
+    ];
+    return {
+        title: title || guessTitle(inputs),
+        purpose,
+        sources,
+        schedule: dedupSched,
+        steps,
+        systems: [...systems],
+        files: [...files].slice(0, 60),
+        hosts: [...hosts],
+        contacts: [...contacts.entries()].map(([who, context]) => ({ who, context })),
+        glossary,
+        gaps,
+        completeness: { score: checks.filter((c) => c.ok).length / checks.length, checks },
+    };
+}
+function firstSentence(text) {
+    const t = text.replace(/^(subject|re|fw|fwd|from|to|cc|sent|date):.*$/gim, "").replace(/^\s*(hi|hello|hey|dear|morning|good morning|team)\b[^\n]{0,30}[,!]?\s*$/gim, "").replace(/\s+/g, " ").trim();
+    const m = t.match(/^(.{20,240}?[.!?])(\s|$)/);
+    return (m ? m[1] : t.slice(0, 200)).trim();
+}
+function guessTitle(inputs) {
+    for (const i of inputs) {
+        const subj = i.text.match(/^subject:\s*(.+)$/im)?.[1] ?? i.text.match(/^#\s+(.+)$/m)?.[1];
+        if (subj)
+            return subj.replace(/^(re|fw|fwd):\s*/i, "").trim();
+    }
+    return inputs[0]?.name.replace(/\.[^.]+$/, "").replace(/[-_]/g, " ") ?? "Runbook";
+}
+function maskSecret(line) {
+    return line
+        .replace(/((?:password|passwd|pwd|pass|passphrase|secret|api[_-]?key|token)\s*[:=]\s*)\S+/gi, "$1****")
+        .replace(/(\s-p\s*['"]?)[^\s'"]+/g, "$1****")
+        .replace(/(sshpass\s+-p\s+)\S+/g, "$1****")
+        .replace(/(\/\/[^:\s/]+:)[^@\s/]+@/g, "$1****@")
+        .replace(/\b((?:sqlplus|isql|sqlcmd|mysql|psql)\s+(?:-\S+\s+)*\w+\/)[^@\s/]+@/g, "$1****@");
+}
+
+return { detectKind, explainCommand, describeCron, buildRunbook, maskSecret };
+})();
+const SAMPLES = {"nostro-recon-handover.txt":"Subject: FW: how I do the daily nostro recs (handover before I go)\n\nHi all,\n\nThis is how I do the USD nostro recon every morning, writing it down before I retire next month. It needs to be done by 10:30 London time because Treasury use it for the liquidity call.\n\n1. Log into the Citrix desktop and open TLM.\n2. Check the MT950s have come in from the correspondents. Usually they land by 7am, if not ask Raj in SWIFT ops.\n3. Run the NOSTRO_USD_AM match in TLM.\n4. Export the unmatched items to the spreadsheet on the S: drive (\\\\fileshare01\\ops\\recs\\USD_breaks.xlsm) and run the macro.\n5. Eyeball the breaks, anything that looks odd over 50k goes to the FO desk.\n6. Check the GL balance matches as usual.\n7. Email the breaks report to treasury and the desk heads.\n\nIf the macro breaks, only Maria knows how to fix it. The login for the old Access DB is user=recsadmin password=Summer2019! (don't change it, the overnight job uses it).\nMonth-end is different, there are extra steps for the CSA accounts but Dave usually does those.\n\nThanks,\nLinda\n","send_swift_batch.sh":"#!/bin/ksh\n# Sends the outbound MT103 batch to the SWIFT gateway. Runs from cron at 06:15 and 14:45 UK time.\n# TODO: move off the old AIX box\ncd /data/payments/outbound\nif [ -f PAY_BATCH.fin ]; then\n  cp PAY_BATCH.fin /archive/payments/PAY_BATCH_$(date +%Y%m%d%H%M).fin\n  wc -l PAY_BATCH.fin\n  sshpass -p Gw4yPass99 sftp swiftops@10.20.4.15 <<EOF\nput PAY_BATCH.fin\nbye\nEOF\n  rm -f /data/payments/outbound/*.fin\n  mailx -s \"SWIFT batch sent\" payments-ops@bank.example\nfi\nsqlplus -s payops/@PAYDB @/opt/scripts/mark_sent.sql\n","PAYEXTR.jcl":"//PAYEXTR  JOB (ACCT),'PAYMENT EXTRACT',CLASS=A,MSGCLASS=X\n//* DAILY EXTRACT OF SETTLED PAYMENTS FOR THE GL FEED - RUNS AFTER EOD\n//STEP010  EXEC PGM=PAYX0100\n//INFILE   DD DSN=PROD.PAYMENTS.SETTLED.DAILY,DISP=SHR\n//OUTFILE  DD DSN=PROD.GL.FEED.PAYMENTS(+1),DISP=(NEW,CATLG,DELETE)\n//STEP020  EXEC PGM=SORT,COND=(4,LT)\n//SORTIN   DD DSN=PROD.GL.FEED.PAYMENTS(+1),DISP=SHR\n//SORTOUT  DD DSN=PROD.GL.FEED.SORTED,DISP=OLD\n","crontab.txt":"15 6 * * 1-5 /opt/scripts/send_swift_batch.sh >> /var/log/swift_batch.log 2>&1\n45 14 * * 1-5 /opt/scripts/send_swift_batch.sh >> /var/log/swift_batch.log 2>&1\n0 22 * * 1-5 /opt/scripts/eod_cleanup.sh\n"};
+// Minimal, safe Markdown → HTML for the reports these tools produce (headings, tables, lists, checkboxes,
+// bold/italic/code, line breaks). All text is HTML-escaped first.
+function renderMarkdown(md) {
+  const esc = (s) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  const inline = (s) => esc(s)
+    .replace(/`([^`]+)`/g, "<code>$1</code>")
+    .replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>")
+    .replace(/(^|[\s(])_([^_]+)_(?=[\s).,:;]|$)/g, "$1<em>$2</em>")
+    .replace(/ {2}$/g, "<br>");
+  const lines = md.replace(/\r/g, "").split("\n");
+  const html = [];
+  let i = 0;
+  while (i < lines.length) {
+    const l = lines[i];
+    if (/^#{1,4} /.test(l)) { const n = l.match(/^#+/)[0].length; html.push(`<h${n + 1}>${inline(l.slice(n + 1))}</h${n + 1}>`); i++; continue; }
+    if (/^\|.*\|$/.test(l) && /^\|\s*-+/.test(lines[i + 1] || "")) {
+      const cells = (row) => row.slice(1, -1).split(/(?<!\\)\|/).map((c) => inline(c.trim().replace(/\\\|/g, "|")));
+      const head = cells(l);
+      i += 2;
+      const body = [];
+      while (i < lines.length && /^\|.*\|$/.test(lines[i])) body.push(cells(lines[i++]));
+      html.push(`<div class="tablewrap"><table><thead><tr>${head.map((c) => `<th>${c}</th>`).join("")}</tr></thead><tbody>${body.map((r) => `<tr>${r.map((c) => `<td>${c}</td>`).join("")}</tr>`).join("")}</tbody></table></div>`);
+      continue;
+    }
+    if (/^(\d+\.|-) /.test(l)) {
+      const ordered = /^\d+\./.test(l);
+      const items = [];
+      while (i < lines.length && (/^(\d+\.|-) /.test(lines[i]) || /^ {2,}\S/.test(lines[i]))) {
+        if (/^ {2,}\S/.test(lines[i]) && items.length) items[items.length - 1] += "<br>" + inline(lines[i].trim());
+        else items.push(inline(lines[i].replace(/^(\d+\.|-) /, "")).replace(/^\[ \] /, '<input type="checkbox"> ').replace(/^\[x\] /i, '<input type="checkbox" checked> '));
+        // keep "  " line-break markers inside items
+        if (/ {2}$/.test(lines[i])) items[items.length - 1] = items[items.length - 1].replace(/<br>$/, "");
+        i++;
+      }
+      html.push(`<${ordered ? "ol" : "ul"}>${items.map((x) => `<li>${x}</li>`).join("")}</${ordered ? "ol" : "ul"}>`);
+      continue;
+    }
+    if (!l.trim()) { i++; continue; }
+    const para = [];
+    while (i < lines.length && lines[i].trim() && !/^(#|\||\d+\. |- )/.test(lines[i])) para.push(inline(lines[i++]));
+    html.push(`<p>${para.join(" ")}</p>`);
+  }
+  return html.join("\n");
+}
+
+// Page UI for each Hub solution. Expects: __m (bundled modules), SAMPLES, renderMarkdown.
+(function () {
+  const $ = (sel, el = document) => el.querySelector(sel);
+  const h = (html) => { const t = document.createElement("template"); t.innerHTML = html.trim(); return t.content.firstElementChild; };
+  const app = $("#app");
+  const table = __m["shared/table.js"];
+  const solution = document.body.dataset.solution;
+
+  function download(name, text, type = "text/plain") {
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(new Blob([text], { type }));
+    a.download = name;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+  }
+  async function readFiles(input) {
+    return Promise.all([...input.files].map(async (f) => ({ name: f.webkitRelativePath || f.name, text: await f.text() })));
+  }
+  function fileInto(input, textarea) {
+    input.addEventListener("change", async () => { const [f] = await readFiles(input); if (f) textarea.value = f.text; });
+  }
+  const resultCard = h(`<section class="card"><div id="downloads" class="actions" style="margin:0 0 8px"></div><div id="report" class="empty">Your report will appear here.</div></section>`);
+  function show(md, downloads = []) {
+    const r = $("#report", resultCard);
+    r.className = "";
+    r.innerHTML = renderMarkdown(md);
+    const d = $("#downloads", resultCard);
+    d.innerHTML = "";
+    for (const [label, name, text, type] of [["Download report (.md)", "report.md", md, "text/markdown"], ...downloads]) {
+      const b = h(`<button>${label}</button>`);
+      b.onclick = () => download(name, text, type);
+      d.append(b);
+    }
+    resultCard.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+  function showError(e) {
+    const r = $("#report", resultCard);
+    r.className = "error";
+    r.textContent = e && e.message ? e.message : String(e);
+  }
+  const safe = (fn) => () => { try { fn(); } catch (e) { console.error(e); showError(e); } };
+
+  // ------------------------------------------------------------------ Agent Payment Mandate Checker
+  if (solution === "agent-payment-mandate-checker") {
+    const c = __m["agent-payment-mandate-checker/src/checker.js"], rep = __m["agent-payment-mandate-checker/src/report.js"];
+    const card = h(`<section class="card"><h2>1 · Mandates <span class="hint">(JSON: what each agent may pay, to whom, up to what limit)</span></h2>
+      <input type="file" id="mf" accept=".json"><textarea id="m" placeholder='{"mandates":[{"id":"M-1","agent_id":"ap-agent","per_payment_limit":5000}]}'></textarea>
+      <h2 style="margin-top:16px">2 · Agent payment log <span class="hint">(CSV: payment_id, timestamp, agent_id, mandate_id, payee, amount, currency, category, approved_by, approval_time, purpose, status)</span></h2>
+      <input type="file" id="pf" accept=".csv,.txt"><textarea id="p"></textarea>
+      <div class="actions"><button class="primary" id="run">Check payments</button><button id="sample">Load sample data</button></div></section>`);
+    app.append(card, resultCard);
+    fileInto($("#mf", card), $("#m", card)); fileInto($("#pf", card), $("#p", card));
+    $("#sample", card).onclick = () => { $("#m", card).value = SAMPLES.mandates; $("#p", card).value = SAMPLES.payments; };
+    $("#run", card).onclick = safe(() => {
+      let raw;
+      try { raw = JSON.parse($("#m", card).value); } catch (e) { throw new Error("Mandates must be valid JSON: " + e.message); }
+      const { file, errors } = c.validateMandateFile(raw);
+      if (!file || errors.length) throw new Error(errors.join("\n"));
+      const res = c.checkPayments(file, c.readPayments(table.parseCsv($("#p", card).value)));
+      show(rep.toMarkdown(res), [["Download results (.csv)", "mandate-check.csv", rep.toResultCsv(res), "text/csv"]]);
+    });
+  }
+
+  // ------------------------------------------------------------------ Verify-Before-You-Pay
+  if (solution === "verify-before-you-pay") {
+    const a = __m["verify-before-you-pay/src/assess.js"], rep = __m["verify-before-you-pay/src/report.js"];
+    const card = h(`<section class="card"><div class="tabs"><button aria-selected="true" data-t="one">Check one request</button><button aria-selected="false" data-t="log">Audit an approval log</button></div>
+      <label>Your company's and key suppliers' email domains <span class="hint">(comma-separated, so look-alikes can be spotted)</span></label><input type="text" id="dom" placeholder="yourbank.com, mainsupplier.com">
+      <div data-p="one"><label>Paste the message, email or call notes</label><textarea id="txt" placeholder="Paste the payment request here…"></textarea>
+        <div class="row"><div><label>Who is asking?</label><input type="text" id="from" placeholder="e.g. Jane Smith"></div><div><label>Their title</label><input type="text" id="title" placeholder="e.g. CFO, Supplier"></div>
+        <div><label>How did it arrive?</label><select id="ch"><option value="">(not sure)</option><option>email</option><option>phone</option><option>voice note</option><option>video</option><option>teams</option><option>whatsapp</option><option>sms</option><option>in person</option></select></div></div>
+        <div class="row"><div><label>Amount</label><input type="text" id="amt" placeholder="e.g. 48500"></div><div><label>Currency</label><input type="text" id="ccy" placeholder="USD"></div>
+        <div><label>New payee?</label><select id="np"><option value="">(not sure)</option><option value="yes">Yes</option><option value="no">No</option></select></div><div><label>Bank details changed?</label><select id="bc"><option value="">(not sure)</option><option value="yes">Yes</option><option value="no">No</option></select></div></div>
+        <div class="actions"><button class="primary" id="go1">Check this request</button><button id="ex">Try an example</button></div></div>
+      <div data-p="log" hidden><label>Approval log CSV <span class="hint">(request_id, received_at, requested_by, requester_title, channel, sender, amount, currency, payee, payee_new, bank_details_changed, bank_change_at, message, callback_done, callback_source, challenge_passed, approver_1, approver_2, released_by, paid_at)</span></label>
+        <input type="file" id="lf" accept=".csv,.txt"><textarea id="log"></textarea><div class="actions"><button class="primary" id="go2">Audit log</button><button id="sl">Load sample log</button></div></div></section>`);
+    app.append(card, resultCard);
+    card.querySelectorAll(".tabs button").forEach((b) => b.onclick = () => {
+      card.querySelectorAll(".tabs button").forEach((x) => x.setAttribute("aria-selected", x === b));
+      card.querySelectorAll("[data-p]").forEach((p) => (p.hidden = p.dataset.p !== b.dataset.t));
+    });
+    fileInto($("#lf", card), $("#log", card));
+    const policy = () => ({ ...a.DEFAULT_POLICY, company_domains: $("#dom", card).value.split(",").map((s) => s.trim()).filter(Boolean) });
+    $("#ex", card).onclick = () => {
+      $("#txt", card).value = "From: d.chen@northwind-group.co\nHi, are you at your desk? I need a favour. Please wire $48,500 today to our new legal counsel for a confidential acquisition. Don't discuss this with anyone yet. I'm in a board meeting so can't talk, just email me when it's done.";
+      $("#dom", card).value = "northwind.com"; $("#from", card).value = "David Chen"; $("#title", card).value = "CEO"; $("#ch", card).value = "email"; $("#np", card).value = "yes";
+    };
+    $("#sl", card).onclick = () => { $("#log", card).value = SAMPLES.log; if (!$("#dom", card).value) $("#dom", card).value = "northwind-demo.com, globex-logistics.com"; };
+    $("#go1", card).onclick = safe(() => {
+      const text = $("#txt", card).value;
+      if (!text.trim()) throw new Error("Paste the request text first.");
+      const yn = (v) => (v === "yes" ? true : v === "no" ? false : null);
+      const extra = { requested_by: $("#from", card).value, requester_title: $("#title", card).value, payee_new: yn($("#np", card).value) };
+      if ($("#ch", card).value) extra.channel = $("#ch", card).value;
+      if ($("#amt", card).value) extra.amount = table.parseAmount($("#amt", card).value);
+      if ($("#ccy", card).value) extra.currency = $("#ccy", card).value.toUpperCase();
+      if (yn($("#bc", card).value) !== null) extra.bank_details_changed = yn($("#bc", card).value);
+      const req = a.requestFromText(text, extra);
+      show("# Verify-Before-You-Pay\n\n" + rep.oneToMarkdown(a.assess(req, policy())));
+    });
+    $("#go2", card).onclick = safe(() => {
+      const list = a.readRequests(table.parseCsv($("#log", card).value)).map((r) => a.assess(r, policy()));
+      if (!list.length) throw new Error("No rows found in the log.");
+      show(rep.toMarkdown(list), [["Download results (.csv)", "verify-report.csv", rep.toResultCsv(list), "text/csv"]]);
+    });
+  }
+
+  // ------------------------------------------------------------------ AI Use Register
+  if (solution === "ai-use-register") {
+    const c = __m["ai-use-register/src/classify.js"], rep = __m["ai-use-register/src/report.js"];
+    const card = h(`<section class="card"><h2>Your AI inventory <span class="hint">(CSV. Only name and description are required; every other column sharpens the register.)</span></h2>
+      <input type="file" id="f" accept=".csv,.txt"><textarea id="t"></textarea>
+      <div class="actions"><button class="primary" id="go">Build register</button><button id="tpl">Download blank template</button><button id="s">Load sample inventory</button></div></section>`);
+    app.append(card, resultCard);
+    fileInto($("#f", card), $("#t", card));
+    $("#tpl", card).onclick = () => download("ai-inventory-template.csv", rep.templateCsv(), "text/csv");
+    $("#s", card).onclick = () => ($("#t", card).value = SAMPLES.inventory);
+    $("#go", card).onclick = safe(() => {
+      const rows = table.parseCsv($("#t", card).value).filter((r) => !/^your reference/i.test(Object.values(r)[0] || ""));
+      if (!rows.length) throw new Error("No rows found. Load a CSV or the sample.");
+      const list = c.readUseCases(rows).map((u) => c.classify(u));
+      show(rep.toMarkdown(list), [["Download register (.csv)", "ai-register.csv", rep.toRegisterCsv(list), "text/csv"]]);
+    });
+  }
+
+  // ------------------------------------------------------------------ PQC Crypto Inventory
+  if (solution === "pqc-crypto-inventory") {
+    const sc = __m["pqc-crypto-inventory/src/scan.js"], rep = __m["pqc-crypto-inventory/src/report.js"];
+    const card = h(`<section class="card"><h2>Choose a code folder or files <span class="hint">(source, configs, scripts, certificates; read locally, never uploaded)</span></h2>
+      <div class="row"><div><label>Folder</label><input type="file" id="dir" webkitdirectory multiple></div><div><label>Or individual files</label><input type="file" id="files" multiple></div></div>
+      <label>Or paste code / config</label><textarea id="t" placeholder='KeyPairGenerator.getInstance("RSA") …'></textarea>
+      <div class="actions"><button class="primary" id="go">Scan</button><button id="s">Scan the demo repo</button></div><p class="hint" id="status"></p></section>`);
+    app.append(card, resultCard);
+    const SKIP = /(^|\/)(node_modules|\.git|dist|build|target|vendor|\.venv|venv|__pycache__)\//;
+    async function run(inputs) {
+      const findings = [];
+      let n = 0;
+      for (const f of inputs) {
+        if (SKIP.test(f.name) || (!sc.isScannable(f.name) && f.name !== "pasted.txt") || f.text.length > 2000000 || f.text.includes("\u0000")) continue;
+        n++;
+        findings.push(...sc.scanText(f.name, f.text));
+      }
+      const s = sc.summarise(findings, n);
+      $("#status", card).textContent = `Scanned ${n} file(s).`;
+      show(rep.toMarkdown(findings, s), [["Download findings (.csv)", "pqc-inventory.csv", rep.toResultCsv(findings), "text/csv"], ["Download CBOM (.json)", "cbom.json", JSON.stringify(sc.toCbom(findings), null, 2), "application/json"]]);
+    }
+    $("#go", card).onclick = async () => {
+      try {
+        const inputs = [...(await readFiles($("#dir", card))), ...(await readFiles($("#files", card)))];
+        if ($("#t", card).value.trim()) inputs.push({ name: "pasted.txt", text: $("#t", card).value });
+        if (!inputs.length) throw new Error("Choose a folder, some files, or paste code first.");
+        $("#status", card).textContent = `Reading ${inputs.length} file(s)…`;
+        await run(inputs);
+      } catch (e) { showError(e); }
+    };
+    $("#s", card).onclick = () => run(Object.entries(SAMPLES).map(([name, text]) => ({ name, text }))).catch(showError);
+  }
+
+  // ------------------------------------------------------------------ Legacy Runbook Builder
+  if (solution === "legacy-runbook-builder") {
+    const x = __m["legacy-runbook-builder/src/extract.js"], rep = __m["legacy-runbook-builder/src/report.js"];
+    const card = h(`<section class="card"><h2>Old procedures, handover notes and scripts <span class="hint">(text, shell/batch scripts, JCL, crontabs, SQL)</span></h2>
+      <input type="file" id="files" multiple><label>Or paste text</label><textarea id="t" placeholder="Paste a handover email, procedure or script…"></textarea>
+      <label>Runbook title <span class="hint">(optional)</span></label><input type="text" id="title" placeholder="e.g. USD nostro reconciliation">
+      <div class="actions"><button class="primary" id="go">Build runbook</button><button id="s">Load sample handover</button></div></section>`);
+    app.append(card, resultCard);
+    let sampleLoaded = false;
+    $("#s", card).onclick = () => { sampleLoaded = true; $("#t", card).value = "(sample: nostro recon handover email + SWIFT batch script + JCL + crontab will be used)"; $("#title", card).value = "Payments ops: SWIFT batch, GL extract & USD nostro recon"; };
+    $("#go", card).onclick = async () => {
+      try {
+        let inputs = await readFiles($("#files", card));
+        const pasted = $("#t", card).value;
+        if (sampleLoaded && pasted.startsWith("(sample")) inputs = inputs.concat(Object.entries(SAMPLES).map(([name, text]) => ({ name, text })));
+        else if (pasted.trim()) inputs.push({ name: "pasted.txt", text: pasted });
+        if (!inputs.length) throw new Error("Choose files or paste text first.");
+        const rb = x.buildRunbook(inputs, $("#title", card).value || undefined);
+        const prompt = rep.aiPrompt(rb, inputs);
+        show(rep.toMarkdown(rb), [["Download knowledge gaps (.csv)", "knowledge-gaps.csv", rep.gapsCsv(rb), "text/csv"], ["Download AI prompt (.txt)", "ai-prompt.txt", prompt, "text/plain"]]);
+      } catch (e) { showError(e); }
+    };
+  }
+
+  // ------------------------------------------------------------------ helpers for the second batch
+  const fromB64 = (s) => Uint8Array.from(atob(s.replace(/^base64:/, "")), (c) => c.charCodeAt(0));
+  async function readBytes(input) { return Promise.all([...input.files].map(async (f) => ({ name: f.webkitRelativePath || f.name, bytes: new Uint8Array(await f.arrayBuffer()) }))); }
+  function simpleCard(html) { const c = h(`<section class="card">${html}</section>`); app.append(c, resultCard); return c; }
+  const csvBox = (id, label, hint) => `<label>${label} <span class="hint">${hint || ""}</span></label><input type="file" id="${id}f" accept=".csv,.txt"><textarea id="${id}"></textarea>`;
+  const wire = (card, ids) => ids.forEach((id) => fileInto($(`#${id}f`, card), $(`#${id}`, card)));
+
+  if (solution === "t1-settlement-predictor") {
+    const m = __m["t1-settlement-predictor/src/predict.js"], rep = __m["t1-settlement-predictor/src/report.js"];
+    const card = simpleCard(`<h2>Trades and SSIs</h2>${csvBox("tr", "Trade blotter (CSV)", "trade_id, trade_date, trade_time, settlement_date, isin, counterparty, place_of_settlement, currency, account_currency, allocation_time, affirmation_time, instruction_time")}${csvBox("ss", "Standing settlement instructions (CSV)", "counterparty, place_of_settlement, currency, agent_bic, account, valid_from, valid_to, last_verified")}
+      <div class="row"><div><label><input type="checkbox" id="t1"> Treat all trades as T+1 (test today's blotter)</label></div><div><label>Holidays <span class="hint">(YYYY-MM-DD, comma-separated)</span></label><input type="text" id="hol"></div></div>
+      <div class="actions"><button class="primary" id="go">Check trades</button><button id="s">Load sample</button></div>`);
+    wire(card, ["tr", "ss"]);
+    $("#s", card).onclick = () => { $("#tr", card).value = SAMPLES.trades; $("#ss", card).value = SAMPLES.ssis; };
+    $("#go", card).onclick = safe(() => {
+      const cfg = { ...m.DEFAULT_CONFIG, assume_t1: $("#t1", card).checked, holidays: $("#hol", card).value.split(",").map((x) => x.trim()).filter(Boolean) };
+      const list = m.assessTrades(m.readTrades(table.parseCsv($("#tr", card).value)), m.readSsis(table.parseCsv($("#ss", card).value)), cfg);
+      if (!list.length) throw new Error("No trades found.");
+      show(rep.toMarkdown(list), [["Download results (.csv)", "t1-report.csv", rep.toResultCsv(list), "text/csv"]]);
+    });
+  }
+
+  if (solution === "vop-precheck") {
+    const m = __m["vop-precheck/src/precheck.js"], rep = __m["vop-precheck/src/report.js"];
+    const card = simpleCard(`<h2>Payment file and supplier master</h2>${csvBox("pa", "Payment file (CSV)", "payee_name, iban, amount")}${csvBox("ma", "Supplier master (CSV, optional but recommended)", "iban, account_holder_name, trading_names")}
+      <div class="actions"><button class="primary" id="go">Check payments</button><button id="s">Load sample</button></div>`);
+    wire(card, ["pa", "ma"]);
+    $("#s", card).onclick = () => { $("#pa", card).value = SAMPLES.payments; $("#ma", card).value = SAMPLES.master; };
+    $("#go", card).onclick = safe(() => {
+      const list = m.precheck(m.readPayments(table.parseCsv($("#pa", card).value)), $("#ma", card).value.trim() ? m.readMaster(table.parseCsv($("#ma", card).value)) : []);
+      if (!list.length) throw new Error("No payments found.");
+      show(rep.toMarkdown(list), [["Download results (.csv)", "vop-precheck.csv", rep.toResultCsv(list), "text/csv"]]);
+    });
+  }
+
+  if (solution === "payment-investigation-assistant") {
+    const m = __m["payment-investigation-assistant/src/investigate.js"], rep = __m["payment-investigation-assistant/src/report.js"];
+    const card = simpleCard(`<h2>Payment query</h2><label>Paste an MT199/n99, an email or call notes</label><textarea id="t" style="min-height:200px"></textarea>
+      <div class="actions"><button class="primary" id="go">Analyse</button><button id="s1">Sample: MT199 non-receipt</button><button id="s2">Sample: fraud recall email</button></div>`);
+    $("#s1", card).onclick = () => ($("#t", card).value = SAMPLES.mt199);
+    $("#s2", card).onclick = () => ($("#t", card).value = SAMPLES.fraud);
+    $("#go", card).onclick = safe(() => { const t = $("#t", card).value; if (!t.trim()) throw new Error("Paste a query first."); show(rep.toMarkdown(m.analyse(t))); });
+  }
+
+  if (solution === "translation-loss-auditor") {
+    const m = __m["translation-loss-auditor/src/audit.js"], rep = __m["translation-loss-auditor/src/report.js"];
+    const card = simpleCard(`<h2>The two versions of one payment</h2><div class="row"><div><label>ISO 20022 pacs.008 (XML)</label><input type="file" id="mxf" accept=".xml,.txt"><textarea id="mx" style="min-height:220px"></textarea></div>
+      <div><label>MT103 (FIN text)</label><input type="file" id="mtf" accept=".txt,.fin,.mt"><textarea id="mt" style="min-height:220px"></textarea></div></div>
+      <div class="actions"><button class="primary" id="go">Compare</button><button id="s">Load sample</button></div>`);
+    wire(card, ["mx", "mt"]);
+    $("#s", card).onclick = () => { $("#mx", card).value = SAMPLES.mx; $("#mt", card).value = SAMPLES.mt; };
+    $("#go", card).onclick = safe(() => {
+      const mx = m.parsePacs008($("#mx", card).value), mt = m.parseMt103($("#mt", card).value);
+      const pairs = [{ name: "payment", uetr: mx.uetr, findings: m.audit(mx, mt) }];
+      show(rep.toMarkdown(pairs), [["Download findings (.csv)", "translation-audit.csv", rep.toResultCsv(pairs), "text/csv"]]);
+    });
+  }
+
+  if (solution === "sanctions-fp-analyser") {
+    const m = __m["sanctions-fp-analyser/src/analyse.js"], rep = __m["sanctions-fp-analyser/src/report.js"];
+    const card = simpleCard(`<h2>Closed alerts export</h2>${csvBox("al", "Alerts (CSV)", "alert_id, created_at, screened_name, matched_name, list, match_score, matched_field, message_type, disposition, handling_minutes, customer_id")}
+      <div class="row"><div><label>Cleared at least … times to count as a repeat pair</label><input type="text" id="mc" value="3"></div><div><label>Minutes per alert when not recorded</label><input type="text" id="mn" value="30"></div></div>
+      <div class="actions"><button class="primary" id="go">Analyse</button><button id="s">Load sample (invented names)</button></div>`);
+    wire(card, ["al"]);
+    $("#s", card).onclick = () => ($("#al", card).value = SAMPLES.alerts);
+    $("#go", card).onclick = safe(() => {
+      const a = m.analyse(m.readAlerts(table.parseCsv($("#al", card).value)), { minClears: Number($("#mc", card).value) || 3, defaultMinutes: Number($("#mn", card).value) || 30 });
+      if (!a.total) throw new Error("No alerts found.");
+      show(rep.toMarkdown(a), [["Download good-guy candidates (.csv)", "good-guy-candidates.csv", rep.goodGuysCsv(a), "text/csv"]]);
+    });
+  }
+
+  if (solution === "report-sanity-checker") {
+    const m = __m["report-sanity-checker/src/check.js"], rep = __m["report-sanity-checker/src/report.js"];
+    const card = simpleCard(`<h2>Report extract</h2>${csvBox("rp", "Report (CSV)", "columns are recognised by name: uti, *_lei, isin, notional, currency, *_date, country…")}
+      <div class="row"><div><label>Required columns <span class="hint">(comma-separated, optional)</span></label><input type="text" id="req"></div><div><label>Report date <span class="hint">(optional)</span></label><input type="text" id="rd" placeholder="YYYY-MM-DD"></div></div>
+      <div class="actions"><button class="primary" id="go">Check report</button><button id="s">Load sample</button></div>`);
+    wire(card, ["rp"]);
+    $("#s", card).onclick = () => ($("#rp", card).value = SAMPLES.report);
+    $("#go", card).onclick = safe(() => {
+      const res = m.checkReport(table.parseCsv($("#rp", card).value), { required: $("#req", card).value.split(",").map((x) => x.trim()).filter(Boolean), reportDate: $("#rd", card).value || undefined });
+      if (!res.rows) throw new Error("No rows found.");
+      show(rep.toMarkdown(res), [["Download issues (.csv)", "report-issues.csv", rep.toIssuesCsv(res.issues), "text/csv"]]);
+    });
+  }
+
+  if (solution === "dora-register-precheck") {
+    const m = __m["dora-register-precheck/src/precheck.js"], rep = __m["dora-register-precheck/src/report.js"];
+    const card = simpleCard(`<h2>Working register</h2>${csvBox("rg", "Register (CSV, one row per contractual arrangement)", "")}
+      <label>Reference date <span class="hint">(end of the reporting year)</span></label><input type="text" id="rd" placeholder="e.g. 2026-12-31">
+      <div class="actions"><button class="primary" id="go">Check register</button><button id="s">Load sample</button></div>`);
+    wire(card, ["rg"]);
+    $("#s", card).onclick = () => { $("#rg", card).value = SAMPLES.register; $("#rd", card).value = "2026-12-31"; };
+    $("#go", card).onclick = safe(() => {
+      const list = m.readRegister(table.parseCsv($("#rg", card).value));
+      if (!list.length) throw new Error("No arrangements found.");
+      const issues = m.precheck(list, { referenceDate: $("#rd", card).value || undefined });
+      show(rep.toMarkdown(list, issues), [["Download fix list (.csv)", "dora-issues.csv", rep.toIssuesCsv(issues), "text/csv"]]);
+    });
+  }
+
+  if (solution === "copybook-decoder") {
+    const m = __m["copybook-decoder/src/copybook.js"], rep = __m["copybook-decoder/src/report.js"];
+    const card = simpleCard(`<h2>Copybook and data file</h2><label>COBOL copybook</label><input type="file" id="cbf" accept=".cpy,.cbl,.cob,.txt"><textarea id="cb" style="min-height:200px"></textarea>
+      <label>Data file <span class="hint">(optional: fixed-length records; read locally)</span></label><input type="file" id="df">
+      <div class="row"><div><label>Encoding</label><select id="enc"><option value="ebcdic">EBCDIC (mainframe)</option><option value="ascii">ASCII</option></select></div><div><label>Record format</label><select id="fmt"><option value="fixed">Fixed length</option><option value="rdw">Variable (RDW)</option><option value="lines">One record per line</option></select></div></div>
+      <div class="actions"><button class="primary" id="go">Decode</button><button id="s">Load sample</button></div><p class="hint" id="st"></p>`);
+    fileInto($("#cbf", card), $("#cb", card));
+    let sampleData = null;
+    $("#s", card).onclick = () => { $("#cb", card).value = SAMPLES.copybook; sampleData = fromB64(SAMPLES.data); $("#st", card).textContent = `Sample data loaded (${sampleData.length} bytes, EBCDIC).`; };
+    $("#go", card).onclick = async () => {
+      try {
+        const { root, warnings } = m.parseCopybook($("#cb", card).value);
+        const l = m.layout(root);
+        let md = rep.dictionaryMarkdown(l.fields, l.recordLength, [...warnings, ...l.warnings]);
+        const dl = [["Download data dictionary (.csv)", "data-dictionary.csv", rep.dictionaryCsv(l.fields), "text/csv"]];
+        const [f] = await readBytes($("#df", card));
+        const bytes = f ? f.bytes : sampleData;
+        if (bytes) {
+          const fmt = $("#fmt", card).value;
+          const d = m.decodeData(l.fields, bytes, { encoding: $("#enc", card).value, recordLength: l.recordLength, rdw: fmt === "rdw", lineSeparated: fmt === "lines" });
+          md += "\n" + rep.decodeSummary(d);
+          dl.push(["Download decoded data (.csv)", "decoded.csv", rep.dataCsv(d), "text/csv"]);
+        }
+        show(md, dl);
+      } catch (e) { showError(e); }
+    };
+  }
+
+  if (solution === "migration-reconciler") {
+    const m = __m["migration-reconciler/src/reconcile.js"], rep = __m["migration-reconciler/src/report.js"];
+    const card = simpleCard(`<h2>Source and target extracts</h2><div class="row"><div>${csvBox("src", "Source (legacy) CSV", "")}</div><div>${csvBox("tgt", "Target (new system) CSV", "")}</div></div>
+      <div class="row"><div><label>Key column(s) in source</label><input type="text" id="key" placeholder="customer_id"></div><div><label>Column mapping <span class="hint">source:target, comma-separated</span></label><input type="text" id="map"></div></div>
+      <div class="row"><div><label>Numeric tolerance</label><input type="text" id="tol" value="0"></div><div><label>Ignore columns</label><input type="text" id="ign"></div></div>
+      <label><input type="checkbox" id="lz" checked> Ignore leading zeros in keys</label> <label><input type="checkbox" id="ic" checked> Ignore case in keys</label>
+      <div class="actions"><button class="primary" id="go">Reconcile</button><button id="s">Load sample</button></div>`);
+    wire(card, ["src", "tgt"]);
+    $("#s", card).onclick = () => { $("#src", card).value = SAMPLES.source; $("#tgt", card).value = SAMPLES.target; $("#key", card).value = "customer_id"; $("#map", card).value = "customer_id:cust_no,full_name:customer_name,address_line:address,postcode:post_code,date_of_birth:dob,balance:balance_amt,marketing_consent:consent_marketing"; };
+    $("#go", card).onclick = safe(() => {
+      const map = Object.fromEntries($("#map", card).value.split(",").filter(Boolean).map((p) => p.split(":").map((x) => x.trim())));
+      const r = m.reconcile(table.parseCsv($("#src", card).value), table.parseCsv($("#tgt", card).value), { key: $("#key", card).value.split(",").map((x) => x.trim()).filter(Boolean), map, tolerance: Number($("#tol", card).value) || 0, ignoreLeadingZeros: $("#lz", card).checked, ignoreCase: $("#ic", card).checked, ignoreFields: $("#ign", card).value.split(",").map((x) => x.trim()).filter(Boolean) });
+      show(rep.toMarkdown(r), [["Download differences (.csv)", "differences.csv", rep.diffsCsv(r), "text/csv"]]);
+    });
+  }
+
+  if (solution === "euc-risk-scanner") {
+    const m = __m["euc-risk-scanner/src/scan.js"], rep = __m["euc-risk-scanner/src/report.js"], zip = __m["shared/zip.js"];
+    const card = simpleCard(`<h2>Spreadsheets to scan</h2><div class="row"><div><label>Folder</label><input type="file" id="dir" webkitdirectory multiple></div><div><label>Or files</label><input type="file" id="files" multiple accept=".xlsx,.xlsm,.xls,.xltx,.xltm"></div></div>
+      <div class="actions"><button class="primary" id="go">Scan</button><button id="s">Scan samples</button></div><p class="hint" id="st"></p>`);
+    async function run(items) {
+      const reports = [];
+      for (const it of items.filter((x) => /\.(xlsx|xlsm|xls|xltx|xltm)$/i.test(x.name) && !/(^|\/)~\$/.test(x.name))) {
+        try { reports.push(await m.scanWorkbook(it.name, it.bytes, zip.browserInflate)); } catch (e) { console.warn(it.name, e); }
+      }
+      if (!reports.length) throw new Error("No Excel workbooks found.");
+      $("#st", card).textContent = `Scanned ${reports.length} workbook(s).`;
+      show(rep.toMarkdown(reports), [["Download EUC register (.csv)", "euc-register.csv", rep.registerCsv(reports), "text/csv"]]);
+    }
+    $("#go", card).onclick = async () => { try { await run([...(await readBytes($("#dir", card))), ...(await readBytes($("#files", card)))]); } catch (e) { showError(e); } };
+    $("#s", card).onclick = () => run(Object.entries(SAMPLES).map(([name, v]) => ({ name, bytes: fromB64(v) }))).catch(showError);
+  }
+
+  if (solution === "batch-dependency-mapper") {
+    const m = __m["batch-dependency-mapper/src/map.js"], rep = __m["batch-dependency-mapper/src/report.js"];
+    const card = simpleCard(`<h2>Batch files</h2><p class="hint">JCL, Control-M XML exports, crontabs and shell scripts.</p><div class="row"><div><label>Folder</label><input type="file" id="dir" webkitdirectory multiple></div><div><label>Or files</label><input type="file" id="files" multiple></div></div>
+      <div class="actions"><button class="primary" id="go">Map</button><button id="s">Load sample</button></div>`);
+    const diagram = h(`<section class="card" hidden><h2>Diagram</h2><div id="svg" style="overflow:auto"></div></section>`);
+    app.insertBefore(diagram, resultCard);
+    function run(files) {
+      const { jobs, skipped } = m.parseAll(files);
+      if (!jobs.length) throw new Error("No jobs found in these files.");
+      const g = m.buildGraph(jobs);
+      const svgText = rep.svg(g);
+      diagram.hidden = false;
+      $("#svg", diagram).innerHTML = svgText;
+      show(rep.toMarkdown(g, skipped).replace(/```mermaid[\s\S]*?```\n/, ""), [["Download diagram (.svg)", "batch-map.svg", svgText, "image/svg+xml"], ["Download dependencies (.csv)", "dependencies.csv", rep.edgesCsv(g), "text/csv"], ["Download Mermaid (.mmd)", "batch-map.mmd", rep.mermaid(g), "text/plain"]]);
+    }
+    $("#go", card).onclick = async () => { try { run([...(await readFiles($("#dir", card))), ...(await readFiles($("#files", card)))]); } catch (e) { showError(e); } };
+    $("#s", card).onclick = safe(() => run(Object.entries(SAMPLES).map(([name, text]) => ({ name, text }))));
+  }
+})();
+
+</script>
+</body>
+</html>

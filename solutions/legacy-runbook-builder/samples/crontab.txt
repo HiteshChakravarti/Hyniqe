@@ -1,0 +1,3 @@
+15 6 * * 1-5 /opt/scripts/send_swift_batch.sh >> /var/log/swift_batch.log 2>&1
+45 14 * * 1-5 /opt/scripts/send_swift_batch.sh >> /var/log/swift_batch.log 2>&1
+0 22 * * 1-5 /opt/scripts/eod_cleanup.sh

@@ -1,0 +1,19 @@
+Subject: FW: how I do the daily nostro recs (handover before I go)
+
+Hi all,
+
+This is how I do the USD nostro recon every morning, writing it down before I retire next month. It needs to be done by 10:30 London time because Treasury use it for the liquidity call.
+
+1. Log into the Citrix desktop and open TLM.
+2. Check the MT950s have come in from the correspondents. Usually they land by 7am, if not ask Raj in SWIFT ops.
+3. Run the NOSTRO_USD_AM match in TLM.
+4. Export the unmatched items to the spreadsheet on the S: drive (\\fileshare01\ops\recs\USD_breaks.xlsm) and run the macro.
+5. Eyeball the breaks, anything that looks odd over 50k goes to the FO desk.
+6. Check the GL balance matches as usual.
+7. Email the breaks report to treasury and the desk heads.
+
+If the macro breaks, only Maria knows how to fix it. The login for the old Access DB is user=recsadmin password=Summer2019! (don't change it, the overnight job uses it).
+Month-end is different, there are extra steps for the CSA accounts but Dave usually does those.
+
+Thanks,
+Linda

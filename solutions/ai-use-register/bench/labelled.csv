@@ -1,0 +1,51 @@
+name,description,users,expected
+Retail credit scorecard,Scores applicants for personal loans to decide approval and credit limit,customers,HIGH-RISK
+Credit card limit increase,Model decides credit limit increases for existing cardholders,customers,HIGH-RISK
+BNPL approval,Real-time BNPL approval decision for consumers at checkout,customers,HIGH-RISK
+Mortgage underwriting assistant,Recommends approve/decline and loan amount to mortgage underwriters based on affordability,customers,HIGH-RISK
+Overdraft eligibility,Determines overdraft eligibility for retail current account holders using a probability of default model,customers,HIGH-RISK
+SME credit rating,Assigns internal risk ratings to corporate and SME borrowers for commercial lending,internal,MINIMAL
+Card fraud scoring,Scores card transactions for fraud and blocks suspicious ones for analyst review,customers,MINIMAL
+AML alert scoring,Prioritises AML alerts for money laundering investigators,internal,MINIMAL
+Sanctions screening,Fuzzy matching of payment names against sanctions lists,customers,MINIMAL
+Life insurance pricing,Calculates premiums for life insurance applicants using health questionnaire data,customers,HIGH-RISK
+Health cover underwriting,Underwriting risk score for health insurance policy applications,customers,HIGH-RISK
+Motor insurance claims triage,Routes motor insurance claims to handlers by complexity,customers,MINIMAL
+CV ranking,Ranks job applicants' CVs and produces a shortlist for recruiters,candidates,HIGH-RISK
+Interview video scoring,Scores candidate video interviews to select who progresses,candidates,HIGH-RISK
+Promotion recommender,Recommends staff for promotion based on performance data,employees,HIGH-RISK
+Shift allocation,Allocates shifts and tasks to branch staff automatically,employees,HIGH-RISK
+Productivity monitoring,Employee monitoring of keystrokes and productivity scoring for managers,employees,HIGH-RISK
+Agent emotion detection,Detects emotion and stress in call centre agents' voices during calls,employees,PROHIBITED?
+Classroom attention tracker,Facial expression analysis to infer student emotion and attention in training sessions,students,PROHIBITED?
+Social trust score,Social scoring of customers using social media activity to decide access to services,customers,PROHIBITED?
+Vulnerable customer upsell,Target vulnerable customers in financial distress with high-interest products using dark pattern nudges,customers,PROHIBITED?
+Sensitive trait inference,Uses facial images to infer and categorise customers by ethnicity and religion,customers,PROHIBITED?
+Branch facial recognition,Facial recognition on CCTV to identify people on a watchlist entering branches,public,HIGH-RISK
+Face ID login,Face verification (1:1) with liveness check for customers to log in to the mobile app,customers,MINIMAL
+Voice biometrics login,Voice authentication to verify callers to the contact centre,customers,MINIMAL
+Customer chatbot,Customer-facing chatbot answering product questions on the website,customers,TRANSPARENCY
+Voice bot IVR,Conversational voice bot handling inbound customer calls,customers,TRANSPARENCY
+HR policy assistant,Internal AI assistant answering employee HR policy questions,employees,TRANSPARENCY
+Marketing image generation,Generates images for marketing campaigns and social media posts,public,TRANSPARENCY
+AI video avatars,AI-generated video avatars for customer education videos,public,TRANSPARENCY
+Synthetic voice ads,Text-to-speech synthetic voice for radio adverts,public,TRANSPARENCY
+Customer sentiment from video,Detects customer emotion from facial expressions during video KYC calls,customers,TRANSPARENCY
+Email complaint classifier,Classifies inbound customer complaint emails by topic and routes them,internal,MINIMAL
+Coding copilot,Developers use an AI coding assistant to write internal code,internal,MINIMAL
+Meeting summariser,Summarises internal meeting transcripts into action points,internal,MINIMAL
+Document OCR,Extracts fields from trade finance documents,internal,MINIMAL
+Liquidity forecast,Forecasts intraday liquidity for treasury,internal,MINIMAL
+Market risk VaR,Machine learning enhancement to VaR calculations for market risk,internal,MINIMAL
+IFRS 9 ECL,Expected credit loss provisioning model for the loan book,internal,MINIMAL
+Invoice matching,Matches supplier invoices to purchase orders in accounts payable,internal,MINIMAL
+Trade surveillance,Detects potential market abuse in trader communications and orders,employees,MINIMAL
+Collections prioritisation,Prioritises which customers in arrears collections agents call first,customers,MINIMAL
+Payment repair,Repairs and enriches payment messages before sending,internal,MINIMAL
+Benefits eligibility,Determines eligibility for social benefit payments administered on behalf of government,citizens,HIGH-RISK
+Grid control,AI safety component in electricity network grid control,internal,HIGH-RISK
+Exam proctoring,Online exam proctoring for internal certification exams,employees,HIGH-RISK
+Contract review,LLM reviews supplier contracts and flags unusual clauses for lawyers,internal,MINIMAL
+Customer churn model,Predicts which customers may close accounts so relationship managers can call them,customers,MINIMAL
+Next best offer,Recommends next product to show customers in the mobile app,customers,MINIMAL
+KYC document check,Checks passports and ID documents for tampering during onboarding,customers,MINIMAL

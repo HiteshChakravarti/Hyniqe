@@ -1,0 +1,777 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Migration Reconciler · Hyniqe Hub</title>
+<style>:root { --ink:#14213d; --muted:#5b6475; --line:#e3e7ef; --bg:#f7f8fb; --card:#fff; --accent:#1f5eff; --accent-ink:#fff; --ok:#137a3f; --warn:#b26a00; --bad:#b3261e; }
+* { box-sizing: border-box; }
+body { margin:0; font:15px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; color:var(--ink); background:var(--bg); }
+header { padding:28px clamp(16px,5vw,56px) 18px; background:var(--card); border-bottom:1px solid var(--line); }
+.brand { font-weight:700; letter-spacing:.2px; color:var(--muted); font-size:13px; text-transform:uppercase; }
+.brand span { color:var(--accent); }
+h1 { margin:6px 0 4px; font-size:clamp(22px,3vw,30px); }
+.tagline { margin:0; color:var(--muted); max-width:760px; }
+.local { margin:10px 0 0; font-size:13px; color:var(--ok); }
+main { padding:20px clamp(16px,5vw,56px) 40px; display:grid; gap:18px; max-width:1180px; }
+.card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:18px; }
+.card h2 { margin:0 0 10px; font-size:17px; }
+label { display:block; font-weight:600; margin:10px 0 4px; font-size:14px; }
+.hint { color:var(--muted); font-size:13px; font-weight:400; }
+textarea, input[type=text], select { width:100%; font:13px/1.45 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; border:1px solid var(--line); border-radius:8px; padding:9px; background:#fbfcfe; color:var(--ink); }
+input[type=text], select { font-family:inherit; font-size:14px; }
+textarea { min-height:140px; resize:vertical; }
+.row { display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:12px; }
+.actions { display:flex; flex-wrap:wrap; gap:8px; margin-top:14px; }
+button { font:inherit; font-weight:600; border-radius:8px; padding:9px 14px; border:1px solid var(--line); background:#fff; color:var(--ink); cursor:pointer; }
+button.primary { background:var(--accent); border-color:var(--accent); color:var(--accent-ink); }
+button:disabled { opacity:.5; cursor:default; }
+.tabs { display:flex; gap:6px; margin-bottom:6px; }
+.tabs button[aria-selected=true] { background:var(--ink); color:#fff; border-color:var(--ink); }
+#report { overflow-wrap:anywhere; }
+#report h2 { font-size:22px; margin:4px 0 8px; } #report h3 { font-size:18px; margin:22px 0 8px; } #report h4, #report h5 { font-size:15px; margin:18px 0 6px; }
+#report p { margin:8px 0; }
+.tablewrap { overflow-x:auto; margin:10px 0; }
+table { border-collapse:collapse; width:100%; font-size:13.5px; }
+th, td { border:1px solid var(--line); padding:6px 8px; text-align:left; vertical-align:top; }
+th { background:#f1f4f9; }
+code { background:#f1f4f9; padding:1px 4px; border-radius:4px; font-size:12.5px; }
+.error { color:var(--bad); font-weight:600; white-space:pre-wrap; }
+.empty { color:var(--muted); }
+footer { padding:20px clamp(16px,5vw,56px) 36px; color:var(--muted); font-size:12.5px; }
+@media (prefers-color-scheme: dark) {
+  :root { --ink:#e8ecf5; --muted:#a3acbf; --line:#2b3345; --bg:#10141d; --card:#171c27; --accent:#5b8cff; }
+  textarea, input[type=text], select { background:#121722; }
+  th, code { background:#1f2634; } button { background:#1d2330; } .tabs button[aria-selected=true] { background:#e8ecf5; color:#10141d; }
+}
+</style>
+</head>
+<body data-solution="migration-reconciler">
+<header><div class="brand">Hyniqe <span>Hub</span></div><h1>Migration Reconciler</h1><p class="tagline">Prove the data in the new system is the data from the old one, with an evidence pack you can sign.</p><p class="local">🔒 Runs entirely in your browser. Nothing you load here is uploaded.</p></header>
+<main id="app"></main>
+<footer>Hyniqe Hub · open-source tools for financial operations. Outputs support your judgement; they are not legal, audit or security advice.</footer>
+<script>
+const __m = {};
+__m["shared/table.js"] = (() => {
+// Small, dependency-free table helpers shared by the Hyniqe Hub solutions in this batch.
+// Runs unchanged in Node (22+, type stripping) and in the browser after `tsc`.
+/** Parse CSV text into rows keyed by lower-cased, trimmed headers (spaces → underscores).
+ *  Handles quoted fields, escaped quotes, BOM, CRLF, and comma / semicolon / tab separators. */
+function parseCsv(text) {
+    const clean = text.replace(/^﻿/, "");
+    const firstLine = clean.split(/\r?\n/, 1)[0] ?? "";
+    const sep = pickSeparator(firstLine);
+    const records = [];
+    let field = "";
+    let record = [];
+    let inQuotes = false;
+    for (let i = 0; i < clean.length; i++) {
+        const ch = clean[i];
+        if (inQuotes) {
+            if (ch === '"') {
+                if (clean[i + 1] === '"') {
+                    field += '"';
+                    i++;
+                }
+                else {
+                    inQuotes = false;
+                }
+            }
+            else {
+                field += ch;
+            }
+            continue;
+        }
+        if (ch === '"') {
+            inQuotes = true;
+            continue;
+        }
+        if (ch === sep) {
+            record.push(field);
+            field = "";
+            continue;
+        }
+        if (ch === "\n" || ch === "\r") {
+            if (ch === "\r" && clean[i + 1] === "\n")
+                i++;
+            record.push(field);
+            field = "";
+            if (record.some((f) => f.trim() !== ""))
+                records.push(record);
+            record = [];
+            continue;
+        }
+        field += ch;
+    }
+    record.push(field);
+    if (record.some((f) => f.trim() !== ""))
+        records.push(record);
+    if (records.length === 0)
+        return [];
+    const headers = records[0].map(normaliseHeader);
+    return records.slice(1).map((r) => {
+        const row = {};
+        headers.forEach((h, idx) => { row[h] = (r[idx] ?? "").trim(); });
+        return row;
+    });
+}
+function normaliseHeader(h) {
+    return h.trim().toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_|_$/g, "");
+}
+function pickSeparator(line) {
+    const counts = [",", ";", "\t"].map((s) => [s, line.split(s).length - 1]);
+    counts.sort((a, b) => b[1] - a[1]);
+    return counts[0][1] > 0 ? counts[0][0] : ",";
+}
+/** Serialise rows to CSV with a fixed column order. */
+function toCsv(rows, columns) {
+    const esc = (v) => {
+        const s = v === undefined || v === null ? "" : String(v);
+        return /[",\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+    };
+    return [columns.join(","), ...rows.map((r) => columns.map((c) => esc(r[c])).join(","))].join("\n") + "\n";
+}
+/** Render a simple Markdown table. */
+function mdTable(headers, rows) {
+    const cell = (v) => String(v).replace(/\|/g, "\\|").replace(/\n/g, " ");
+    return [
+        `| ${headers.map(cell).join(" | ")} |`,
+        `| ${headers.map(() => "---").join(" | ")} |`,
+        ...rows.map((r) => `| ${r.map(cell).join(" | ")} |`),
+    ].join("\n");
+}
+/** Read the first non-empty value among several possible column names. */
+function pick(row, ...names) {
+    for (const n of names) {
+        const v = row[normaliseHeader(n)];
+        if (v !== undefined && v !== "")
+            return v;
+    }
+    return "";
+}
+function parseAmount(raw) {
+    if (!raw)
+        return null;
+    let s = raw.replace(/[^\d.,\-]/g, "");
+    if (s.includes(",") && s.includes(".")) {
+        s = s.lastIndexOf(",") > s.lastIndexOf(".") ? s.replace(/\./g, "").replace(",", ".") : s.replace(/,/g, "");
+    }
+    else if (s.includes(",")) {
+        const parts = s.split(",");
+        s = parts.length === 2 && parts[1].length !== 3 ? s.replace(",", ".") : s.replace(/,/g, "");
+    }
+    const n = Number(s);
+    return Number.isFinite(n) ? n : null;
+}
+function parseBool(raw) {
+    const s = raw.trim().toLowerCase();
+    if (["y", "yes", "true", "1", "done", "passed", "pass"].includes(s))
+        return true;
+    if (["n", "no", "false", "0", "not done", "failed", "fail", ""].includes(s))
+        return s === "" ? null : false;
+    return null;
+}
+/** Parse ISO-ish timestamps ("2026-11-24 14:05", "2026-11-24T14:05:00Z", "24/11/2026 14:05"). */
+function parseTimestamp(raw) {
+    const s = raw.trim();
+    if (!s)
+        return null;
+    const dmy = s.match(/^(\d{1,2})[\/.](\d{1,2})[\/.](\d{4})(?:[ T](\d{1,2}):(\d{2})(?::(\d{2}))?)?$/);
+    if (dmy) {
+        const [, d, m, y, hh = "0", mm = "0", ss = "0"] = dmy;
+        return new Date(Date.UTC(+y, +m - 1, +d, +hh, +mm, +ss));
+    }
+    const iso = s.includes("T") ? s : s.replace(" ", "T");
+    const withZone = /[zZ]|[+\-]\d{2}:?\d{2}$/.test(iso) ? iso : iso + (iso.length > 10 ? "Z" : "T00:00:00Z");
+    const d = new Date(withZone);
+    return Number.isNaN(d.getTime()) ? null : d;
+}
+
+return { parseCsv, normaliseHeader, toCsv, mdTable, pick, parseAmount, parseBool, parseTimestamp };
+})();
+__m["migration-reconciler/src/reconcile.js"] = (() => {
+// Migration Reconciler
+// Compares a source extract (legacy system) with a target extract (new system) after a data migration: record counts,
+// records missing or added, duplicate keys, and field-by-field differences classified so that real problems stand out:
+// values truncated, emptied (e.g. consent flags lost), or changed, versus harmless differences in case, spacing or
+// number/date formatting. Produces control totals and an evidence pack for sign-off.
+const { normaliseHeader, parseAmount, parseTimestamp } = __m["shared/table.js"];
+const SERIOUS = ["TRUNCATED", "EMPTIED", "CHANGED", "NUMBER_CHANGED", "DATE_CHANGED"];
+const isNum = (s) => /^[+-]?[\d.,' ]*\d[\d.,' ]*$/.test(s.trim()) && parseAmount(s) !== null;
+const looksDate = (s) => /\d{1,4}[-\/.]\d{1,2}[-\/.]\d{1,4}/.test(s) || /^\d{8}$/.test(s.trim());
+function asDate(s) {
+    const t = s.trim();
+    if (/^\d{8}$/.test(t))
+        return `${t.slice(0, 4)}-${t.slice(4, 6)}-${t.slice(6, 8)}`;
+    const d = parseTimestamp(t);
+    return d ? d.toISOString().slice(0, 10) : null;
+}
+function classify(src, tgt, tol = 0) {
+    if (src === tgt)
+        return null;
+    const s = src.trim(), t = tgt.trim();
+    if (s === t)
+        return "CASE_SPACING";
+    if (!t && s)
+        return "EMPTIED";
+    if (!s && t)
+        return "POPULATED";
+    if (s.toLowerCase().replace(/\s+/g, " ") === t.toLowerCase().replace(/\s+/g, " "))
+        return "CASE_SPACING";
+    if (isNum(s) && isNum(t)) {
+        const a = parseAmount(s), b = parseAmount(t);
+        return Math.abs(a - b) <= tol + 1e-9 ? "FORMAT_ONLY" : "NUMBER_CHANGED";
+    }
+    if (looksDate(s) && looksDate(t)) {
+        const a = asDate(s), b = asDate(t);
+        if (a && b)
+            return a === b ? "FORMAT_ONLY" : "DATE_CHANGED";
+    }
+    if (t.length < s.length && s.toLowerCase().startsWith(t.toLowerCase().replace(/[+…]$/, "")))
+        return "TRUNCATED";
+    // Y/N vs true/false vs 1/0 style booleans
+    const bool = (x) => (/^(y|yes|true|1|t)$/i.test(x) ? "T" : /^(n|no|false|0|f)$/i.test(x) ? "F" : null);
+    if (bool(s) && bool(s) === bool(t))
+        return "FORMAT_ONLY";
+    return "CHANGED";
+}
+function reconcile(source, target, opts) {
+    const srcCols = source.length ? Object.keys(source[0]) : [];
+    const tgtCols = target.length ? Object.keys(target[0]) : [];
+    const map = {};
+    const userMap = Object.fromEntries(Object.entries(opts.map ?? {}).map(([a, b]) => [normaliseHeader(a), normaliseHeader(b)]));
+    for (const c of srcCols) {
+        const t = userMap[c] ?? (tgtCols.includes(c) ? c : undefined);
+        if (t && tgtCols.includes(t))
+            map[c] = t;
+    }
+    const ignore = new Set((opts.ignoreFields ?? []).map(normaliseHeader));
+    const keyCols = opts.key.map(normaliseHeader);
+    for (const k of keyCols) {
+        if (!srcCols.includes(k))
+            throw new Error(`Key column "${k}" not found in source (columns: ${srcCols.join(", ")}).`);
+        if (!map[k])
+            throw new Error(`Key column "${k}" has no matching column in target. Use --map ${k}:<target column>.`);
+    }
+    const normKey = (v) => { let x = v.trim(); if (opts.ignoreCase)
+        x = x.toUpperCase(); if (opts.ignoreLeadingZeros)
+        x = x.replace(/^0+(?=.)/, ""); return x; };
+    const keyOf = (r, side) => keyCols.map((k) => normKey(r[side === "s" ? k : map[k]] ?? "")).join("|");
+    const index = (rows, side) => {
+        const m = new Map(), dups = [];
+        for (const r of rows) {
+            const k = keyOf(r, side);
+            if (m.has(k))
+                dups.push(k);
+            else
+                m.set(k, r);
+        }
+        return { m, dups };
+    };
+    const S = index(source, "s"), T = index(target, "t");
+    const missing = [...S.m.keys()].filter((k) => !T.m.has(k));
+    const extra = [...T.m.keys()].filter((k) => !S.m.has(k));
+    const compareCols = Object.keys(map).filter((c) => !keyCols.includes(c) && !ignore.has(c));
+    const stats = new Map(compareCols.map((c) => [c, { field: c, target: map[c], compared: 0, same: 0, kinds: {} }]));
+    const diffs = [];
+    const seriousKeys = new Set();
+    let matched = 0;
+    for (const [k, s] of S.m) {
+        const t = T.m.get(k);
+        if (!t)
+            continue;
+        matched++;
+        for (const c of compareCols) {
+            const st = stats.get(c);
+            st.compared++;
+            const kind = classify(s[c] ?? "", t[map[c]] ?? "", opts.tolerance ?? 0);
+            if (!kind) {
+                st.same++;
+                continue;
+            }
+            st.kinds[kind] = (st.kinds[kind] ?? 0) + 1;
+            if (kind === "FORMAT_ONLY" || kind === "CASE_SPACING") {
+                st.same++;
+                continue;
+            }
+            diffs.push({ key: k, field: c, source: s[c] ?? "", target: t[map[c]] ?? "", kind });
+            if (SERIOUS.includes(kind))
+                seriousKeys.add(k);
+        }
+    }
+    // control totals for numeric columns (all rows, each side)
+    for (const c of compareCols) {
+        const sVals = source.map((r) => r[c] ?? "").filter((v) => v.trim());
+        if (sVals.length && sVals.every(isNum)) {
+            const st = stats.get(c);
+            st.sourceSum = round(sVals.reduce((a, v) => a + parseAmount(v), 0));
+            st.targetSum = round(target.map((r) => r[map[c]] ?? "").filter((v) => isNum(v)).reduce((a, v) => a + parseAmount(v), 0));
+        }
+    }
+    return {
+        sourceRows: source.length, targetRows: target.length, matched, missing, extra, dupSource: S.dups, dupTarget: T.dups, diffs, fields: [...stats.values()],
+        unmappedSource: srcCols.filter((c) => !map[c]), unmappedTarget: tgtCols.filter((c) => !Object.values(map).includes(c)), recordsWithSeriousDiffs: seriousKeys.size,
+    };
+}
+const round = (n) => Math.round(n * 100) / 100;
+
+return { SERIOUS, classify, reconcile };
+})();
+__m["migration-reconciler/src/report.js"] = (() => {
+const { mdTable, toCsv } = __m["shared/table.js"];
+const { SERIOUS } = __m["migration-reconciler/src/reconcile.js"];
+const LABEL = { TRUNCATED: "truncated", EMPTIED: "emptied (value lost)", POPULATED: "filled in (was empty)", CHANGED: "changed", NUMBER_CHANGED: "number changed", DATE_CHANGED: "date changed", CASE_SPACING: "case/spacing only", FORMAT_ONLY: "format only" };
+function toMarkdown(r, title = "Migration reconciliation") {
+    const pass = !r.missing.length && !r.extra.length && !r.dupSource.length && !r.dupTarget.length && !r.diffs.some((d) => SERIOUS.includes(d.kind)) && r.fields.every((f) => f.sourceSum === undefined || f.sourceSum === f.targetSum);
+    const out = [
+        `# ${title}`, "",
+        `## ${pass ? "✅ RECONCILED" : "❌ NOT RECONCILED"}`, "",
+        mdTable(["Check", "Source", "Target", "Result"], [
+            ["Records", r.sourceRows, r.targetRows, r.sourceRows === r.targetRows ? "✅" : "❌"],
+            ["Matched by key", r.matched, r.matched, ""],
+            ["Missing in target", r.missing.length, "", r.missing.length ? "❌" : "✅"],
+            ["Extra in target", "", r.extra.length, r.extra.length ? "❌" : "✅"],
+            ["Duplicate keys", r.dupSource.length, r.dupTarget.length, r.dupSource.length || r.dupTarget.length ? "❌" : "✅"],
+            ["Records with real differences", "", r.recordsWithSeriousDiffs, r.recordsWithSeriousDiffs ? "❌" : "✅"],
+        ]), "",
+    ];
+    const totals = r.fields.filter((f) => f.sourceSum !== undefined);
+    if (totals.length)
+        out.push("## Control totals", "", mdTable(["Field", "Source total", "Target total", "Difference"], totals.map((f) => [f.field, f.sourceSum.toLocaleString("en-US"), f.targetSum.toLocaleString("en-US"), f.sourceSum === f.targetSum ? "✅ 0" : `❌ ${(Math.round((f.targetSum - f.sourceSum) * 100) / 100).toLocaleString("en-US")}`])), "");
+    out.push("## Field by field", "", mdTable(["Source field", "Target field", "Match %", "Real differences", "Harmless differences"], r.fields.map((f) => {
+        const serious = SERIOUS.filter((k) => f.kinds[k]).map((k) => `${f.kinds[k]} ${LABEL[k]}`).join(", ");
+        const harmless = ["FORMAT_ONLY", "CASE_SPACING", "POPULATED"].filter((k) => f.kinds[k]).map((k) => `${f.kinds[k]} ${LABEL[k]}`).join(", ");
+        return [f.field, f.target, f.compared ? `${((f.same / f.compared) * 100).toFixed(2)}%` : "-", serious || "-", harmless || "-"];
+    })), "");
+    if (r.unmappedSource.length || r.unmappedTarget.length)
+        out.push(`**Not compared:** source-only columns: ${r.unmappedSource.join(", ") || "none"}; target-only columns: ${r.unmappedTarget.join(", ") || "none"}. Use \`--map\` if they correspond.`, "");
+    const sample = r.diffs.filter((d) => SERIOUS.includes(d.kind)).slice(0, 25);
+    if (sample.length)
+        out.push("## Examples of real differences", "", mdTable(["Key", "Field", "Source", "Target", "Type"], sample.map((d) => [d.key, d.field, d.source, d.target, LABEL[d.kind]])), "");
+    if (r.missing.length)
+        out.push(`**Missing in target (first 20):** ${r.missing.slice(0, 20).join(", ")}`, "");
+    if (r.extra.length)
+        out.push(`**Extra in target (first 20):** ${r.extra.slice(0, 20).join(", ")}`, "");
+    out.push("## Sign-off", "", "| Role | Name | Date | Signature |", "| --- | --- | --- | --- |", "| Data owner | | | |", "| Migration lead | | | |", "| Independent reviewer | | | |", "", "_Generated by Hyniqe Hub · Migration Reconciler. Runs locally. Keep this report with the extracts it was run on (record file names, row counts and extraction times)._");
+    return out.join("\n") + "\n";
+}
+function diffsCsv(r) {
+    const rows = [...r.missing.map((k) => ({ key: k, field: "(record)", source: "present", target: "missing", kind: "MISSING" })), ...r.extra.map((k) => ({ key: k, field: "(record)", source: "missing", target: "present", kind: "EXTRA" })), ...r.diffs];
+    return toCsv(rows, ["key", "field", "source", "target", "kind"]);
+}
+
+return { toMarkdown, diffsCsv };
+})();
+const SAMPLES = {"source":"customer_id,full_name,address_line,postcode,date_of_birth,balance,marketing_consent,segment\n00100000,\"Fatima Khan\",\"119 Long Winding Countryside Lane\",SW1A 5AB,1976-06-14,42176.03,Y,SME\n00100001,\"Rahul Sharma\",\"80 Station Road\",SW1A 6AB,1974-06-24,40269.24,N,RETAIL\n00100002,\"Maria Mueller\",\"196 Station Road, Flat 23\",EC2V 5AB,1974-11-05,42485.35,N,PREMIER\n00100003,\"Anna Adeyemi\",\"106 Station Road\",M1 1AB,1978-01-13,31739.63,N,PREMIER\n00100004,\"John Mueller\",\"84 Hauptstrasse\",M1 4AB,1990-02-04,31511.33,N,RETAIL\n00100005,\"John Martin\",\"126 Avenue des Champs-Elysees\",M1 4AB,1958-07-01,44035.46,Y,PREMIER\n00100006,\"Anna Rossi\",\"103 High Street\",M1 8AB,1997-08-17,28659.35,Y,RETAIL\n00100007,\"Lars Martin\",\"28 High Street\",LS6 4AB,1995-05-22,32691.47,Y,RETAIL\n00100008,\"Wei Nilsson\",\"144 Station Road, Flat 17\",EC2V 2AB,1988-12-22,252.10,Y,SME\n00100009,\"Chiara Nilsson-Zhang\",\"99 High Street\",SW1A 1AB,1999-08-20,41739.21,N,SME\n00100010,\"Rahul Khan\",\"84 Avenue des Champs-Elysees, Flat 2\",EC2V 3AB,1965-09-12,16907.83,Y,PREMIER\n00100011,\"Maria Zhang\",\"137 Station Road\",M1 1AB,1947-02-24,6783.40,N,RETAIL\n00100012,\"Olu Rossi\",\"20 High Street\",SW1A 2AB,1960-02-25,31949.76,N,PREMIER\n00100013,\"Chiara Smith\",\"46 Station Road, Flat 19\",SW1A 6AB,1997-11-15,43805.20,Y,PREMIER\n00100014,\"Maria Martin-Adeyemi\",\"95 Long Winding Countryside Lane\",EC2V 5AB,1966-02-06,4737.16,Y,SME\n00100015,\"Fatima Garcia\",\"16 Long Winding Countryside Lane, Flat 2\",EC2V 4AB,1948-05-04,44854.35,Y,PREMIER\n00100016,\"John Khan\",\"52 Avenue des Champs-Elysees\",EC2V 5AB,1964-02-07,31624.80,Y,RETAIL\n00100017,\"Rahul Garcia\",\"157 Hauptstrasse\",M1 4AB,1985-12-10,35523.69,Y,RETAIL\n00100018,\"Lars Mueller\",\"183 High Street\",EC2V 7AB,1974-10-28,22181.51,Y,RETAIL\n00100019,\"Chiara Mueller\",\"25 Avenue des Champs-Elysees\",EC2V 9AB,1984-02-03,8434.40,Y,SME\n00100020,\"Lars Garcia\",\"144 Hauptstrasse\",LS6 5AB,1988-07-11,14368.36,N,RETAIL\n00100021,\"Wei Nilsson\",\"39 Hauptstrasse, Flat 10\",SW1A 8AB,1963-02-16,22426.25,Y,RETAIL\n00100022,\"John Martin\",\"182 Station Road\",M1 1AB,1962-07-23,35407.04,N,SME\n00100023,\"Rahul Mueller-Garcia\",\"171 High Street, Flat 2\",LS6 7AB,1941-05-01,11317.40,N,PREMIER\n00100024,\"Anna Mueller\",\"101 High Street\",LS6 3AB,1960-02-05,1629.01,Y,SME\n00100025,\"John Adeyemi\",\"63 Hauptstrasse\",M1 4AB,1982-06-12,21070.20,N,RETAIL\n00100026,\"Anna Nilsson-Nilsson\",\"45 Long Winding Countryside Lane\",SW1A 9AB,1964-05-06,624.39,N,RETAIL\n00100027,\"Olu Adeyemi-Martin\",\"80 Avenue des Champs-Elysees\",EC2V 1AB,1941-04-02,14866.81,N,PREMIER\n00100028,\"Fatima Nilsson\",\"187 High Street\",SW1A 7AB,1958-02-18,13016.51,Y,PREMIER\n00100029,\"Maria Garcia-Mueller\",\"12 Station Road\",EC2V 9AB,1983-09-09,33460.15,Y,SME\n00100030,\"Chiara Sharma\",\"187 Station Road, Flat 26\",LS6 3AB,1940-02-14,1993.33,N,SME\n00100031,\"Fatima Garcia\",\"194 Hauptstrasse, Flat 10\",EC2V 5AB,1988-12-02,13824.46,Y,SME\n00100032,\"Wei Sharma\",\"114 Avenue des Champs-Elysees\",EC2V 9AB,1948-03-17,39722.92,Y,RETAIL\n00100033,\"John Adeyemi\",\"58 Avenue des Champs-Elysees\",EC2V 4AB,1983-02-10,11487.04,N,RETAIL\n00100034,\"Fatima Garcia-Adeyemi\",\"139 High Street\",SW1A 1AB,1950-01-01,46702.24,N,SME\n00100035,\"Lars Rossi\",\"10 Station Road, Flat 9\",EC2V 3AB,1947-11-14,43894.02,N,RETAIL\n00100036,\"Lars Mueller\",\"141 Long Winding Countryside Lane\",M1 4AB,1952-07-28,10192.98,Y,RETAIL\n00100037,\"John Rossi\",\"84 Station Road, Flat 21\",EC2V 3AB,1947-01-16,9897.91,N,PREMIER\n00100038,\"Olu Sharma\",\"81 Station Road, Flat 25\",SW1A 6AB,1945-07-17,36570.46,Y,PREMIER\n00100039,\"Rahul Rossi\",\"151 Hauptstrasse\",M1 7AB,1940-04-12,33282.59,Y,PREMIER\n00100040,\"Lars Adeyemi-Rossi\",\"156 Avenue des Champs-Elysees\",SW1A 2AB,1972-02-13,20409.99,Y,RETAIL\n00100041,\"Chiara Nilsson\",\"24 High Street, Flat 18\",LS6 7AB,1951-04-14,4311.92,Y,SME\n00100042,\"Wei Mueller\",\"95 Long Winding Countryside Lane\",SW1A 9AB,1972-03-06,15613.82,Y,SME\n00100043,\"Rahul Khan\",\"119 Long Winding Countryside Lane\",LS6 4AB,1943-12-18,5558.94,Y,RETAIL\n00100044,\"Lars Nilsson\",\"113 Hauptstrasse\",EC2V 1AB,1988-02-16,46687.19,N,SME\n00100045,\"John Martin\",\"149 Long Winding Countryside Lane, Flat 8\",M1 3AB,1967-09-16,45333.58,Y,RETAIL\n00100046,\"Lars Nilsson\",\"39 High Street\",M1 3AB,1957-09-20,47552.75,Y,RETAIL\n00100047,\"Anna Khan-Rossi\",\"136 Hauptstrasse\",SW1A 7AB,1999-09-09,14447.76,Y,PREMIER\n00100048,\"Anna Khan-Khan\",\"175 Long Winding Countryside Lane\",EC2V 8AB,1970-06-25,5503.45,N,PREMIER\n00100049,\"Maria Sharma-Nilsson\",\"124 Long Winding Countryside Lane\",SW1A 5AB,1994-07-18,44190.31,Y,RETAIL\n00100050,\"Rahul Garcia\",\"128 Avenue des Champs-Elysees, Flat 1\",EC2V 2AB,1976-10-17,4162.53,N,RETAIL\n00100051,\"Maria Zhang-Mueller\",\"191 High Street, Flat 28\",SW1A 1AB,1999-03-07,42145.49,N,SME\n00100052,\"Chiara Martin\",\"45 Avenue des Champs-Elysees\",LS6 2AB,1941-09-14,12836.36,Y,PREMIER\n00100053,\"Anna Adeyemi\",\"13 Station Road, Flat 28\",SW1A 6AB,1966-10-24,3219.73,N,RETAIL\n00100054,\"Sophie Garcia-Adeyemi\",\"102 Avenue des Champs-Elysees\",M1 4AB,1972-10-28,24072.97,N,SME\n00100055,\"Maria Rossi-Adeyemi\",\"120 Hauptstrasse\",EC2V 8AB,1995-06-27,1151.73,Y,RETAIL\n00100056,\"Chiara Garcia\",\"136 Hauptstrasse\",EC2V 8AB,1941-11-05,11676.91,N,PREMIER\n00100057,\"Olu Rossi\",\"168 Long Winding Countryside Lane, Flat 30\",LS6 4AB,1982-09-24,15647.02,N,RETAIL\n00100058,\"Maria Adeyemi\",\"198 High Street, Flat 16\",SW1A 7AB,1987-10-26,24071.10,N,SME\n00100059,\"Chiara Zhang\",\"119 Avenue des Champs-Elysees\",LS6 2AB,1957-08-12,21842.03,N,RETAIL\n00100060,\"Fatima Zhang\",\"28 Long Winding Countryside Lane, Flat 10\",LS6 6AB,1992-04-15,44165.08,Y,SME\n00100061,\"Lars Smith-Zhang\",\"66 Long Winding Countryside Lane\",SW1A 4AB,1991-09-09,24332.27,Y,SME\n00100062,\"Wei Smith\",\"97 High Street\",SW1A 1AB,1972-06-09,32020.20,Y,SME\n00100063,\"Sophie Zhang\",\"188 Avenue des Champs-Elysees\",SW1A 6AB,1972-11-11,16772.13,Y,PREMIER\n00100064,\"Chiara Martin-Smith\",\"86 Long Winding Countryside Lane\",LS6 8AB,1944-06-13,10250.44,Y,RETAIL\n00100065,\"Anna Smith-Martin\",\"6 Station Road\",EC2V 3AB,1993-04-16,27303.82,Y,PREMIER\n00100066,\"Sophie Garcia\",\"178 Avenue des Champs-Elysees, Flat 30\",SW1A 1AB,1991-03-09,47998.89,N,SME\n00100067,\"Sophie Sharma\",\"179 Station Road\",LS6 4AB,1969-10-21,11214.71,N,PREMIER\n00100068,\"Rahul Rossi\",\"181 Hauptstrasse\",LS6 5AB,1997-03-13,20873.19,Y,PREMIER\n00100069,\"Fatima Garcia\",\"5 Long Winding Countryside Lane, Flat 1\",EC2V 8AB,1940-01-18,1561.88,N,RETAIL\n00100070,\"Olu Rossi\",\"40 Hauptstrasse\",SW1A 9AB,1978-03-05,48658.37,N,PREMIER\n00100071,\"Rahul Sharma\",\"101 Avenue des Champs-Elysees\",EC2V 2AB,1957-05-12,9564.49,Y,PREMIER\n00100072,\"Maria Martin-Nilsson\",\"94 Hauptstrasse\",M1 7AB,1955-12-18,9034.27,N,PREMIER\n00100073,\"John Mueller\",\"78 Avenue des Champs-Elysees\",SW1A 9AB,1945-03-16,42948.61,N,SME\n00100074,\"Rahul Mueller-Rossi\",\"17 High Street\",LS6 9AB,1971-04-16,44344.77,N,PREMIER\n00100075,\"Lars Adeyemi\",\"128 Long Winding Countryside Lane\",LS6 7AB,1991-02-06,4195.75,N,RETAIL\n00100076,\"John Zhang\",\"119 Long Winding Countryside Lane\",SW1A 1AB,1969-04-26,40610.74,Y,PREMIER\n00100077,\"Fatima Zhang\",\"127 High Street\",EC2V 2AB,1980-05-08,8881.97,Y,PREMIER\n00100078,\"Wei Khan\",\"191 Hauptstrasse\",EC2V 7AB,1962-11-10,33944.55,Y,RETAIL\n00100079,\"Olu Mueller-Adeyemi\",\"189 Long Winding Countryside Lane\",SW1A 2AB,1993-11-21,15820.67,Y,SME\n00100080,\"Olu Nilsson\",\"4 High Street\",M1 6AB,1942-11-04,17724.78,Y,SME\n00100081,\"Anna Sharma-Sharma\",\"25 Hauptstrasse\",M1 5AB,1993-04-25,6815.59,Y,SME\n00100082,\"Olu Nilsson\",\"73 High Street\",M1 2AB,1970-03-07,33902.75,Y,PREMIER\n00100083,\"Rahul Smith\",\"73 Long Winding Countryside Lane, Flat 26\",EC2V 7AB,1975-07-12,6784.09,N,RETAIL\n00100084,\"Lars Mueller\",\"94 High Street\",M1 1AB,1959-01-12,49888.40,N,SME\n00100085,\"Rahul Rossi\",\"2 High Street\",SW1A 9AB,1942-12-08,10313.21,N,RETAIL\n00100086,\"Chiara Sharma\",\"86 Hauptstrasse, Flat 29\",LS6 3AB,1963-07-28,30344.25,N,RETAIL\n00100087,\"Rahul Khan\",\"10 Station Road\",LS6 4AB,1968-03-16,4788.03,N,SME\n00100088,\"Wei Mueller\",\"189 Hauptstrasse\",SW1A 8AB,1987-08-24,46637.16,Y,PREMIER\n00100089,\"Fatima Garcia\",\"185 Hauptstrasse\",SW1A 8AB,1966-06-04,5875.22,Y,SME\n00100090,\"Maria Garcia\",\"192 Station Road, Flat 21\",EC2V 7AB,1946-12-24,5161.90,N,RETAIL\n00100091,\"Lars Khan\",\"132 Long Winding Countryside Lane\",LS6 2AB,1976-11-05,33362.83,Y,SME\n00100092,\"Fatima Martin\",\"88 High Street\",SW1A 3AB,1975-03-28,2663.26,Y,PREMIER\n00100093,\"Wei Khan\",\"139 Long Winding Countryside Lane\",LS6 8AB,1959-12-05,7424.76,N,RETAIL\n00100094,\"Olu Sharma-Nilsson\",\"5 Long Winding Countryside Lane, Flat 7\",LS6 7AB,1991-04-26,20785.11,N,SME\n00100095,\"Lars Nilsson\",\"46 Hauptstrasse, Flat 12\",SW1A 4AB,1962-10-20,27225.37,Y,SME\n00100096,\"Chiara Sharma\",\"38 Avenue des Champs-Elysees\",LS6 1AB,1979-01-14,38593.59,N,RETAIL\n00100097,\"John Mueller\",\"17 Long Winding Countryside Lane\",SW1A 5AB,1999-07-05,13896.19,Y,SME\n00100098,\"Olu Rossi\",\"25 Avenue des Champs-Elysees, Flat 21\",M1 7AB,1977-01-15,31202.57,N,SME\n00100099,\"Wei Martin\",\"21 Hauptstrasse, Flat 5\",M1 3AB,1974-10-21,10591.36,Y,RETAIL\n00100100,\"Chiara Nilsson-Sharma\",\"129 Avenue des Champs-Elysees\",SW1A 6AB,1971-09-15,37512.21,N,RETAIL\n00100101,\"Rahul Khan\",\"21 High Street, Flat 29\",M1 6AB,1964-06-26,28765.72,Y,SME\n00100102,\"Fatima Mueller\",\"113 Avenue des Champs-Elysees, Flat 8\",M1 3AB,1992-05-04,33280.05,Y,RETAIL\n00100103,\"Fatima Rossi\",\"77 Hauptstrasse\",SW1A 8AB,1966-12-26,15637.90,N,SME\n00100104,\"Lars Martin-Mueller\",\"59 Avenue des Champs-Elysees\",LS6 9AB,1959-12-18,7591.95,N,SME\n00100105,\"Anna Garcia\",\"108 Hauptstrasse\",LS6 1AB,1950-12-15,48640.21,Y,PREMIER\n00100106,\"Anna Adeyemi-Mueller\",\"54 High Street\",SW1A 7AB,1967-07-26,34533.00,Y,PREMIER\n00100107,\"Wei Martin\",\"109 Long Winding Countryside Lane\",M1 5AB,1974-01-23,11442.68,N,RETAIL\n00100108,\"Sophie Rossi\",\"2 Hauptstrasse, Flat 26\",EC2V 7AB,1990-04-19,35783.70,Y,SME\n00100109,\"Anna Nilsson-Smith\",\"27 High Street, Flat 22\",M1 1AB,1996-11-19,28275.07,Y,SME\n00100110,\"Maria Rossi\",\"46 Avenue des Champs-Elysees, Flat 14\",LS6 2AB,1944-07-15,22649.67,N,PREMIER\n00100111,\"Chiara Adeyemi\",\"63 Station Road\",M1 5AB,1950-12-26,43114.35,Y,SME\n00100112,\"John Garcia\",\"165 Station Road\",LS6 2AB,1981-03-14,17373.02,Y,PREMIER\n00100113,\"Maria Sharma\",\"43 High Street\",M1 2AB,1983-09-06,42229.05,Y,RETAIL\n00100114,\"Fatima Garcia-Zhang\",\"105 Station Road, Flat 3\",LS6 9AB,1957-06-02,24903.18,N,SME\n00100115,\"Chiara Mueller\",\"90 Hauptstrasse\",EC2V 9AB,1953-11-21,8621.95,N,RETAIL\n00100116,\"Maria Nilsson\",\"153 Long Winding Countryside Lane\",LS6 4AB,1946-01-17,9314.67,N,RETAIL\n00100117,\"Lars Mueller\",\"169 Long Winding Countryside Lane, Flat 1\",LS6 4AB,1977-07-06,19569.95,Y,RETAIL\n00100118,\"Rahul Smith\",\"154 Hauptstrasse\",LS6 7AB,1992-09-05,40795.01,Y,SME\n00100119,\"Sophie Khan\",\"109 Station Road, Flat 2\",EC2V 4AB,1973-08-05,2844.37,N,RETAIL\n00100120,\"Olu Martin\",\"145 Avenue des Champs-Elysees\",SW1A 3AB,1953-10-25,25534.77,Y,RETAIL\n00100121,\"Wei Zhang\",\"83 Avenue des Champs-Elysees\",LS6 4AB,1964-04-17,20164.58,N,PREMIER\n00100122,\"Olu Khan\",\"179 Avenue des Champs-Elysees, Flat 1\",LS6 5AB,1975-08-15,31811.15,Y,PREMIER\n00100123,\"Wei Smith-Khan\",\"153 Avenue des Champs-Elysees\",LS6 6AB,1962-02-11,44274.89,N,SME\n00100124,\"Sophie Mueller\",\"93 Long Winding Countryside Lane\",SW1A 2AB,1942-11-11,14856.91,Y,RETAIL\n00100125,\"Rahul Khan\",\"128 Station Road, Flat 8\",LS6 8AB,1988-09-14,4448.02,Y,PREMIER\n00100126,\"Anna Khan\",\"4 Station Road, Flat 14\",LS6 8AB,1967-02-16,18188.77,Y,PREMIER\n00100127,\"Olu Mueller\",\"30 Hauptstrasse\",M1 6AB,1953-05-19,27705.93,N,RETAIL\n00100128,\"John Adeyemi\",\"1 Long Winding Countryside Lane\",EC2V 1AB,1974-08-21,33597.23,Y,PREMIER\n00100129,\"Olu Zhang\",\"21 Avenue des Champs-Elysees\",LS6 5AB,1950-02-07,46421.01,N,RETAIL\n00100130,\"Fatima Zhang-Adeyemi\",\"71 Station Road\",M1 8AB,1984-12-23,8822.62,Y,RETAIL\n00100131,\"Maria Rossi\",\"88 High Street, Flat 10\",SW1A 4AB,1950-06-21,46792.45,N,PREMIER\n00100132,\"Chiara Smith\",\"183 Avenue des Champs-Elysees\",SW1A 9AB,1945-07-27,44712.20,N,PREMIER\n00100133,\"John Khan\",\"133 Station Road\",M1 4AB,1998-12-22,21621.37,Y,SME\n00100134,\"Lars Garcia\",\"21 Long Winding Countryside Lane\",LS6 1AB,1949-04-09,41852.37,Y,SME\n00100135,\"Fatima Martin\",\"163 High Street\",M1 7AB,1984-12-14,44275.80,N,SME\n00100136,\"John Adeyemi\",\"26 Hauptstrasse, Flat 1\",M1 3AB,1957-11-15,31678.61,Y,PREMIER\n00100137,\"Maria Garcia\",\"79 Hauptstrasse\",EC2V 6AB,1970-11-14,41976.07,Y,RETAIL\n00100138,\"Maria Smith-Sharma\",\"146 Hauptstrasse\",SW1A 4AB,1963-09-11,17507.89,Y,PREMIER\n00100139,\"Fatima Garcia\",\"163 Long Winding Countryside Lane\",SW1A 8AB,1964-07-08,28626.57,N,PREMIER\n00100140,\"Rahul Martin\",\"31 High Street\",EC2V 9AB,1992-08-17,7182.72,Y,SME\n00100141,\"Rahul Rossi-Khan\",\"60 Long Winding Countryside Lane\",EC2V 9AB,1998-04-08,19139.18,N,PREMIER\n00100142,\"Wei Rossi\",\"62 High Street, Flat 3\",SW1A 7AB,1953-11-20,5953.64,N,PREMIER\n00100143,\"Rahul Khan\",\"18 Avenue des Champs-Elysees\",SW1A 1AB,1965-02-13,20824.85,Y,PREMIER\n00100144,\"John Khan\",\"200 Station Road\",SW1A 3AB,1996-03-26,47254.60,Y,PREMIER\n00100145,\"Wei Sharma\",\"125 Station Road\",SW1A 6AB,1991-12-09,8993.60,Y,PREMIER\n00100146,\"Maria Mueller\",\"132 Station Road\",SW1A 7AB,1985-05-02,27815.19,N,PREMIER\n00100147,\"Anna Zhang\",\"91 Station Road\",M1 7AB,1981-06-06,4152.82,Y,RETAIL\n00100148,\"John Rossi\",\"194 Station Road\",LS6 3AB,1947-01-08,47610.42,Y,RETAIL\n00100149,\"Rahul Nilsson\",\"186 Long Winding Countryside Lane\",LS6 4AB,1966-02-21,7295.43,N,PREMIER\n00100150,\"Chiara Sharma\",\"163 Long Winding Countryside Lane\",LS6 3AB,1948-02-07,32331.20,Y,SME\n00100151,\"John Nilsson\",\"75 Station Road\",EC2V 9AB,1975-09-08,21630.13,N,SME\n00100152,\"Chiara Khan\",\"164 Long Winding Countryside Lane\",EC2V 7AB,1980-06-21,14945.41,N,SME\n00100153,\"Sophie Adeyemi\",\"115 Long Winding Countryside Lane\",M1 6AB,1962-08-12,19979.46,Y,PREMIER\n00100154,\"John Garcia\",\"27 Station Road\",SW1A 5AB,1961-05-14,1740.32,Y,RETAIL\n00100155,\"Sophie Garcia\",\"88 Avenue des Champs-Elysees\",M1 4AB,1949-05-17,3253.18,Y,SME\n00100156,\"Chiara Rossi-Martin\",\"119 Hauptstrasse\",EC2V 4AB,1995-11-25,49189.23,Y,RETAIL\n00100157,\"Chiara Garcia\",\"28 High Street\",LS6 3AB,1946-08-06,39443.12,N,SME\n00100158,\"Fatima Smith\",\"35 Avenue des Champs-Elysees\",SW1A 1AB,1988-03-11,7597.04,N,PREMIER\n00100159,\"Lars Adeyemi\",\"115 Hauptstrasse, Flat 11\",LS6 7AB,1958-09-02,44818.97,Y,RETAIL\n00100160,\"Anna Rossi\",\"129 Station Road\",LS6 3AB,1990-10-09,21304.36,Y,PREMIER\n00100161,\"Chiara Smith\",\"125 Station Road, Flat 14\",M1 1AB,1962-01-24,46894.27,Y,SME\n00100162,\"Olu Adeyemi\",\"93 Station Road\",EC2V 1AB,1998-05-17,16927.86,N,SME\n00100163,\"Rahul Adeyemi\",\"96 Long Winding Countryside Lane\",M1 2AB,1999-10-14,5623.16,Y,RETAIL\n00100164,\"Lars Smith\",\"30 Long Winding Countryside Lane, Flat 8\",LS6 8AB,1965-02-13,28011.90,Y,PREMIER\n00100165,\"Chiara Sharma\",\"170 Hauptstrasse\",SW1A 8AB,1973-06-25,13219.37,Y,PREMIER\n00100166,\"Chiara Zhang\",\"110 High Street\",LS6 1AB,1969-04-06,28473.17,Y,RETAIL\n00100167,\"Rahul Zhang\",\"11 High Street\",SW1A 2AB,1981-10-24,43834.16,N,RETAIL\n00100168,\"Olu Adeyemi-Martin\",\"161 High Street\",EC2V 5AB,1945-03-14,22016.88,N,SME\n00100169,\"Fatima Sharma-Martin\",\"179 Avenue des Champs-Elysees\",SW1A 5AB,1983-10-11,30945.81,Y,RETAIL\n00100170,\"Anna Khan\",\"130 Long Winding Countryside Lane, Flat 14\",SW1A 3AB,1996-04-07,47786.93,Y,SME\n00100171,\"Fatima Nilsson\",\"90 Avenue des Champs-Elysees, Flat 10\",EC2V 5AB,1983-08-16,49967.99,Y,PREMIER\n00100172,\"Wei Zhang-Khan\",\"194 Avenue des Champs-Elysees, Flat 26\",LS6 9AB,1977-04-07,701.03,N,RETAIL\n00100173,\"Olu Sharma\",\"112 High Street\",SW1A 6AB,1970-03-26,49330.28,Y,PREMIER\n00100174,\"Rahul Rossi\",\"48 Station Road, Flat 9\",LS6 3AB,1945-10-15,11419.92,Y,RETAIL\n00100175,\"Fatima Garcia\",\"72 Long Winding Countryside Lane, Flat 19\",EC2V 2AB,1991-07-05,376.65,Y,PREMIER\n00100176,\"Wei Martin\",\"70 High Street\",EC2V 3AB,1994-12-24,27134.02,Y,RETAIL\n00100177,\"Rahul Nilsson\",\"182 High Street\",M1 3AB,1946-02-26,28026.25,N,RETAIL\n00100178,\"John Nilsson\",\"119 High Street, Flat 27\",SW1A 4AB,1979-06-25,48405.13,Y,SME\n00100179,\"Chiara Nilsson-Garcia\",\"43 Long Winding Countryside Lane\",EC2V 2AB,1990-06-15,20436.35,Y,RETAIL\n00100180,\"Maria Smith-Zhang\",\"60 Avenue des Champs-Elysees\",SW1A 5AB,1961-09-03,902.76,Y,SME\n00100181,\"Chiara Martin-Rossi\",\"51 Avenue des Champs-Elysees\",SW1A 2AB,1951-04-05,49555.38,Y,SME\n00100182,\"Wei Khan-Zhang\",\"134 Avenue des Champs-Elysees, Flat 19\",M1 5AB,1997-07-12,5202.92,N,PREMIER\n00100183,\"Sophie Mueller\",\"1 Hauptstrasse\",SW1A 8AB,1986-08-12,19442.31,N,SME\n00100184,\"Wei Rossi\",\"194 Avenue des Champs-Elysees\",EC2V 3AB,1962-09-16,38006.94,Y,RETAIL\n00100185,\"Fatima Rossi\",\"193 High Street\",SW1A 4AB,1967-12-03,39052.86,N,RETAIL\n00100186,\"Anna Smith\",\"157 Long Winding Countryside Lane\",EC2V 2AB,1950-12-08,29371.07,N,RETAIL\n00100187,\"John Nilsson\",\"59 High Street\",SW1A 6AB,1978-08-11,25245.04,Y,PREMIER\n00100188,\"Anna Martin\",\"111 High Street\",LS6 8AB,1992-04-27,42762.09,Y,PREMIER\n00100189,\"Chiara Rossi\",\"1 Hauptstrasse\",LS6 6AB,1940-07-07,35998.05,Y,PREMIER\n00100190,\"Wei Sharma\",\"58 High Street\",EC2V 7AB,1966-08-02,26656.14,Y,RETAIL\n00100191,\"John Sharma-Nilsson\",\"14 Station Road\",SW1A 9AB,1978-12-02,30124.73,N,SME\n00100192,\"Maria Martin\",\"68 Avenue des Champs-Elysees\",LS6 3AB,1959-09-20,44097.47,Y,SME\n00100193,\"Wei Rossi\",\"172 Station Road\",LS6 5AB,1944-04-11,17220.94,Y,SME\n00100194,\"Fatima Garcia\",\"170 Long Winding Countryside Lane, Flat 10\",M1 9AB,1996-03-23,33428.33,Y,PREMIER\n00100195,\"Lars Martin\",\"173 Avenue des Champs-Elysees\",M1 8AB,1977-09-01,18582.84,Y,RETAIL\n00100196,\"Rahul Khan\",\"77 High Street, Flat 27\",LS6 3AB,1995-04-22,25414.27,Y,PREMIER\n00100197,\"Sophie Nilsson\",\"119 Avenue des Champs-Elysees, Flat 1\",SW1A 3AB,1976-08-05,13048.03,Y,PREMIER\n00100198,\"Lars Adeyemi\",\"179 Hauptstrasse\",M1 7AB,1980-01-24,49259.21,N,RETAIL\n00100199,\"Fatima Adeyemi\",\"137 High Street\",EC2V 6AB,1994-11-06,6470.29,Y,PREMIER\n00100200,\"Sophie Nilsson\",\"148 Long Winding Countryside Lane\",LS6 3AB,1976-02-04,22518.77,N,RETAIL\n00100201,\"Maria Adeyemi\",\"41 Avenue des Champs-Elysees, Flat 6\",SW1A 4AB,1966-02-28,47039.92,Y,PREMIER\n00100202,\"Rahul Smith\",\"126 Hauptstrasse\",LS6 8AB,1959-04-06,5838.92,Y,SME\n00100203,\"Anna Garcia\",\"170 Long Winding Countryside Lane\",M1 9AB,1951-11-18,6757.26,Y,SME\n00100204,\"Maria Nilsson\",\"11 High Street\",M1 4AB,1998-03-18,8958.59,Y,RETAIL\n00100205,\"Sophie Rossi\",\"44 High Street\",LS6 5AB,1975-02-10,15056.04,N,SME\n00100206,\"Maria Smith-Smith\",\"109 Station Road, Flat 11\",EC2V 4AB,1943-07-19,3876.15,N,SME\n00100207,\"Rahul Rossi\",\"72 Long Winding Countryside Lane\",M1 2AB,1982-01-12,9184.57,N,PREMIER\n00100208,\"Fatima Adeyemi\",\"134 Avenue des Champs-Elysees\",EC2V 9AB,1985-06-12,29672.63,Y,PREMIER\n00100209,\"John Nilsson\",\"166 Avenue des Champs-Elysees, Flat 1\",EC2V 7AB,1940-01-25,41187.65,N,RETAIL\n00100210,\"Anna Mueller\",\"196 High Street\",M1 7AB,1967-05-21,12076.06,N,PREMIER\n00100211,\"Maria Garcia\",\"68 Hauptstrasse\",LS6 9AB,1940-03-17,31797.97,N,RETAIL\n00100212,\"Sophie Smith\",\"180 High Street\",EC2V 8AB,1992-03-19,33172.72,N,PREMIER\n00100213,\"Fatima Zhang\",\"165 Station Road, Flat 23\",EC2V 8AB,1940-10-05,23233.73,Y,PREMIER\n00100214,\"Fatima Garcia\",\"58 High Street\",SW1A 4AB,1982-09-11,3001.27,Y,PREMIER\n00100215,\"Fatima Nilsson-Smith\",\"32 Station Road\",LS6 1AB,1957-04-27,26939.29,N,SME\n00100216,\"Rahul Sharma\",\"174 High Street, Flat 20\",SW1A 3AB,1957-12-24,5980.17,N,SME\n00100217,\"Rahul Khan\",\"93 Avenue des Champs-Elysees\",SW1A 3AB,1952-10-07,31017.11,N,RETAIL\n00100218,\"Chiara Mueller\",\"107 Avenue des Champs-Elysees\",SW1A 5AB,1983-11-23,21444.21,Y,PREMIER\n00100219,\"Maria Garcia\",\"189 Long Winding Countryside Lane\",EC2V 9AB,1977-12-18,27310.26,N,SME\n00100220,\"Chiara Garcia-Rossi\",\"166 Station Road\",SW1A 1AB,1999-01-04,40994.32,Y,RETAIL\n00100221,\"Wei Rossi\",\"18 Hauptstrasse, Flat 25\",SW1A 3AB,1984-11-15,14655.47,N,SME\n00100222,\"Sophie Rossi\",\"122 High Street, Flat 28\",SW1A 5AB,1970-11-26,26103.48,N,RETAIL\n00100223,\"Sophie Adeyemi\",\"30 Hauptstrasse\",EC2V 2AB,1943-07-27,22272.10,N,RETAIL\n00100224,\"Lars Zhang\",\"148 High Street\",LS6 6AB,1971-11-04,9557.76,N,SME\n00100225,\"Lars Mueller\",\"139 Station Road, Flat 16\",M1 9AB,1981-06-01,6982.71,N,PREMIER\n00100226,\"Anna Smith\",\"51 Hauptstrasse\",LS6 4AB,1996-04-11,12819.66,N,SME\n00100227,\"Chiara Rossi\",\"21 High Street\",LS6 5AB,1962-12-25,4972.78,Y,RETAIL\n00100228,\"Sophie Martin-Khan\",\"90 Station Road, Flat 20\",M1 4AB,1958-11-17,43285.33,N,PREMIER\n00100229,\"Maria Khan\",\"48 Station Road\",M1 7AB,1973-02-28,31264.66,Y,SME\n00100230,\"Chiara Mueller\",\"181 High Street, Flat 3\",SW1A 5AB,1946-10-03,598.13,Y,RETAIL\n00100231,\"Maria Adeyemi-Zhang\",\"88 Station Road\",M1 3AB,1988-12-17,35252.09,Y,RETAIL\n00100232,\"Lars Mueller\",\"140 Station Road\",EC2V 3AB,1953-03-08,11871.17,Y,PREMIER\n00100233,\"Lars Sharma\",\"23 Station Road, Flat 28\",EC2V 6AB,1952-06-10,12329.04,Y,SME\n00100234,\"Wei Zhang\",\"78 Avenue des Champs-Elysees\",LS6 2AB,1942-12-28,25431.43,N,PREMIER\n00100235,\"Anna Adeyemi\",\"124 High Street\",EC2V 1AB,1954-02-05,2516.87,N,PREMIER\n00100236,\"Rahul Martin\",\"164 Hauptstrasse\",LS6 3AB,1995-09-02,19466.71,Y,RETAIL\n00100237,\"Wei Martin\",\"100 Avenue des Champs-Elysees\",LS6 1AB,1997-03-21,32184.18,Y,PREMIER\n00100238,\"Wei Garcia\",\"98 Station Road\",EC2V 2AB,1960-07-05,46290.71,N,PREMIER\n00100239,\"John Smith-Rossi\",\"86 Avenue des Champs-Elysees\",LS6 6AB,1954-08-22,31900.23,N,PREMIER\n00100240,\"Wei Mueller\",\"196 Avenue des Champs-Elysees\",EC2V 8AB,1974-12-14,49315.91,N,PREMIER\n00100241,\"Anna Garcia\",\"80 Avenue des Champs-Elysees\",M1 6AB,1988-10-27,38792.65,Y,RETAIL\n00100242,\"John Adeyemi\",\"162 Station Road, Flat 2\",M1 2AB,1982-07-24,13014.14,N,SME\n00100243,\"Sophie Sharma-Zhang\",\"154 Station Road\",LS6 3AB,1954-10-27,20480.89,Y,PREMIER\n00100244,\"John Martin\",\"196 Long Winding Countryside Lane, Flat 6\",M1 1AB,1955-10-25,9787.38,Y,RETAIL\n00100245,\"Anna Smith\",\"24 Long Winding Countryside Lane, Flat 7\",EC2V 7AB,1997-10-18,30208.76,Y,PREMIER\n00100246,\"Sophie Adeyemi\",\"28 Avenue des Champs-Elysees, Flat 3\",M1 9AB,1997-01-22,48063.42,Y,PREMIER\n00100247,\"Wei Martin-Zhang\",\"155 High Street\",EC2V 1AB,1955-05-18,20583.98,N,SME\n00100248,\"Chiara Khan\",\"106 Hauptstrasse\",SW1A 9AB,1969-01-15,34767.27,N,RETAIL\n00100249,\"John Adeyemi-Khan\",\"160 Hauptstrasse\",LS6 9AB,1993-10-07,31869.90,Y,PREMIER\n00100250,\"Lars Garcia\",\"74 Station Road\",EC2V 6AB,1950-10-24,47107.28,Y,PREMIER\n00100251,\"Anna Garcia\",\"112 Hauptstrasse\",M1 7AB,1949-06-15,4893.03,Y,SME\n00100252,\"Olu Khan\",\"143 Station Road\",M1 6AB,1951-07-05,42885.31,N,RETAIL\n00100253,\"Chiara Zhang\",\"142 Station Road\",M1 2AB,1958-10-23,4902.12,N,PREMIER\n00100254,\"Sophie Smith\",\"93 Avenue des Champs-Elysees, Flat 27\",EC2V 1AB,1983-02-28,2139.34,Y,SME\n00100255,\"Fatima Sharma-Adeyemi\",\"199 High Street, Flat 27\",M1 5AB,1975-04-19,23885.90,Y,SME\n00100256,\"Fatima Rossi-Rossi\",\"199 Hauptstrasse, Flat 1\",M1 8AB,1954-10-01,21784.22,N,SME\n00100257,\"John Mueller-Rossi\",\"119 Station Road, Flat 27\",LS6 3AB,1982-08-27,14194.56,N,RETAIL\n00100258,\"Lars Garcia\",\"62 Avenue des Champs-Elysees, Flat 24\",LS6 7AB,1998-06-20,27812.96,N,SME\n00100259,\"Chiara Smith\",\"9 Avenue des Champs-Elysees\",M1 4AB,1956-12-19,20663.27,N,PREMIER\n00100260,\"Olu Khan-Smith\",\"47 Avenue des Champs-Elysees\",LS6 3AB,1989-03-12,34939.43,Y,PREMIER\n00100261,\"Anna Adeyemi\",\"115 Hauptstrasse, Flat 12\",LS6 1AB,1994-06-05,14925.66,N,RETAIL\n00100262,\"Rahul Sharma-Zhang\",\"128 Long Winding Countryside Lane, Flat 24\",SW1A 2AB,1944-08-17,37241.21,N,RETAIL\n00100263,\"Fatima Adeyemi\",\"167 High Street, Flat 18\",M1 2AB,1948-10-16,18098.64,Y,SME\n00100264,\"Olu Nilsson-Adeyemi\",\"41 High Street\",LS6 3AB,1955-04-15,11491.81,Y,SME\n00100265,\"Olu Sharma\",\"156 High Street, Flat 7\",LS6 5AB,1970-10-05,6619.89,Y,PREMIER\n00100266,\"Rahul Mueller\",\"34 Avenue des Champs-Elysees, Flat 5\",LS6 7AB,1955-06-05,36802.10,Y,PREMIER\n00100267,\"Fatima Adeyemi\",\"112 Long Winding Countryside Lane\",LS6 8AB,1954-04-21,13788.21,Y,RETAIL\n00100268,\"Chiara Mueller-Khan\",\"45 Station Road\",EC2V 1AB,1969-12-05,40840.57,Y,SME\n00100269,\"Maria Khan\",\"168 Avenue des Champs-Elysees\",M1 3AB,1997-09-26,6770.42,N,RETAIL\n00100270,\"Fatima Zhang-Zhang\",\"22 High Street\",EC2V 9AB,1990-12-20,16562.84,Y,RETAIL\n00100271,\"Wei Nilsson\",\"186 Hauptstrasse\",SW1A 3AB,1951-09-03,28149.50,N,SME\n00100272,\"John Zhang\",\"158 High Street\",EC2V 9AB,1998-12-12,43378.97,N,RETAIL\n00100273,\"Rahul Garcia\",\"162 Hauptstrasse\",SW1A 4AB,1977-12-17,39379.40,Y,PREMIER\n00100274,\"Lars Nilsson\",\"39 Long Winding Countryside Lane\",M1 2AB,1961-11-16,42211.95,N,RETAIL\n00100275,\"Chiara Khan\",\"81 High Street\",SW1A 4AB,1990-02-17,18300.64,N,RETAIL\n00100276,\"Olu Martin\",\"158 Hauptstrasse, Flat 30\",M1 4AB,1979-12-21,8382.95,N,SME\n00100277,\"Wei Rossi-Mueller\",\"5 Long Winding Countryside Lane\",M1 5AB,1966-09-25,36427.92,Y,SME\n00100278,\"John Mueller\",\"61 High Street\",SW1A 2AB,1979-08-23,35714.07,N,RETAIL\n00100279,\"Rahul Nilsson\",\"71 High Street\",EC2V 7AB,1942-03-07,9455.19,N,PREMIER\n00100280,\"Wei Khan\",\"139 High Street\",SW1A 3AB,1977-01-03,14337.23,Y,SME\n00100281,\"Maria Mueller\",\"162 High Street\",LS6 2AB,1969-10-04,23876.91,N,RETAIL\n00100282,\"Anna Mueller\",\"43 Avenue des Champs-Elysees, Flat 26\",LS6 2AB,1998-03-11,47224.12,Y,RETAIL\n00100283,\"Rahul Rossi\",\"23 Avenue des Champs-Elysees\",M1 1AB,1944-07-24,4585.68,Y,RETAIL\n00100284,\"Rahul Rossi-Nilsson\",\"134 Hauptstrasse\",LS6 3AB,1976-03-07,42937.14,N,PREMIER\n00100285,\"Olu Sharma\",\"35 Long Winding Countryside Lane\",LS6 6AB,1955-03-07,49021.30,Y,PREMIER\n00100286,\"Rahul Smith\",\"2 Station Road\",LS6 8AB,1958-01-23,1920.53,N,RETAIL\n00100287,\"Chiara Garcia\",\"188 Long Winding Countryside Lane\",EC2V 8AB,1981-11-11,27660.66,Y,SME\n00100288,\"Sophie Martin\",\"17 Station Road\",M1 4AB,1945-10-11,49900.63,Y,SME\n00100289,\"Rahul Zhang\",\"94 Hauptstrasse\",EC2V 2AB,1980-09-06,29630.33,Y,RETAIL\n00100290,\"Wei Garcia\",\"161 High Street, Flat 20\",EC2V 7AB,1976-07-04,20052.58,N,SME\n00100291,\"Olu Rossi\",\"44 Long Winding Countryside Lane\",EC2V 7AB,1968-10-17,40028.69,N,RETAIL\n00100292,\"Rahul Sharma\",\"100 Hauptstrasse, Flat 21\",LS6 3AB,1961-02-17,7436.13,N,PREMIER\n00100293,\"Wei Martin\",\"106 High Street\",EC2V 1AB,1945-12-17,44249.31,Y,SME\n00100294,\"Anna Nilsson-Mueller\",\"22 High Street\",M1 9AB,1985-08-21,34514.75,Y,RETAIL\n00100295,\"Sophie Smith\",\"96 Long Winding Countryside Lane\",LS6 2AB,1960-06-25,48947.35,Y,PREMIER\n00100296,\"Fatima Mueller\",\"193 Long Winding Countryside Lane\",EC2V 9AB,1953-06-09,2493.86,N,PREMIER\n00100297,\"Anna Rossi\",\"126 Station Road\",M1 6AB,1984-12-03,19342.45,Y,PREMIER\n00100298,\"Chiara Garcia-Adeyemi\",\"117 High Street, Flat 24\",SW1A 9AB,1996-06-07,25921.79,N,PREMIER\n00100299,\"Wei Mueller\",\"107 Hauptstrasse\",EC2V 6AB,1945-08-09,28951.85,Y,PREMIER\n","target":"cust_no,customer_name,address,post_code,dob,balance_amt,consent_marketing,segment\n100000,\"Fatima Khan\",\"119 Long Winding Countryside Lane\",SW1A 5AB,14/06/1976,\"42,176.03\",true,sme\n100001,\"Rahul Sharma\",\"80 Station Road\",SW1A 6AB,24/06/1974,\"40,269.24\",false,retail\n100002,\"Maria Mueller\",\"196 Station Road, Fl\",EC2V 5AB,05/11/1974,\"42,485.35\",false,premier\n100003,\"Anna Adeyemi\",\"106 Station Road\",M1 1AB,13/01/1978,\"31,739.63\",false,premier\n100004,\"John Mueller\",\"84 Hauptstrasse\",M1 4AB,04/02/1990,\"31,511.33\",false,retail\n100005,\"John Martin\",\"126 Avenue des Champs-Elysees\",M1 4AB,01/07/1958,\"44,035.46\",true,premier\n100006,\"Anna Rossi\",\"103 High Street\",M1 8AB,17/08/1997,\"28,659.35\",true,retail\n100007,\"Lars Martin\",\"28 High Street\",LS6 4AB,22/05/1995,\"32,691.47\",true,retail\n100008,\"Wei Nilsson\",\"144 Station Road, Flat 17\",EC2V 2AB,22/12/1988,\"252.10\",true,sme\n100009,\"Chiara Nilsson-Zhang\",\"99 High Street\",SW1A 1AB,20/08/1999,\"41749.21\",false,sme\n100010,\"Rahul Khan\",\"84 Avenue des Champs-Elysees, Flat 2\",EC2V 3AB,12/09/1965,\"16,907.83\",true,premier\n100011,\"Maria Zhang\",\"137 Station Road\",M1 1AB,24/02/1947,\"6,783.40\",false,retail\n100012,\"Olu Rossi\",\"20 High Street\",SW1A 2AB,25/02/1960,\"31,949.76\",false,premier\n100013,\"Chiara Smith\",\"46 Station Road, Flat 19\",SW1A 6AB,15/11/1997,\"43,805.20\",true,premier\n100014,\"Maria Martin-Adeyemi\",\"95 Long Winding Countryside Lane\",EC2V 5AB,06/02/1966,\"4,737.16\",true,sme\n100015,\"Fatima Garcia\",\"16 Long Winding Countryside Lane, Flat 2\",EC2V 4AB,04/05/1948,\"44,854.35\",true,premier\n100016,\"John Khan\",\"52 Avenue des Champs-Elysees\",EC2V 5AB,07/02/1964,\"31,624.80\",true,retail\n100017,\"Rahul Garcia\",\"157 Hauptstrasse\",M1 4AB,10/12/1985,\"35,523.69\",true,retail\n100018,\"Lars Mueller\",\"183 High Street\",EC2V 7AB,28/10/1974,\"22,181.51\",true,retail\n100019,\"Chiara Mueller\",\"25 Avenue des Champs-Elysees\",EC2V 9AB,03/02/1984,\"8,434.40\",true,sme\n100020,\"Lars Garcia\",\"144 Hauptstrasse\",LS6 5AB,11/07/1988,\"14,368.36\",false,retail\n100021,\"Wei Nilsson\",\"39 Hauptstrasse, Flat 10\",SW1A 8AB,02/16/1963,\"22,426.25\",true,retail\n100022,\"John Martin\",\"182 Station Road\",M1 1AB,23/07/1962,\"35,407.04\",false,sme\n100024,\"Anna Mueller\",\"101 High Street\",LS6 3AB,05/02/1960,\"1,629.01\",true,sme\n100025,\"John Adeyemi\",\"63 Hauptstrasse\",M1 4AB,12/06/1982,\"21,070.20\",false,retail\n100026,\"Anna Nilsson-Nilsson\",\"45 Long Winding Countryside Lane\",SW1A 9AB,06/05/1964,\"624.39\",false,retail\n100027,\"Olu Adeyemi-Martin\",\"80 Avenue des Champs-Elysees\",EC2V 1AB,02/04/1941,\"14,866.81\",false,premier\n100028,\"Fatima Nilsson\",\"187 High Street\",SW1A 7AB,18/02/1958,\"13,016.51\",true,premier\n100029,\"Maria Garcia-Mueller\",\"12 Station Road\",EC2V 9AB,09/09/1983,\"33,460.15\",true,sme\n100030,\"Chiara Sharma\",\"187 Station Road, Flat 26\",LS6 3AB,14/02/1940,\"1,993.33\",false,sme\n100031,\"Fatima Garcia\",\"194 Hauptstrasse, Flat 10\",EC2V 5AB,02/12/1988,\"13,824.46\",true,sme\n100032,\"Wei Sharma\",\"114 Avenue des Champs-Elysees\",EC2V 9AB,17/03/1948,\"39732.92\",true,retail\n100033,\"John Adeyemi\",\"58 Avenue des Champs\",EC2V 4AB,10/02/1983,\"11,487.04\",false,retail\n100034,\"Fatima Garcia-Adeyemi\",\"139 High Street\",SW1A 1AB,01/01/1950,\"46,702.24\",false,sme\n100035,\"Lars Rossi\",\"10 Station Road, Flat 9\",EC2V 3AB,14/11/1947,\"43,894.02\",false,retail\n100036,\"Lars Mueller\",\"141 Long Winding Countryside Lane\",M1 4AB,28/07/1952,\"10,192.98\",true,retail\n100037,\"John Rossi\",\"84 Station Road, Flat 21\",EC2V 3AB,16/01/1947,\"9,897.91\",false,premier\n100038,\"Olu Sharma\",\"81 Station Road, Flat 25\",SW1A 6AB,17/07/1945,\"36,570.46\",true,premier\n100039,\"Rahul Rossi\",\"151 Hauptstrasse\",M1 7AB,12/04/1940,\"33,282.59\",true,premier\n100040,\"Lars Adeyemi-Rossi\",\"156 Avenue des Champs-Elysees\",SW1A 2AB,13/02/1972,\"20,409.99\",true,retail\n100041,\"Chiara Nilsson\",\"24 High Street, Flat 18\",LS6 7AB,14/04/1951,\"4,311.92\",true,sme\n100042,\"Wei Mueller\",\"95 Long Winding Countryside Lane\",SW1A 9AB,06/03/1972,\"15,613.82\",true,sme\n100043,\"Rahul Khan\",\"119 Long Winding Countryside Lane\",LS6 4AB,18/12/1943,\"5,558.94\",true,retail\n100044,\"Lars Nilsson\",\"113 Hauptstrasse\",EC2V 1AB,16/02/1988,\"46,687.19\",false,sme\n100045,\"John Martin\",\"149 Long Winding Countryside Lane, Flat 8\",M1 3AB,16/09/1967,\"45,333.58\",true,retail\n100046,\"Lars Nilsson\",\"39 High Street\",M1 3AB,20/09/1957,\"47,552.75\",true,retail\n100047,\"Anna Khan-Rossi\",\"136 Hauptstrasse\",SW1A 7AB,09/09/1999,\"14,447.76\",true,premier\n100048,\"Anna Khan-Khan\",\"175 Long Winding Countryside Lane\",EC2V 8AB,25/06/1970,\"5,503.45\",false,premier\n100049,\"Maria Sharma-Nilsson\",\"124 Long Winding Countryside Lane\",SW1A 5AB,18/07/1994,\"44,190.31\",true,retail\n100050,\"Rahul Garcia\",\"128 Avenue des Champs-Elysees, Flat 1\",EC2V 2AB,17/10/1976,\"4,162.53\",false,retail\n100051,\"Maria Zhang-Mueller\",\"191 High Street, Flat 28\",SW1A 1AB,07/03/1999,\"42,145.49\",false,sme\n100052,\"Chiara Martin\",\"45 Avenue des Champs-Elysees\",LS6 2AB,14/09/1941,\"12,836.36\",true,premier\n100053,\"Anna Adeyemi\",\"13 Station Road, Flat 28\",SW1A 6AB,24/10/1966,\"3,219.73\",false,retail\n100054,\"Sophie Garcia-Adeyemi\",\"102 Avenue des Champs-Elysees\",M1 4AB,28/10/1972,\"24,072.97\",false,sme\n100055,\"Maria Rossi-Adeyemi\",\"120 Hauptstrasse\",EC2V 8AB,27/06/1995,\"1,151.73\",true,retail\n100056,\"Chiara Garcia\",\"136 Hauptstrasse\",EC2V 8AB,05/11/1941,\"11,676.91\",false,premier\n100057,\"Olu Rossi\",\"168 Long Winding Countryside Lane, Flat 30\",LS6 4AB,24/09/1982,\"15,647.02\",false,retail\n100058,\"Maria Adeyemi\",\"198 High Street, Flat 16\",SW1A 7AB,26/10/1987,\"24,071.10\",false,sme\n100059,\"Chiara Zhang\",\"119 Avenue des Champs-Elysees\",LS6 2AB,12/08/1957,\"21,842.03\",false,retail\n100060,\"Fatima Zhang\",\"28 Long Winding Countryside Lane, Flat 10\",LS6 6AB,15/04/1992,\"44,165.08\",true,sme\n100061,\"Lars Smith-Zhang\",\"66 Long Winding Countryside Lane\",SW1A 4AB,09/09/1991,\"24,332.27\",true,sme\n100062,\"Wei Smith\",\"97 High Street\",SW1A 1AB,09/06/1972,\"32,020.20\",true,sme\n100063,\"Sophie Zhang\",\"188 Avenue des Champ\",SW1A 6AB,11/11/1972,\"16,772.13\",true,premier\n100064,\"Chiara Martin-Smith\",\"86 Long Winding Countryside Lane\",LS6 8AB,13/06/1944,\"10,250.44\",true,retail\n100065,\"Anna Smith-Martin\",\"6 Station Road\",EC2V 3AB,16/04/1993,\"27,303.82\",true,premier\n100066,\"Sophie Garcia\",\"178 Avenue des Champs-Elysees, Flat 30\",SW1A 1AB,09/03/1991,\"47,998.89\",false,sme\n100067,\"Sophie Sharma\",\"179 Station Road\",LS6 4AB,21/10/1969,\"11,214.71\",false,premier\n100068,\"Rahul Rossi\",\"181 Hauptstrasse\",LS6 5AB,13/03/1997,\"20,873.19\",true,premier\n100069,\"Fatima Garcia\",\"5 Long Winding Countryside Lane, Flat 1\",EC2V 8AB,18/01/1940,\"1,561.88\",false,retail\n100070,\"Olu Rossi\",\"40 Hauptstrasse\",SW1A 9AB,05/03/1978,\"48,658.37\",false,premier\n100071,\"Rahul Sharma\",\"101 Avenue des Champs-Elysees\",EC2V 2AB,12/05/1957,\"9,564.49\",true,premier\n100072,\"Maria Martin-Nilsson\",\"94 Hauptstrasse\",M1 7AB,18/12/1955,\"9,034.27\",false,premier\n100074,\"Rahul Mueller-Rossi\",\"17 High Street\",LS6 9AB,16/04/1971,\"44,344.77\",false,premier\n100075,\"Lars Adeyemi\",\"128 Long Winding Countryside Lane\",LS6 7AB,06/02/1991,\"4,195.75\",false,retail\n100076,\"John Zhang\",\"119 Long Winding Countryside Lane\",SW1A 1AB,26/04/1969,\"40,610.74\",true,premier\n100077,\"Fatima Zhang\",\"127 High Street\",EC2V 2AB,08/05/1980,\"8,881.97\",true,premier\n100078,\"Wei Khan\",\"191 Hauptstrasse\",EC2V 7AB,10/11/1962,\"33,944.55\",true,retail\n100079,\"Olu Mueller-Adeyemi\",\"189 Long Winding Countryside Lane\",SW1A 2AB,21/11/1993,\"15,820.67\",true,sme\n100080,\"Olu Nilsson\",\"4 High Street\",M1 6AB,04/11/1942,\"17,724.78\",true,sme\n100081,\"Anna Sharma-Sharma\",\"25 Hauptstrasse\",M1 5AB,25/04/1993,\"6,815.59\",true,sme\n100082,\"Olu Nilsson\",\"73 High Street\",M1 2AB,07/03/1970,\"33,902.75\",true,premier\n100083,\"Rahul Smith\",\"73 Long Winding Countryside Lane, Flat 26\",EC2V 7AB,12/07/1975,\"6,784.09\",false,retail\n100084,\"Lars Mueller\",\"94 High Street\",M1 1AB,12/01/1959,\"49,888.40\",false,sme\n100085,\"Rahul Rossi\",\"2 High Street\",SW1A 9AB,08/12/1942,\"10,313.21\",false,retail\n100086,\"Chiara Sharma\",\"86 Hauptstrasse, Flat 29\",LS6 3AB,07/28/1963,\"30,344.25\",false,retail\n100087,\"Rahul Khan\",\"10 Station Road\",LS6 4AB,16/03/1968,\"4,788.03\",false,sme\n100088,\"Wei Mueller\",\"189 Hauptstrasse\",SW1A 8AB,08/24/1987,\"46,637.16\",true,premier\n100089,\"Fatima Garcia\",\"185 Hauptstrasse\",SW1A 8AB,04/06/1966,\"5,875.22\",true,sme\n100090,\"Maria Garcia\",\"192 Station Road, Flat 21\",EC2V 7AB,24/12/1946,\"5,161.90\",false,retail\n100091,\"Lars Khan\",\"132 Long Winding Countryside Lane\",LS6 2AB,05/11/1976,\"33,362.83\",true,sme\n100092,\"Fatima Martin\",\"88 High Street\",SW1A 3AB,28/03/1975,\"2,663.26\",true,premier\n100093,\"Wei Khan\",\"139 Long Winding Countryside Lane\",LS6 8AB,05/12/1959,\"7,424.76\",false,retail\n100094,\"Olu Sharma-Nilsson\",\"5 Long Winding Countryside Lane, Flat 7\",LS6 7AB,26/04/1991,\"20795.11\",false,sme\n100095,\"Lars Nilsson\",\"46 Hauptstrasse, Flat 12\",SW1A 4AB,20/10/1962,\"27,225.37\",true,sme\n100096,\"Chiara Sharma\",\"38 Avenue des Champs-Elysees\",LS6 1AB,14/01/1979,\"38,593.59\",false,retail\n100097,\"John Mueller\",\"17 Long Winding Countryside Lane\",SW1A 5AB,05/07/1999,\"13,896.19\",true,sme\n100098,\"Olu Rossi\",\"25 Avenue des Champs-Elysees, Flat 21\",M1 7AB,15/01/1977,\"31,202.57\",false,sme\n100099,\"Wei Martin\",\"21 Hauptstrasse, Flat 5\",M1 3AB,21/10/1974,\"10,591.36\",true,retail\n100100,\"Chiara Nilsson-Sharma\",\"129 Avenue des Champs-Elysees\",SW1A 6AB,15/09/1971,\"37,512.21\",false,retail\n100101,\"Rahul Khan\",\"21 High Street, Flat\",M1 6AB,26/06/1964,\"28,765.72\",true,sme\n100102,\"Fatima Mueller\",\"113 Avenue des Champs-Elysees, Flat 8\",M1 3AB,04/05/1992,\"33,280.05\",true,retail\n100103,\"Fatima Rossi\",\"77 Hauptstrasse\",SW1A 8AB,26/12/1966,\"15,637.90\",false,sme\n100104,\"Lars Martin-Mueller\",\"59 Avenue des Champs-Elysees\",LS6 9AB,18/12/1959,\"7,591.95\",false,sme\n100105,\"Anna Garcia\",\"108 Hauptstrasse\",LS6 1AB,15/12/1950,\"48,640.21\",true,premier\n100106,\"Anna Adeyemi-Mueller\",\"54 High Street\",SW1A 7AB,26/07/1967,\"34,533.00\",true,premier\n100107,\"Wei Martin\",\"109 Long Winding Countryside Lane\",M1 5AB,23/01/1974,\"11,442.68\",false,retail\n100108,\"Sophie Rossi\",\"2 Hauptstrasse, Flat 26\",EC2V 7AB,04/19/1990,\"35,783.70\",true,sme\n100109,\"Anna Nilsson-Smith\",\"27 High Street, Flat 22\",M1 1AB,19/11/1996,\"28,275.07\",true,sme\n100110,\"Maria Rossi\",\"46 Avenue des Champs-Elysees, Flat 14\",LS6 2AB,15/07/1944,\"22,649.67\",false,premier\n100111,\"Chiara Adeyemi\",\"63 Station Road\",M1 5AB,26/12/1950,\"43,114.35\",true,sme\n100112,\"John Garcia\",\"165 Station Road\",LS6 2AB,14/03/1981,\"17,373.02\",true,premier\n100113,\"Maria Sharma\",\"43 High Street\",M1 2AB,06/09/1983,\"42,229.05\",true,retail\n100114,\"Fatima Garcia-Zhang\",\"105 Station Road, Flat 3\",LS6 9AB,02/06/1957,\"24,903.18\",false,sme\n100115,\"Chiara Mueller\",\"90 Hauptstrasse\",EC2V 9AB,21/11/1953,\"8,621.95\",false,retail\n100116,\"Maria Nilsson\",\"153 Long Winding Countryside Lane\",LS6 4AB,17/01/1946,\"9,314.67\",false,retail\n100117,\"Lars Mueller\",\"169 Long Winding Countryside Lane, Flat 1\",LS6 4AB,06/07/1977,\"19,569.95\",true,retail\n100118,\"Rahul Smith\",\"154 Hauptstrasse\",LS6 7AB,05/09/1992,\"40,795.01\",true,sme\n100119,\"Sophie Khan\",\"109 Station Road, Flat 2\",EC2V 4AB,05/08/1973,\"2,844.37\",false,retail\n100120,\"Olu Martin\",\"145 Avenue des Champs-Elysees\",SW1A 3AB,25/10/1953,\"25,534.77\",true,retail\n100121,\"Wei Zhang\",\"83 Avenue des Champs-Elysees\",LS6 4AB,17/04/1964,\"20,164.58\",false,premier\n100122,\"Olu Khan\",\"179 Avenue des Champs-Elysees, Flat 1\",LS6 5AB,15/08/1975,\"31,811.15\",true,premier\n100123,\"Wei Smith-Khan\",\"153 Avenue des Champs-Elysees\",LS6 6AB,11/02/1962,\"44,274.89\",false,sme\n100124,\"Sophie Mueller\",\"93 Long Winding Countryside Lane\",SW1A 2AB,11/11/1942,\"14,856.91\",true,retail\n100125,\"Rahul Khan\",\"128 Station Road, Flat 8\",LS6 8AB,14/09/1988,\"4,448.02\",true,premier\n100126,\"Anna Khan\",\"4 Station Road, Flat\",LS6 8AB,16/02/1967,\"18,188.77\",true,premier\n100127,\"Olu Mueller\",\"30 Hauptstrasse\",M1 6AB,19/05/1953,\"27,705.93\",false,retail\n100128,\"John Adeyemi\",\"1 Long Winding Countryside Lane\",EC2V 1AB,21/08/1974,\"33,597.23\",true,premier\n100129,\"Olu Zhang\",\"21 Avenue des Champs-Elysees\",LS6 5AB,07/02/1950,\"46,421.01\",false,retail\n100130,\"Fatima Zhang-Adeyemi\",\"71 Station Road\",M1 8AB,23/12/1984,\"8,822.62\",true,retail\n100131,\"Maria Rossi\",\"88 High Street, Flat 10\",SW1A 4AB,06/21/1950,\"46,792.45\",false,premier\n100132,\"Chiara Smith\",\"183 Avenue des Champs-Elysees\",SW1A 9AB,27/07/1945,\"44,712.20\",false,premier\n100133,\"John Khan\",\"133 Station Road\",M1 4AB,22/12/1998,\"21,621.37\",true,sme\n100134,\"Lars Garcia\",\"21 Long Winding Countryside Lane\",LS6 1AB,09/04/1949,\"41,852.37\",true,sme\n100135,\"Fatima Martin\",\"163 High Street\",M1 7AB,14/12/1984,\"44,275.80\",false,sme\n100136,\"John Adeyemi\",\"26 Hauptstrasse, Flat 1\",M1 3AB,15/11/1957,\"31,678.61\",true,premier\n100137,\"Maria Garcia\",\"79 Hauptstrasse\",EC2V 6AB,14/11/1970,\"41,976.07\",true,retail\n100138,\"Maria Smith-Sharma\",\"146 Hauptstrasse\",SW1A 4AB,11/09/1963,\"17,507.89\",true,premier\n100139,\"Fatima Garcia\",\"163 Long Winding Countryside Lane\",SW1A 8AB,08/07/1964,\"28,626.57\",false,premier\n100140,\"Rahul Martin\",\"31 High Street\",EC2V 9AB,17/08/1992,\"7,182.72\",true,sme\n100141,\"Rahul Rossi-Khan\",\"60 Long Winding Countryside Lane\",EC2V 9AB,08/04/1998,\"19,139.18\",false,premier\n100142,\"Wei Rossi\",\"62 High Street, Flat 3\",SW1A 7AB,20/11/1953,\"5,953.64\",false,premier\n100143,\"Rahul Khan\",\"18 Avenue des Champs-Elysees\",SW1A 1AB,13/02/1965,\"20,824.85\",true,premier\n100144,\"John Khan\",\"200 Station Road\",SW1A 3AB,26/03/1996,\"47,254.60\",true,premier\n100145,\"Wei Sharma\",\"125 Station Road\",SW1A 6AB,09/12/1991,\"8,993.60\",true,premier\n100146,\"Maria Mueller\",\"132 Station Road\",SW1A 7AB,02/05/1985,\"27,815.19\",false,premier\n100147,\"Zhang Anna\",\"91 Station Road\",M1 7AB,06/06/1981,\"4,152.82\",true,retail\n100148,\"John Rossi\",\"194 Station Road\",LS6 3AB,08/01/1947,\"47,610.42\",true,retail\n100149,\"Rahul Nilsson\",\"186 Long Winding Countryside Lane\",LS6 4AB,21/02/1966,\"7,295.43\",false,premier\n100150,\"Chiara Sharma\",\"163 Long Winding Countryside Lane\",LS6 3AB,07/02/1948,\"32,331.20\",true,sme\n100151,\"John Nilsson\",\"75 Station Road\",EC2V 9AB,08/09/1975,\"21,630.13\",false,sme\n100152,\"Chiara Khan\",\"164 Long Winding Countryside Lane\",EC2V 7AB,21/06/1980,\"14,945.41\",false,sme\n100153,\"Sophie Adeyemi\",\"115 Long Winding Countryside Lane\",M1 6AB,12/08/1962,\"19,979.46\",true,premier\n100154,\"John Garcia\",\"27 Station Road\",SW1A 5AB,14/05/1961,\"1,740.32\",true,retail\n100155,\"Sophie Garcia\",\"88 Avenue des Champs-Elysees\",M1 4AB,17/05/1949,\"3,253.18\",true,sme\n100156,\"Chiara Rossi-Martin\",\"119 Hauptstrasse\",EC2V 4AB,25/11/1995,\"49,189.23\",true,retail\n100157,\"Chiara Garcia\",\"28 High Street\",LS6 3AB,06/08/1946,\"39,443.12\",false,sme\n100158,\"Fatima Smith\",\"35 Avenue des Champs-Elysees\",SW1A 1AB,11/03/1988,\"7,597.04\",false,premier\n100159,\"Lars Adeyemi\",\"115 Hauptstrasse, Flat 11\",LS6 7AB,02/09/1958,\"44,818.97\",true,retail\n100160,\"Anna Rossi\",\"129 Station Road\",LS6 3AB,09/10/1990,\"21,304.36\",true,premier\n100161,\"Chiara Smith\",\"125 Station Road, Flat 14\",M1 1AB,24/01/1962,\"46,894.27\",true,sme\n100162,\"Olu Adeyemi\",\"93 Station Road\",EC2V 1AB,05/17/1998,\"16,927.86\",false,sme\n100163,\"Rahul Adeyemi\",\"96 Long Winding Countryside Lane\",M1 2AB,14/10/1999,\"5,623.16\",true,retail\n100164,\"Lars Smith\",\"30 Long Winding Countryside Lane, Flat 8\",LS6 8AB,13/02/1965,\"28,011.90\",true,premier\n100165,\"Chiara Sharma\",\"170 Hauptstrasse\",SW1A 8AB,25/06/1973,\"13,219.37\",true,premier\n100166,\"Chiara Zhang\",\"110 High Street\",LS6 1AB,06/04/1969,\"28,473.17\",true,retail\n100167,\"Rahul Zhang\",\"11 High Street\",SW1A 2AB,24/10/1981,\"43,834.16\",false,retail\n100168,\"Olu Adeyemi-Martin\",\"161 High Street\",EC2V 5AB,14/03/1945,\"22,016.88\",false,sme\n100169,\"Fatima Sharma-Martin\",\"179 Avenue des Champs-Elysees\",SW1A 5AB,11/10/1983,\"30,945.81\",true,retail\n100170,\"Anna Khan\",\"130 Long Winding Countryside Lane, Flat 14\",SW1A 3AB,07/04/1996,\"47,786.93\",true,sme\n100171,\"Fatima Nilsson\",\"90 Avenue des Champs-Elysees, Flat 10\",EC2V 5AB,16/08/1983,\"49,967.99\",true,premier\n100172,\"Wei Zhang-Khan\",\"194 Avenue des Champs-Elysees, Flat 26\",LS6 9AB,07/04/1977,\"701.03\",false,retail\n100173,\"Olu Sharma\",\"112 High Street\",SW1A 6AB,26/03/1970,\"49,330.28\",true,premier\n100174,\"Rahul Rossi\",\"48 Station Road, Flat 9\",LS6 3AB,15/10/1945,\"11,419.92\",true,retail\n100175,\"Fatima Garcia\",\"72 Long Winding Countryside Lane, Flat 19\",EC2V 2AB,05/07/1991,\"376.65\",true,premier\n100176,\"Wei Martin\",\"70 High Street\",EC2V 3AB,24/12/1994,\"27,134.02\",true,retail\n100177,\"Rahul Nilsson\",\"182 High Street\",M1 3AB,26/02/1946,\"28,026.25\",false,retail\n100178,\"John Nilsson\",\"119 High Street, Flat 27\",SW1A 4AB,25/06/1979,\"48,405.13\",true,sme\n100179,\"Chiara Nilsson-Garcia\",\"43 Long Winding Countryside Lane\",EC2V 2AB,06/15/1990,\"20,436.35\",true,retail\n100180,\"Maria Smith-Zhang\",\"60 Avenue des Champs-Elysees\",SW1A 5AB,03/09/1961,\"902.76\",true,sme\n100181,\"Chiara Martin-Rossi\",\"51 Avenue des Champs-Elysees\",SW1A 2AB,05/04/1951,\"49,555.38\",true,sme\n100182,\"Wei Khan-Zhang\",\"134 Avenue des Champs-Elysees, Flat 19\",M1 5AB,12/07/1997,\"5,202.92\",false,premier\n100183,\"Sophie Mueller\",\"1 Hauptstrasse\",SW1A 8AB,12/08/1986,\"19,442.31\",,sme\n100184,\"Wei Rossi\",\"194 Avenue des Champs-Elysees\",EC2V 3AB,16/09/1962,\"38,006.94\",true,retail\n100185,\"Fatima Rossi\",\"193 High Street\",SW1A 4AB,03/12/1967,\"39,052.86\",false,retail\n100186,\"Anna Smith\",\"157 Long Winding Countryside Lane\",EC2V 2AB,08/12/1950,\"29,371.07\",false,retail\n100187,\"John Nilsson\",\"59 High Street\",SW1A 6AB,11/08/1978,\"25,245.04\",true,premier\n100188,\"Anna Martin\",\"111 High Street\",LS6 8AB,27/04/1992,\"42,762.09\",true,premier\n100189,\"Chiara Rossi\",\"1 Hauptstrasse\",LS6 6AB,07/07/1940,\"35,998.05\",true,premier\n100190,\"Wei Sharma\",\"58 High Street\",EC2V 7AB,02/08/1966,\"26,656.14\",true,retail\n100191,\"John Sharma-Nilsson\",\"14 Station Road\",SW1A 9AB,02/12/1978,\"30,124.73\",false,sme\n100192,\"Maria Martin\",\"68 Avenue des Champs\",LS6 3AB,20/09/1959,\"44,097.47\",true,sme\n100193,\"Wei Rossi\",\"172 Station Road\",LS6 5AB,11/04/1944,\"17,220.94\",true,sme\n100194,\"Fatima Garcia\",\"170 Long Winding Countryside Lane, Flat 10\",M1 9AB,23/03/1996,\"33,428.33\",true,premier\n100195,\"Lars Martin\",\"173 Avenue des Champs-Elysees\",M1 8AB,01/09/1977,\"18,582.84\",true,retail\n100196,\"Rahul Khan\",\"77 High Street, Flat 27\",LS6 3AB,22/04/1995,\"25424.27\",true,premier\n100197,\"Sophie Nilsson\",\"119 Avenue des Champs-Elysees, Flat 1\",SW1A 3AB,05/08/1976,\"13,048.03\",true,premier\n100198,\"Lars Adeyemi\",\"179 Hauptstrasse\",M1 7AB,24/01/1980,\"49,259.21\",false,retail\n100199,\"Fatima Adeyemi\",\"137 High Street\",EC2V 6AB,06/11/1994,\"6,470.29\",true,premier\n100200,\"Sophie Nilsson\",\"148 Long Winding Countryside Lane\",LS6 3AB,04/02/1976,\"22,518.77\",false,retail\n100201,\"Maria Adeyemi\",\"41 Avenue des Champs-Elysees, Flat 6\",SW1A 4AB,28/02/1966,\"47,039.92\",true,premier\n100202,\"Rahul Smith\",\"126 Hauptstrasse\",LS6 8AB,06/04/1959,\"5,838.92\",true,sme\n100203,\"Anna Garcia\",\"170 Long Winding Countryside Lane\",M1 9AB,18/11/1951,\"6,757.26\",true,sme\n100204,\"Maria Nilsson\",\"11 High Street\",M1 4AB,18/03/1998,\"8,958.59\",true,retail\n100205,\"Sophie Rossi\",\"44 High Street\",LS6 5AB,10/02/1975,\"15,056.04\",false,sme\n100206,\"Maria Smith-Smith\",\"109 Station Road, Flat 11\",EC2V 4AB,19/07/1943,\"3,876.15\",,sme\n100207,\"Rahul Rossi\",\"72 Long Winding Countryside Lane\",M1 2AB,12/01/1982,\"9,184.57\",false,premier\n100208,\"Fatima Adeyemi\",\"134 Avenue des Champs-Elysees\",EC2V 9AB,12/06/1985,\"29,672.63\",true,premier\n100209,\"John Nilsson\",\"166 Avenue des Champs-Elysees, Flat 1\",EC2V 7AB,25/01/1940,\"41,187.65\",false,retail\n100210,\"Anna Mueller\",\"196 High Street\",M1 7AB,21/05/1967,\"12,076.06\",false,premier\n100211,\"Maria Garcia\",\"68 Hauptstrasse\",LS6 9AB,17/03/1940,\"31,797.97\",false,retail\n100212,\"Sophie Smith\",\"180 High Street\",EC2V 8AB,19/03/1992,\"33,172.72\",false,premier\n100213,\"Fatima Zhang\",\"165 Station Road, Flat 23\",EC2V 8AB,05/10/1940,\"23,233.73\",true,premier\n100214,\"Fatima Garcia\",\"58 High Street\",SW1A 4AB,11/09/1982,\"3,001.27\",true,premier\n100216,\"Rahul Sharma\",\"174 High Street, Flat 20\",SW1A 3AB,24/12/1957,\"5,980.17\",false,sme\n100217,\"Rahul Khan\",\"93 Avenue des Champs-Elysees\",SW1A 3AB,07/10/1952,\"31,017.11\",false,retail\n100218,\"Chiara Mueller\",\"107 Avenue des Champs-Elysees\",SW1A 5AB,23/11/1983,\"21,444.21\",true,premier\n100219,\"Maria Garcia\",\"189 Long Winding Countryside Lane\",EC2V 9AB,18/12/1977,\"27,310.26\",false,sme\n100220,\"Chiara Garcia-Rossi\",\"166 Station Road\",SW1A 1AB,04/01/1999,\"40,994.32\",true,retail\n100221,\"Wei Rossi\",\"18 Hauptstrasse, Flat 25\",SW1A 3AB,15/11/1984,\"14,655.47\",false,sme\n100222,\"Sophie Rossi\",\"122 High Street, Flat 28\",SW1A 5AB,26/11/1970,\"26,103.48\",false,retail\n100223,\"Sophie Adeyemi\",\"30 Hauptstrasse\",EC2V 2AB,27/07/1943,\"22,272.10\",false,retail\n100224,\"Lars Zhang\",\"148 High Street\",LS6 6AB,04/11/1971,\"9,557.76\",false,sme\n100225,\"Lars Mueller\",\"139 Station Road, Flat 16\",M1 9AB,01/06/1981,\"6,982.71\",false,premier\n100226,\"Anna Smith\",\"51 Hauptstrasse\",LS6 4AB,11/04/1996,\"12,819.66\",false,sme\n100227,\"Chiara Rossi\",\"21 High Street\",LS6 5AB,25/12/1962,\"4,972.78\",true,retail\n100228,\"Sophie Martin-Khan\",\"90 Station Road, Flat 20\",M1 4AB,17/11/1958,\"43,285.33\",false,premier\n100229,\"Maria Khan\",\"48 Station Road\",M1 7AB,28/02/1973,\"31,264.66\",true,sme\n100230,\"Chiara Mueller\",\"181 High Street, Flat 3\",SW1A 5AB,03/10/1946,\"598.13\",true,retail\n100231,\"Maria Adeyemi-Zhang\",\"88 Station Road\",M1 3AB,17/12/1988,\"35,252.09\",true,retail\n100232,\"Lars Mueller\",\"140 Station Road\",EC2V 3AB,08/03/1953,\"11,871.17\",,premier\n100233,\"Lars Sharma\",\"23 Station Road, Flat 28\",EC2V 6AB,10/06/1952,\"12,329.04\",true,sme\n100234,\"Wei Zhang\",\"78 Avenue des Champs-Elysees\",LS6 2AB,28/12/1942,\"25,431.43\",false,premier\n100235,\"Anna Adeyemi\",\"124 High Street\",EC2V 1AB,05/02/1954,\"2,516.87\",false,premier\n100237,\"Wei Martin\",\"100 Avenue des Champs-Elysees\",LS6 1AB,21/03/1997,\"32,184.18\",true,premier\n100238,\"Wei Garcia\",\"98 Station Road\",EC2V 2AB,05/07/1960,\"46,290.71\",false,premier\n100239,\"John Smith-Rossi\",\"86 Avenue des Champs-Elysees\",LS6 6AB,22/08/1954,\"31,900.23\",false,premier\n100240,\"Wei Mueller\",\"196 Avenue des Champs-Elysees\",EC2V 8AB,14/12/1974,\"49,315.91\",false,premier\n100241,\"Anna Garcia\",\"80 Avenue des Champs-Elysees\",M1 6AB,27/10/1988,\"38,792.65\",true,retail\n100242,\"John Adeyemi\",\"162 Station Road, Flat 2\",M1 2AB,07/24/1982,\"13,014.14\",false,sme\n100243,\"Sophie Sharma-Zhang\",\"154 Station Road\",LS6 3AB,27/10/1954,\"20,480.89\",true,premier\n100244,\"John Martin\",\"196 Long Winding Countryside Lane, Flat 6\",M1 1AB,25/10/1955,\"9,787.38\",true,retail\n100245,\"Anna Smith\",\"24 Long Winding Countryside Lane, Flat 7\",EC2V 7AB,18/10/1997,\"30,208.76\",true,premier\n100246,\"Sophie Adeyemi\",\"28 Avenue des Champs-Elysees, Flat 3\",M1 9AB,22/01/1997,\"48073.42\",true,premier\n100247,\"Wei Martin-Zhang\",\"155 High Street\",EC2V 1AB,18/05/1955,\"20,583.98\",false,sme\n100248,\"Chiara Khan\",\"106 Hauptstrasse\",SW1A 9AB,15/01/1969,\"34,767.27\",false,retail\n100249,\"John Adeyemi-Khan\",\"160 Hauptstrasse\",LS6 9AB,07/10/1993,\"31,869.90\",true,premier\n100250,\"Lars Garcia\",\"74 Station Road\",EC2V 6AB,24/10/1950,\"47,107.28\",true,premier\n100251,\"Anna Garcia\",\"112 Hauptstrasse\",M1 7AB,15/06/1949,\"4,893.03\",true,sme\n100252,\"Olu Khan\",\"143 Station Road\",M1 6AB,05/07/1951,\"42,885.31\",false,retail\n100253,\"Chiara Zhang\",\"142 Station Road\",M1 2AB,23/10/1958,\"4,902.12\",false,premier\n100254,\"Sophie Smith\",\"93 Avenue des Champs-Elysees, Flat 27\",EC2V 1AB,28/02/1983,\"2,139.34\",true,sme\n100255,\"Fatima Sharma-Adeyemi\",\"199 High Street, Flat 27\",M1 5AB,19/04/1975,\"23,885.90\",true,sme\n100256,\"Fatima Rossi-Rossi\",\"199 Hauptstrasse, Flat 1\",M1 8AB,01/10/1954,\"21,784.22\",false,sme\n100257,\"John Mueller-Rossi\",\"119 Station Road, Flat 27\",LS6 3AB,27/08/1982,\"14,194.56\",false,retail\n100258,\"Lars Garcia\",\"62 Avenue des Champs-Elysees, Flat 24\",LS6 7AB,20/06/1998,\"27,812.96\",false,sme\n100259,\"Chiara Smith\",\"9 Avenue des Champs-Elysees\",M1 4AB,19/12/1956,\"20,663.27\",false,premier\n100260,\"Olu Khan-Smith\",\"47 Avenue des Champs-Elysees\",LS6 3AB,12/03/1989,\"34,939.43\",true,premier\n100261,\"Anna Adeyemi\",\"115 Hauptstrasse, Flat 12\",LS6 1AB,05/06/1994,\"14,925.66\",false,retail\n100262,\"Rahul Sharma-Zhang\",\"128 Long Winding Countryside Lane, Flat 24\",SW1A 2AB,17/08/1944,\"37,241.21\",false,retail\n100263,\"Fatima Adeyemi\",\"167 High Street, Flat 18\",M1 2AB,16/10/1948,\"18,098.64\",true,sme\n100264,\"Olu Nilsson-Adeyemi\",\"41 High Street\",LS6 3AB,15/04/1955,\"11,491.81\",true,sme\n100266,\"Rahul Mueller\",\"34 Avenue des Champs-Elysees, Flat 5\",LS6 7AB,05/06/1955,\"36,802.10\",true,premier\n100267,\"Fatima Adeyemi\",\"112 Long Winding Countryside Lane\",LS6 8AB,21/04/1954,\"13,788.21\",true,retail\n100268,\"Chiara Mueller-Khan\",\"45 Station Road\",EC2V 1AB,05/12/1969,\"40,840.57\",true,sme\n100269,\"Maria Khan\",\"168 Avenue des Champs-Elysees\",M1 3AB,26/09/1997,\"6,770.42\",false,retail\n100270,\"Fatima Zhang-Zhang\",\"22 High Street\",EC2V 9AB,20/12/1990,\"16,562.84\",true,retail\n100271,\"Wei Nilsson\",\"186 Hauptstrasse\",SW1A 3AB,03/09/1951,\"28,149.50\",false,sme\n100272,\"John Zhang\",\"158 High Street\",EC2V 9AB,12/12/1998,\"43,378.97\",false,retail\n100273,\"Rahul Garcia\",\"162 Hauptstrasse\",SW1A 4AB,17/12/1977,\"39,379.40\",true,premier\n100274,\"Lars Nilsson\",\"39 Long Winding Countryside Lane\",M1 2AB,16/11/1961,\"42,211.95\",false,retail\n100275,\"Chiara Khan\",\"81 High Street\",SW1A 4AB,17/02/1990,\"18,300.64\",false,retail\n100276,\"Olu Martin\",\"158 Hauptstrasse, Flat 30\",M1 4AB,21/12/1979,\"8,382.95\",false,sme\n100277,\"Wei Rossi-Mueller\",\"5 Long Winding Countryside Lane\",M1 5AB,25/09/1966,\"36,427.92\",true,sme\n100278,\"John Mueller\",\"61 High Street\",SW1A 2AB,23/08/1979,\"35,714.07\",false,retail\n100279,\"Rahul Nilsson\",\"71 High Street\",EC2V 7AB,07/03/1942,\"9,455.19\",false,premier\n100280,\"Wei Khan\",\"139 High Street\",SW1A 3AB,03/01/1977,\"14,337.23\",true,sme\n100281,\"Maria Mueller\",\"162 High Street\",LS6 2AB,04/10/1969,\"23,876.91\",false,retail\n100282,\"Anna Mueller\",\"43 Avenue des Champs-Elysees, Flat 26\",LS6 2AB,11/03/1998,\"47,224.12\",true,retail\n100283,\"Rahul Rossi\",\"23 Avenue des Champs-Elysees\",M1 1AB,24/07/1944,\"4,585.68\",true,retail\n100284,\"Rahul Rossi-Nilsson\",\"134 Hauptstrasse\",LS6 3AB,07/03/1976,\"42,937.14\",false,premier\n100285,\"Olu Sharma\",\"35 Long Winding Countryside Lane\",LS6 6AB,07/03/1955,\"49,021.30\",true,premier\n100286,\"Rahul Smith\",\"2 Station Road\",LS6 8AB,23/01/1958,\"1,920.53\",false,retail\n100287,\"Chiara Garcia\",\"188 Long Winding Countryside Lane\",EC2V 8AB,11/11/1981,\"27,660.66\",true,sme\n100288,\"Sophie Martin\",\"17 Station Road\",M1 4AB,11/10/1945,\"49,900.63\",true,sme\n100289,\"Rahul Zhang\",\"94 Hauptstrasse\",EC2V 2AB,06/09/1980,\"29,630.33\",true,retail\n100290,\"Wei Garcia\",\"161 High Street, Flat 20\",EC2V 7AB,04/07/1976,\"20,052.58\",false,sme\n100291,\"Olu Rossi\",\"44 Long Winding Countryside Lane\",EC2V 7AB,17/10/1968,\"40,028.69\",false,retail\n100292,\"Rahul Sharma\",\"100 Hauptstrasse, Flat 21\",LS6 3AB,17/02/1961,\"7,436.13\",false,premier\n100293,\"Wei Martin\",\"106 High Street\",EC2V 1AB,17/12/1945,\"44,249.31\",true,sme\n100294,\"Anna Nilsson-Mueller\",\"22 High Street\",M1 9AB,21/08/1985,\"34,514.75\",true,retail\n100295,\"Sophie Smith\",\"96 Long Winding Countryside Lane\",LS6 2AB,25/06/1960,\"48,947.35\",true,premier\n100296,\"Fatima Mueller\",\"193 Long Winding Countryside Lane\",EC2V 9AB,09/06/1953,\"2,493.86\",false,premier\n100297,\"Anna Rossi\",\"126 Station Road\",M1 6AB,03/12/1984,\"19,342.45\",true,premier\n100298,\"Chiara Garcia-Adeyemi\",\"117 High Street, Flat 24\",SW1A 9AB,07/06/1996,\"25,921.79\",false,premier\n100299,\"Wei Mueller\",\"107 Hauptstrasse\",EC2V 6AB,09/08/1945,\"28,951.85\",true,premier\n900000,\"New Person\",\"1 New Road\",N1 1AA,01/01/1990,\"0.00\",false,retail\n900001,\"New Person\",\"1 New Road\",N1 1AA,01/01/1990,\"0.00\",false,retail\n"};
+// Minimal, safe Markdown → HTML for the reports these tools produce (headings, tables, lists, checkboxes,
+// bold/italic/code, line breaks). All text is HTML-escaped first.
+function renderMarkdown(md) {
+  const esc = (s) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  const inline = (s) => esc(s)
+    .replace(/`([^`]+)`/g, "<code>$1</code>")
+    .replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>")
+    .replace(/(^|[\s(])_([^_]+)_(?=[\s).,:;]|$)/g, "$1<em>$2</em>")
+    .replace(/ {2}$/g, "<br>");
+  const lines = md.replace(/\r/g, "").split("\n");
+  const html = [];
+  let i = 0;
+  while (i < lines.length) {
+    const l = lines[i];
+    if (/^#{1,4} /.test(l)) { const n = l.match(/^#+/)[0].length; html.push(`<h${n + 1}>${inline(l.slice(n + 1))}</h${n + 1}>`); i++; continue; }
+    if (/^\|.*\|$/.test(l) && /^\|\s*-+/.test(lines[i + 1] || "")) {
+      const cells = (row) => row.slice(1, -1).split(/(?<!\\)\|/).map((c) => inline(c.trim().replace(/\\\|/g, "|")));
+      const head = cells(l);
+      i += 2;
+      const body = [];
+      while (i < lines.length && /^\|.*\|$/.test(lines[i])) body.push(cells(lines[i++]));
+      html.push(`<div class="tablewrap"><table><thead><tr>${head.map((c) => `<th>${c}</th>`).join("")}</tr></thead><tbody>${body.map((r) => `<tr>${r.map((c) => `<td>${c}</td>`).join("")}</tr>`).join("")}</tbody></table></div>`);
+      continue;
+    }
+    if (/^(\d+\.|-) /.test(l)) {
+      const ordered = /^\d+\./.test(l);
+      const items = [];
+      while (i < lines.length && (/^(\d+\.|-) /.test(lines[i]) || /^ {2,}\S/.test(lines[i]))) {
+        if (/^ {2,}\S/.test(lines[i]) && items.length) items[items.length - 1] += "<br>" + inline(lines[i].trim());
+        else items.push(inline(lines[i].replace(/^(\d+\.|-) /, "")).replace(/^\[ \] /, '<input type="checkbox"> ').replace(/^\[x\] /i, '<input type="checkbox" checked> '));
+        // keep "  " line-break markers inside items
+        if (/ {2}$/.test(lines[i])) items[items.length - 1] = items[items.length - 1].replace(/<br>$/, "");
+        i++;
+      }
+      html.push(`<${ordered ? "ol" : "ul"}>${items.map((x) => `<li>${x}</li>`).join("")}</${ordered ? "ol" : "ul"}>`);
+      continue;
+    }
+    if (!l.trim()) { i++; continue; }
+    const para = [];
+    while (i < lines.length && lines[i].trim() && !/^(#|\||\d+\. |- )/.test(lines[i])) para.push(inline(lines[i++]));
+    html.push(`<p>${para.join(" ")}</p>`);
+  }
+  return html.join("\n");
+}
+
+// Page UI for each Hub solution. Expects: __m (bundled modules), SAMPLES, renderMarkdown.
+(function () {
+  const $ = (sel, el = document) => el.querySelector(sel);
+  const h = (html) => { const t = document.createElement("template"); t.innerHTML = html.trim(); return t.content.firstElementChild; };
+  const app = $("#app");
+  const table = __m["shared/table.js"];
+  const solution = document.body.dataset.solution;
+
+  function download(name, text, type = "text/plain") {
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(new Blob([text], { type }));
+    a.download = name;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+  }
+  async function readFiles(input) {
+    return Promise.all([...input.files].map(async (f) => ({ name: f.webkitRelativePath || f.name, text: await f.text() })));
+  }
+  function fileInto(input, textarea) {
+    input.addEventListener("change", async () => { const [f] = await readFiles(input); if (f) textarea.value = f.text; });
+  }
+  const resultCard = h(`<section class="card"><div id="downloads" class="actions" style="margin:0 0 8px"></div><div id="report" class="empty">Your report will appear here.</div></section>`);
+  function show(md, downloads = []) {
+    const r = $("#report", resultCard);
+    r.className = "";
+    r.innerHTML = renderMarkdown(md);
+    const d = $("#downloads", resultCard);
+    d.innerHTML = "";
+    for (const [label, name, text, type] of [["Download report (.md)", "report.md", md, "text/markdown"], ...downloads]) {
+      const b = h(`<button>${label}</button>`);
+      b.onclick = () => download(name, text, type);
+      d.append(b);
+    }
+    resultCard.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+  function showError(e) {
+    const r = $("#report", resultCard);
+    r.className = "error";
+    r.textContent = e && e.message ? e.message : String(e);
+  }
+  const safe = (fn) => () => { try { fn(); } catch (e) { console.error(e); showError(e); } };
+
+  // ------------------------------------------------------------------ Agent Payment Mandate Checker
+  if (solution === "agent-payment-mandate-checker") {
+    const c = __m["agent-payment-mandate-checker/src/checker.js"], rep = __m["agent-payment-mandate-checker/src/report.js"];
+    const card = h(`<section class="card"><h2>1 · Mandates <span class="hint">(JSON: what each agent may pay, to whom, up to what limit)</span></h2>
+      <input type="file" id="mf" accept=".json"><textarea id="m" placeholder='{"mandates":[{"id":"M-1","agent_id":"ap-agent","per_payment_limit":5000}]}'></textarea>
+      <h2 style="margin-top:16px">2 · Agent payment log <span class="hint">(CSV: payment_id, timestamp, agent_id, mandate_id, payee, amount, currency, category, approved_by, approval_time, purpose, status)</span></h2>
+      <input type="file" id="pf" accept=".csv,.txt"><textarea id="p"></textarea>
+      <div class="actions"><button class="primary" id="run">Check payments</button><button id="sample">Load sample data</button></div></section>`);
+    app.append(card, resultCard);
+    fileInto($("#mf", card), $("#m", card)); fileInto($("#pf", card), $("#p", card));
+    $("#sample", card).onclick = () => { $("#m", card).value = SAMPLES.mandates; $("#p", card).value = SAMPLES.payments; };
+    $("#run", card).onclick = safe(() => {
+      let raw;
+      try { raw = JSON.parse($("#m", card).value); } catch (e) { throw new Error("Mandates must be valid JSON: " + e.message); }
+      const { file, errors } = c.validateMandateFile(raw);
+      if (!file || errors.length) throw new Error(errors.join("\n"));
+      const res = c.checkPayments(file, c.readPayments(table.parseCsv($("#p", card).value)));
+      show(rep.toMarkdown(res), [["Download results (.csv)", "mandate-check.csv", rep.toResultCsv(res), "text/csv"]]);
+    });
+  }
+
+  // ------------------------------------------------------------------ Verify-Before-You-Pay
+  if (solution === "verify-before-you-pay") {
+    const a = __m["verify-before-you-pay/src/assess.js"], rep = __m["verify-before-you-pay/src/report.js"];
+    const card = h(`<section class="card"><div class="tabs"><button aria-selected="true" data-t="one">Check one request</button><button aria-selected="false" data-t="log">Audit an approval log</button></div>
+      <label>Your company's and key suppliers' email domains <span class="hint">(comma-separated, so look-alikes can be spotted)</span></label><input type="text" id="dom" placeholder="yourbank.com, mainsupplier.com">
+      <div data-p="one"><label>Paste the message, email or call notes</label><textarea id="txt" placeholder="Paste the payment request here…"></textarea>
+        <div class="row"><div><label>Who is asking?</label><input type="text" id="from" placeholder="e.g. Jane Smith"></div><div><label>Their title</label><input type="text" id="title" placeholder="e.g. CFO, Supplier"></div>
+        <div><label>How did it arrive?</label><select id="ch"><option value="">(not sure)</option><option>email</option><option>phone</option><option>voice note</option><option>video</option><option>teams</option><option>whatsapp</option><option>sms</option><option>in person</option></select></div></div>
+        <div class="row"><div><label>Amount</label><input type="text" id="amt" placeholder="e.g. 48500"></div><div><label>Currency</label><input type="text" id="ccy" placeholder="USD"></div>
+        <div><label>New payee?</label><select id="np"><option value="">(not sure)</option><option value="yes">Yes</option><option value="no">No</option></select></div><div><label>Bank details changed?</label><select id="bc"><option value="">(not sure)</option><option value="yes">Yes</option><option value="no">No</option></select></div></div>
+        <div class="actions"><button class="primary" id="go1">Check this request</button><button id="ex">Try an example</button></div></div>
+      <div data-p="log" hidden><label>Approval log CSV <span class="hint">(request_id, received_at, requested_by, requester_title, channel, sender, amount, currency, payee, payee_new, bank_details_changed, bank_change_at, message, callback_done, callback_source, challenge_passed, approver_1, approver_2, released_by, paid_at)</span></label>
+        <input type="file" id="lf" accept=".csv,.txt"><textarea id="log"></textarea><div class="actions"><button class="primary" id="go2">Audit log</button><button id="sl">Load sample log</button></div></div></section>`);
+    app.append(card, resultCard);
+    card.querySelectorAll(".tabs button").forEach((b) => b.onclick = () => {
+      card.querySelectorAll(".tabs button").forEach((x) => x.setAttribute("aria-selected", x === b));
+      card.querySelectorAll("[data-p]").forEach((p) => (p.hidden = p.dataset.p !== b.dataset.t));
+    });
+    fileInto($("#lf", card), $("#log", card));
+    const policy = () => ({ ...a.DEFAULT_POLICY, company_domains: $("#dom", card).value.split(",").map((s) => s.trim()).filter(Boolean) });
+    $("#ex", card).onclick = () => {
+      $("#txt", card).value = "From: d.chen@northwind-group.co\nHi, are you at your desk? I need a favour. Please wire $48,500 today to our new legal counsel for a confidential acquisition. Don't discuss this with anyone yet. I'm in a board meeting so can't talk, just email me when it's done.";
+      $("#dom", card).value = "northwind.com"; $("#from", card).value = "David Chen"; $("#title", card).value = "CEO"; $("#ch", card).value = "email"; $("#np", card).value = "yes";
+    };
+    $("#sl", card).onclick = () => { $("#log", card).value = SAMPLES.log; if (!$("#dom", card).value) $("#dom", card).value = "northwind-demo.com, globex-logistics.com"; };
+    $("#go1", card).onclick = safe(() => {
+      const text = $("#txt", card).value;
+      if (!text.trim()) throw new Error("Paste the request text first.");
+      const yn = (v) => (v === "yes" ? true : v === "no" ? false : null);
+      const extra = { requested_by: $("#from", card).value, requester_title: $("#title", card).value, payee_new: yn($("#np", card).value) };
+      if ($("#ch", card).value) extra.channel = $("#ch", card).value;
+      if ($("#amt", card).value) extra.amount = table.parseAmount($("#amt", card).value);
+      if ($("#ccy", card).value) extra.currency = $("#ccy", card).value.toUpperCase();
+      if (yn($("#bc", card).value) !== null) extra.bank_details_changed = yn($("#bc", card).value);
+      const req = a.requestFromText(text, extra);
+      show("# Verify-Before-You-Pay\n\n" + rep.oneToMarkdown(a.assess(req, policy())));
+    });
+    $("#go2", card).onclick = safe(() => {
+      const list = a.readRequests(table.parseCsv($("#log", card).value)).map((r) => a.assess(r, policy()));
+      if (!list.length) throw new Error("No rows found in the log.");
+      show(rep.toMarkdown(list), [["Download results (.csv)", "verify-report.csv", rep.toResultCsv(list), "text/csv"]]);
+    });
+  }
+
+  // ------------------------------------------------------------------ AI Use Register
+  if (solution === "ai-use-register") {
+    const c = __m["ai-use-register/src/classify.js"], rep = __m["ai-use-register/src/report.js"];
+    const card = h(`<section class="card"><h2>Your AI inventory <span class="hint">(CSV. Only name and description are required; every other column sharpens the register.)</span></h2>
+      <input type="file" id="f" accept=".csv,.txt"><textarea id="t"></textarea>
+      <div class="actions"><button class="primary" id="go">Build register</button><button id="tpl">Download blank template</button><button id="s">Load sample inventory</button></div></section>`);
+    app.append(card, resultCard);
+    fileInto($("#f", card), $("#t", card));
+    $("#tpl", card).onclick = () => download("ai-inventory-template.csv", rep.templateCsv(), "text/csv");
+    $("#s", card).onclick = () => ($("#t", card).value = SAMPLES.inventory);
+    $("#go", card).onclick = safe(() => {
+      const rows = table.parseCsv($("#t", card).value).filter((r) => !/^your reference/i.test(Object.values(r)[0] || ""));
+      if (!rows.length) throw new Error("No rows found. Load a CSV or the sample.");
+      const list = c.readUseCases(rows).map((u) => c.classify(u));
+      show(rep.toMarkdown(list), [["Download register (.csv)", "ai-register.csv", rep.toRegisterCsv(list), "text/csv"]]);
+    });
+  }
+
+  // ------------------------------------------------------------------ PQC Crypto Inventory
+  if (solution === "pqc-crypto-inventory") {
+    const sc = __m["pqc-crypto-inventory/src/scan.js"], rep = __m["pqc-crypto-inventory/src/report.js"];
+    const card = h(`<section class="card"><h2>Choose a code folder or files <span class="hint">(source, configs, scripts, certificates; read locally, never uploaded)</span></h2>
+      <div class="row"><div><label>Folder</label><input type="file" id="dir" webkitdirectory multiple></div><div><label>Or individual files</label><input type="file" id="files" multiple></div></div>
+      <label>Or paste code / config</label><textarea id="t" placeholder='KeyPairGenerator.getInstance("RSA") …'></textarea>
+      <div class="actions"><button class="primary" id="go">Scan</button><button id="s">Scan the demo repo</button></div><p class="hint" id="status"></p></section>`);
+    app.append(card, resultCard);
+    const SKIP = /(^|\/)(node_modules|\.git|dist|build|target|vendor|\.venv|venv|__pycache__)\//;
+    async function run(inputs) {
+      const findings = [];
+      let n = 0;
+      for (const f of inputs) {
+        if (SKIP.test(f.name) || (!sc.isScannable(f.name) && f.name !== "pasted.txt") || f.text.length > 2000000 || f.text.includes("\u0000")) continue;
+        n++;
+        findings.push(...sc.scanText(f.name, f.text));
+      }
+      const s = sc.summarise(findings, n);
+      $("#status", card).textContent = `Scanned ${n} file(s).`;
+      show(rep.toMarkdown(findings, s), [["Download findings (.csv)", "pqc-inventory.csv", rep.toResultCsv(findings), "text/csv"], ["Download CBOM (.json)", "cbom.json", JSON.stringify(sc.toCbom(findings), null, 2), "application/json"]]);
+    }
+    $("#go", card).onclick = async () => {
+      try {
+        const inputs = [...(await readFiles($("#dir", card))), ...(await readFiles($("#files", card)))];
+        if ($("#t", card).value.trim()) inputs.push({ name: "pasted.txt", text: $("#t", card).value });
+        if (!inputs.length) throw new Error("Choose a folder, some files, or paste code first.");
+        $("#status", card).textContent = `Reading ${inputs.length} file(s)…`;
+        await run(inputs);
+      } catch (e) { showError(e); }
+    };
+    $("#s", card).onclick = () => run(Object.entries(SAMPLES).map(([name, text]) => ({ name, text }))).catch(showError);
+  }
+
+  // ------------------------------------------------------------------ Legacy Runbook Builder
+  if (solution === "legacy-runbook-builder") {
+    const x = __m["legacy-runbook-builder/src/extract.js"], rep = __m["legacy-runbook-builder/src/report.js"];
+    const card = h(`<section class="card"><h2>Old procedures, handover notes and scripts <span class="hint">(text, shell/batch scripts, JCL, crontabs, SQL)</span></h2>
+      <input type="file" id="files" multiple><label>Or paste text</label><textarea id="t" placeholder="Paste a handover email, procedure or script…"></textarea>
+      <label>Runbook title <span class="hint">(optional)</span></label><input type="text" id="title" placeholder="e.g. USD nostro reconciliation">
+      <div class="actions"><button class="primary" id="go">Build runbook</button><button id="s">Load sample handover</button></div></section>`);
+    app.append(card, resultCard);
+    let sampleLoaded = false;
+    $("#s", card).onclick = () => { sampleLoaded = true; $("#t", card).value = "(sample: nostro recon handover email + SWIFT batch script + JCL + crontab will be used)"; $("#title", card).value = "Payments ops: SWIFT batch, GL extract & USD nostro recon"; };
+    $("#go", card).onclick = async () => {
+      try {
+        let inputs = await readFiles($("#files", card));
+        const pasted = $("#t", card).value;
+        if (sampleLoaded && pasted.startsWith("(sample")) inputs = inputs.concat(Object.entries(SAMPLES).map(([name, text]) => ({ name, text })));
+        else if (pasted.trim()) inputs.push({ name: "pasted.txt", text: pasted });
+        if (!inputs.length) throw new Error("Choose files or paste text first.");
+        const rb = x.buildRunbook(inputs, $("#title", card).value || undefined);
+        const prompt = rep.aiPrompt(rb, inputs);
+        show(rep.toMarkdown(rb), [["Download knowledge gaps (.csv)", "knowledge-gaps.csv", rep.gapsCsv(rb), "text/csv"], ["Download AI prompt (.txt)", "ai-prompt.txt", prompt, "text/plain"]]);
+      } catch (e) { showError(e); }
+    };
+  }
+
+  // ------------------------------------------------------------------ helpers for the second batch
+  const fromB64 = (s) => Uint8Array.from(atob(s.replace(/^base64:/, "")), (c) => c.charCodeAt(0));
+  async function readBytes(input) { return Promise.all([...input.files].map(async (f) => ({ name: f.webkitRelativePath || f.name, bytes: new Uint8Array(await f.arrayBuffer()) }))); }
+  function simpleCard(html) { const c = h(`<section class="card">${html}</section>`); app.append(c, resultCard); return c; }
+  const csvBox = (id, label, hint) => `<label>${label} <span class="hint">${hint || ""}</span></label><input type="file" id="${id}f" accept=".csv,.txt"><textarea id="${id}"></textarea>`;
+  const wire = (card, ids) => ids.forEach((id) => fileInto($(`#${id}f`, card), $(`#${id}`, card)));
+
+  if (solution === "t1-settlement-predictor") {
+    const m = __m["t1-settlement-predictor/src/predict.js"], rep = __m["t1-settlement-predictor/src/report.js"];
+    const card = simpleCard(`<h2>Trades and SSIs</h2>${csvBox("tr", "Trade blotter (CSV)", "trade_id, trade_date, trade_time, settlement_date, isin, counterparty, place_of_settlement, currency, account_currency, allocation_time, affirmation_time, instruction_time")}${csvBox("ss", "Standing settlement instructions (CSV)", "counterparty, place_of_settlement, currency, agent_bic, account, valid_from, valid_to, last_verified")}
+      <div class="row"><div><label><input type="checkbox" id="t1"> Treat all trades as T+1 (test today's blotter)</label></div><div><label>Holidays <span class="hint">(YYYY-MM-DD, comma-separated)</span></label><input type="text" id="hol"></div></div>
+      <div class="actions"><button class="primary" id="go">Check trades</button><button id="s">Load sample</button></div>`);
+    wire(card, ["tr", "ss"]);
+    $("#s", card).onclick = () => { $("#tr", card).value = SAMPLES.trades; $("#ss", card).value = SAMPLES.ssis; };
+    $("#go", card).onclick = safe(() => {
+      const cfg = { ...m.DEFAULT_CONFIG, assume_t1: $("#t1", card).checked, holidays: $("#hol", card).value.split(",").map((x) => x.trim()).filter(Boolean) };
+      const list = m.assessTrades(m.readTrades(table.parseCsv($("#tr", card).value)), m.readSsis(table.parseCsv($("#ss", card).value)), cfg);
+      if (!list.length) throw new Error("No trades found.");
+      show(rep.toMarkdown(list), [["Download results (.csv)", "t1-report.csv", rep.toResultCsv(list), "text/csv"]]);
+    });
+  }
+
+  if (solution === "vop-precheck") {
+    const m = __m["vop-precheck/src/precheck.js"], rep = __m["vop-precheck/src/report.js"];
+    const card = simpleCard(`<h2>Payment file and supplier master</h2>${csvBox("pa", "Payment file (CSV)", "payee_name, iban, amount")}${csvBox("ma", "Supplier master (CSV, optional but recommended)", "iban, account_holder_name, trading_names")}
+      <div class="actions"><button class="primary" id="go">Check payments</button><button id="s">Load sample</button></div>`);
+    wire(card, ["pa", "ma"]);
+    $("#s", card).onclick = () => { $("#pa", card).value = SAMPLES.payments; $("#ma", card).value = SAMPLES.master; };
+    $("#go", card).onclick = safe(() => {
+      const list = m.precheck(m.readPayments(table.parseCsv($("#pa", card).value)), $("#ma", card).value.trim() ? m.readMaster(table.parseCsv($("#ma", card).value)) : []);
+      if (!list.length) throw new Error("No payments found.");
+      show(rep.toMarkdown(list), [["Download results (.csv)", "vop-precheck.csv", rep.toResultCsv(list), "text/csv"]]);
+    });
+  }
+
+  if (solution === "payment-investigation-assistant") {
+    const m = __m["payment-investigation-assistant/src/investigate.js"], rep = __m["payment-investigation-assistant/src/report.js"];
+    const card = simpleCard(`<h2>Payment query</h2><label>Paste an MT199/n99, an email or call notes</label><textarea id="t" style="min-height:200px"></textarea>
+      <div class="actions"><button class="primary" id="go">Analyse</button><button id="s1">Sample: MT199 non-receipt</button><button id="s2">Sample: fraud recall email</button></div>`);
+    $("#s1", card).onclick = () => ($("#t", card).value = SAMPLES.mt199);
+    $("#s2", card).onclick = () => ($("#t", card).value = SAMPLES.fraud);
+    $("#go", card).onclick = safe(() => { const t = $("#t", card).value; if (!t.trim()) throw new Error("Paste a query first."); show(rep.toMarkdown(m.analyse(t))); });
+  }
+
+  if (solution === "translation-loss-auditor") {
+    const m = __m["translation-loss-auditor/src/audit.js"], rep = __m["translation-loss-auditor/src/report.js"];
+    const card = simpleCard(`<h2>The two versions of one payment</h2><div class="row"><div><label>ISO 20022 pacs.008 (XML)</label><input type="file" id="mxf" accept=".xml,.txt"><textarea id="mx" style="min-height:220px"></textarea></div>
+      <div><label>MT103 (FIN text)</label><input type="file" id="mtf" accept=".txt,.fin,.mt"><textarea id="mt" style="min-height:220px"></textarea></div></div>
+      <div class="actions"><button class="primary" id="go">Compare</button><button id="s">Load sample</button></div>`);
+    wire(card, ["mx", "mt"]);
+    $("#s", card).onclick = () => { $("#mx", card).value = SAMPLES.mx; $("#mt", card).value = SAMPLES.mt; };
+    $("#go", card).onclick = safe(() => {
+      const mx = m.parsePacs008($("#mx", card).value), mt = m.parseMt103($("#mt", card).value);
+      const pairs = [{ name: "payment", uetr: mx.uetr, findings: m.audit(mx, mt) }];
+      show(rep.toMarkdown(pairs), [["Download findings (.csv)", "translation-audit.csv", rep.toResultCsv(pairs), "text/csv"]]);
+    });
+  }
+
+  if (solution === "sanctions-fp-analyser") {
+    const m = __m["sanctions-fp-analyser/src/analyse.js"], rep = __m["sanctions-fp-analyser/src/report.js"];
+    const card = simpleCard(`<h2>Closed alerts export</h2>${csvBox("al", "Alerts (CSV)", "alert_id, created_at, screened_name, matched_name, list, match_score, matched_field, message_type, disposition, handling_minutes, customer_id")}
+      <div class="row"><div><label>Cleared at least … times to count as a repeat pair</label><input type="text" id="mc" value="3"></div><div><label>Minutes per alert when not recorded</label><input type="text" id="mn" value="30"></div></div>
+      <div class="actions"><button class="primary" id="go">Analyse</button><button id="s">Load sample (invented names)</button></div>`);
+    wire(card, ["al"]);
+    $("#s", card).onclick = () => ($("#al", card).value = SAMPLES.alerts);
+    $("#go", card).onclick = safe(() => {
+      const a = m.analyse(m.readAlerts(table.parseCsv($("#al", card).value)), { minClears: Number($("#mc", card).value) || 3, defaultMinutes: Number($("#mn", card).value) || 30 });
+      if (!a.total) throw new Error("No alerts found.");
+      show(rep.toMarkdown(a), [["Download good-guy candidates (.csv)", "good-guy-candidates.csv", rep.goodGuysCsv(a), "text/csv"]]);
+    });
+  }
+
+  if (solution === "report-sanity-checker") {
+    const m = __m["report-sanity-checker/src/check.js"], rep = __m["report-sanity-checker/src/report.js"];
+    const card = simpleCard(`<h2>Report extract</h2>${csvBox("rp", "Report (CSV)", "columns are recognised by name: uti, *_lei, isin, notional, currency, *_date, country…")}
+      <div class="row"><div><label>Required columns <span class="hint">(comma-separated, optional)</span></label><input type="text" id="req"></div><div><label>Report date <span class="hint">(optional)</span></label><input type="text" id="rd" placeholder="YYYY-MM-DD"></div></div>
+      <div class="actions"><button class="primary" id="go">Check report</button><button id="s">Load sample</button></div>`);
+    wire(card, ["rp"]);
+    $("#s", card).onclick = () => ($("#rp", card).value = SAMPLES.report);
+    $("#go", card).onclick = safe(() => {
+      const res = m.checkReport(table.parseCsv($("#rp", card).value), { required: $("#req", card).value.split(",").map((x) => x.trim()).filter(Boolean), reportDate: $("#rd", card).value || undefined });
+      if (!res.rows) throw new Error("No rows found.");
+      show(rep.toMarkdown(res), [["Download issues (.csv)", "report-issues.csv", rep.toIssuesCsv(res.issues), "text/csv"]]);
+    });
+  }
+
+  if (solution === "dora-register-precheck") {
+    const m = __m["dora-register-precheck/src/precheck.js"], rep = __m["dora-register-precheck/src/report.js"];
+    const card = simpleCard(`<h2>Working register</h2>${csvBox("rg", "Register (CSV, one row per contractual arrangement)", "")}
+      <label>Reference date <span class="hint">(end of the reporting year)</span></label><input type="text" id="rd" placeholder="e.g. 2026-12-31">
+      <div class="actions"><button class="primary" id="go">Check register</button><button id="s">Load sample</button></div>`);
+    wire(card, ["rg"]);
+    $("#s", card).onclick = () => { $("#rg", card).value = SAMPLES.register; $("#rd", card).value = "2026-12-31"; };
+    $("#go", card).onclick = safe(() => {
+      const list = m.readRegister(table.parseCsv($("#rg", card).value));
+      if (!list.length) throw new Error("No arrangements found.");
+      const issues = m.precheck(list, { referenceDate: $("#rd", card).value || undefined });
+      show(rep.toMarkdown(list, issues), [["Download fix list (.csv)", "dora-issues.csv", rep.toIssuesCsv(issues), "text/csv"]]);
+    });
+  }
+
+  if (solution === "copybook-decoder") {
+    const m = __m["copybook-decoder/src/copybook.js"], rep = __m["copybook-decoder/src/report.js"];
+    const card = simpleCard(`<h2>Copybook and data file</h2><label>COBOL copybook</label><input type="file" id="cbf" accept=".cpy,.cbl,.cob,.txt"><textarea id="cb" style="min-height:200px"></textarea>
+      <label>Data file <span class="hint">(optional: fixed-length records; read locally)</span></label><input type="file" id="df">
+      <div class="row"><div><label>Encoding</label><select id="enc"><option value="ebcdic">EBCDIC (mainframe)</option><option value="ascii">ASCII</option></select></div><div><label>Record format</label><select id="fmt"><option value="fixed">Fixed length</option><option value="rdw">Variable (RDW)</option><option value="lines">One record per line</option></select></div></div>
+      <div class="actions"><button class="primary" id="go">Decode</button><button id="s">Load sample</button></div><p class="hint" id="st"></p>`);
+    fileInto($("#cbf", card), $("#cb", card));
+    let sampleData = null;
+    $("#s", card).onclick = () => { $("#cb", card).value = SAMPLES.copybook; sampleData = fromB64(SAMPLES.data); $("#st", card).textContent = `Sample data loaded (${sampleData.length} bytes, EBCDIC).`; };
+    $("#go", card).onclick = async () => {
+      try {
+        const { root, warnings } = m.parseCopybook($("#cb", card).value);
+        const l = m.layout(root);
+        let md = rep.dictionaryMarkdown(l.fields, l.recordLength, [...warnings, ...l.warnings]);
+        const dl = [["Download data dictionary (.csv)", "data-dictionary.csv", rep.dictionaryCsv(l.fields), "text/csv"]];
+        const [f] = await readBytes($("#df", card));
+        const bytes = f ? f.bytes : sampleData;
+        if (bytes) {
+          const fmt = $("#fmt", card).value;
+          const d = m.decodeData(l.fields, bytes, { encoding: $("#enc", card).value, recordLength: l.recordLength, rdw: fmt === "rdw", lineSeparated: fmt === "lines" });
+          md += "\n" + rep.decodeSummary(d);
+          dl.push(["Download decoded data (.csv)", "decoded.csv", rep.dataCsv(d), "text/csv"]);
+        }
+        show(md, dl);
+      } catch (e) { showError(e); }
+    };
+  }
+
+  if (solution === "migration-reconciler") {
+    const m = __m["migration-reconciler/src/reconcile.js"], rep = __m["migration-reconciler/src/report.js"];
+    const card = simpleCard(`<h2>Source and target extracts</h2><div class="row"><div>${csvBox("src", "Source (legacy) CSV", "")}</div><div>${csvBox("tgt", "Target (new system) CSV", "")}</div></div>
+      <div class="row"><div><label>Key column(s) in source</label><input type="text" id="key" placeholder="customer_id"></div><div><label>Column mapping <span class="hint">source:target, comma-separated</span></label><input type="text" id="map"></div></div>
+      <div class="row"><div><label>Numeric tolerance</label><input type="text" id="tol" value="0"></div><div><label>Ignore columns</label><input type="text" id="ign"></div></div>
+      <label><input type="checkbox" id="lz" checked> Ignore leading zeros in keys</label> <label><input type="checkbox" id="ic" checked> Ignore case in keys</label>
+      <div class="actions"><button class="primary" id="go">Reconcile</button><button id="s">Load sample</button></div>`);
+    wire(card, ["src", "tgt"]);
+    $("#s", card).onclick = () => { $("#src", card).value = SAMPLES.source; $("#tgt", card).value = SAMPLES.target; $("#key", card).value = "customer_id"; $("#map", card).value = "customer_id:cust_no,full_name:customer_name,address_line:address,postcode:post_code,date_of_birth:dob,balance:balance_amt,marketing_consent:consent_marketing"; };
+    $("#go", card).onclick = safe(() => {
+      const map = Object.fromEntries($("#map", card).value.split(",").filter(Boolean).map((p) => p.split(":").map((x) => x.trim())));
+      const r = m.reconcile(table.parseCsv($("#src", card).value), table.parseCsv($("#tgt", card).value), { key: $("#key", card).value.split(",").map((x) => x.trim()).filter(Boolean), map, tolerance: Number($("#tol", card).value) || 0, ignoreLeadingZeros: $("#lz", card).checked, ignoreCase: $("#ic", card).checked, ignoreFields: $("#ign", card).value.split(",").map((x) => x.trim()).filter(Boolean) });
+      show(rep.toMarkdown(r), [["Download differences (.csv)", "differences.csv", rep.diffsCsv(r), "text/csv"]]);
+    });
+  }
+
+  if (solution === "euc-risk-scanner") {
+    const m = __m["euc-risk-scanner/src/scan.js"], rep = __m["euc-risk-scanner/src/report.js"], zip = __m["shared/zip.js"];
+    const card = simpleCard(`<h2>Spreadsheets to scan</h2><div class="row"><div><label>Folder</label><input type="file" id="dir" webkitdirectory multiple></div><div><label>Or files</label><input type="file" id="files" multiple accept=".xlsx,.xlsm,.xls,.xltx,.xltm"></div></div>
+      <div class="actions"><button class="primary" id="go">Scan</button><button id="s">Scan samples</button></div><p class="hint" id="st"></p>`);
+    async function run(items) {
+      const reports = [];
+      for (const it of items.filter((x) => /\.(xlsx|xlsm|xls|xltx|xltm)$/i.test(x.name) && !/(^|\/)~\$/.test(x.name))) {
+        try { reports.push(await m.scanWorkbook(it.name, it.bytes, zip.browserInflate)); } catch (e) { console.warn(it.name, e); }
+      }
+      if (!reports.length) throw new Error("No Excel workbooks found.");
+      $("#st", card).textContent = `Scanned ${reports.length} workbook(s).`;
+      show(rep.toMarkdown(reports), [["Download EUC register (.csv)", "euc-register.csv", rep.registerCsv(reports), "text/csv"]]);
+    }
+    $("#go", card).onclick = async () => { try { await run([...(await readBytes($("#dir", card))), ...(await readBytes($("#files", card)))]); } catch (e) { showError(e); } };
+    $("#s", card).onclick = () => run(Object.entries(SAMPLES).map(([name, v]) => ({ name, bytes: fromB64(v) }))).catch(showError);
+  }
+
+  if (solution === "batch-dependency-mapper") {
+    const m = __m["batch-dependency-mapper/src/map.js"], rep = __m["batch-dependency-mapper/src/report.js"];
+    const card = simpleCard(`<h2>Batch files</h2><p class="hint">JCL, Control-M XML exports, crontabs and shell scripts.</p><div class="row"><div><label>Folder</label><input type="file" id="dir" webkitdirectory multiple></div><div><label>Or files</label><input type="file" id="files" multiple></div></div>
+      <div class="actions"><button class="primary" id="go">Map</button><button id="s">Load sample</button></div>`);
+    const diagram = h(`<section class="card" hidden><h2>Diagram</h2><div id="svg" style="overflow:auto"></div></section>`);
+    app.insertBefore(diagram, resultCard);
+    function run(files) {
+      const { jobs, skipped } = m.parseAll(files);
+      if (!jobs.length) throw new Error("No jobs found in these files.");
+      const g = m.buildGraph(jobs);
+      const svgText = rep.svg(g);
+      diagram.hidden = false;
+      $("#svg", diagram).innerHTML = svgText;
+      show(rep.toMarkdown(g, skipped).replace(/```mermaid[\s\S]*?```\n/, ""), [["Download diagram (.svg)", "batch-map.svg", svgText, "image/svg+xml"], ["Download dependencies (.csv)", "dependencies.csv", rep.edgesCsv(g), "text/csv"], ["Download Mermaid (.mmd)", "batch-map.mmd", rep.mermaid(g), "text/plain"]]);
+    }
+    $("#go", card).onclick = async () => { try { run([...(await readFiles($("#dir", card))), ...(await readFiles($("#files", card)))]); } catch (e) { showError(e); } };
+    $("#s", card).onclick = safe(() => run(Object.entries(SAMPLES).map(([name, text]) => ({ name, text }))));
+  }
+})();
+
+</script>
+</body>
+</html>

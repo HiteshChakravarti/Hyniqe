@@ -1,0 +1,298 @@
+cust_no,customer_name,address,post_code,dob,balance_amt,consent_marketing,segment
+100000,"Fatima Khan","119 Long Winding Countryside Lane",SW1A 5AB,14/06/1976,"42,176.03",true,sme
+100001,"Rahul Sharma","80 Station Road",SW1A 6AB,24/06/1974,"40,269.24",false,retail
+100002,"Maria Mueller","196 Station Road, Fl",EC2V 5AB,05/11/1974,"42,485.35",false,premier
+100003,"Anna Adeyemi","106 Station Road",M1 1AB,13/01/1978,"31,739.63",false,premier
+100004,"John Mueller","84 Hauptstrasse",M1 4AB,04/02/1990,"31,511.33",false,retail
+100005,"John Martin","126 Avenue des Champs-Elysees",M1 4AB,01/07/1958,"44,035.46",true,premier
+100006,"Anna Rossi","103 High Street",M1 8AB,17/08/1997,"28,659.35",true,retail
+100007,"Lars Martin","28 High Street",LS6 4AB,22/05/1995,"32,691.47",true,retail
+100008,"Wei Nilsson","144 Station Road, Flat 17",EC2V 2AB,22/12/1988,"252.10",true,sme
+100009,"Chiara Nilsson-Zhang","99 High Street",SW1A 1AB,20/08/1999,"41749.21",false,sme
+100010,"Rahul Khan","84 Avenue des Champs-Elysees, Flat 2",EC2V 3AB,12/09/1965,"16,907.83",true,premier
+100011,"Maria Zhang","137 Station Road",M1 1AB,24/02/1947,"6,783.40",false,retail
+100012,"Olu Rossi","20 High Street",SW1A 2AB,25/02/1960,"31,949.76",false,premier
+100013,"Chiara Smith","46 Station Road, Flat 19",SW1A 6AB,15/11/1997,"43,805.20",true,premier
+100014,"Maria Martin-Adeyemi","95 Long Winding Countryside Lane",EC2V 5AB,06/02/1966,"4,737.16",true,sme
+100015,"Fatima Garcia","16 Long Winding Countryside Lane, Flat 2",EC2V 4AB,04/05/1948,"44,854.35",true,premier
+100016,"John Khan","52 Avenue des Champs-Elysees",EC2V 5AB,07/02/1964,"31,624.80",true,retail
+100017,"Rahul Garcia","157 Hauptstrasse",M1 4AB,10/12/1985,"35,523.69",true,retail
+100018,"Lars Mueller","183 High Street",EC2V 7AB,28/10/1974,"22,181.51",true,retail
+100019,"Chiara Mueller","25 Avenue des Champs-Elysees",EC2V 9AB,03/02/1984,"8,434.40",true,sme
+100020,"Lars Garcia","144 Hauptstrasse",LS6 5AB,11/07/1988,"14,368.36",false,retail
+100021,"Wei Nilsson","39 Hauptstrasse, Flat 10",SW1A 8AB,02/16/1963,"22,426.25",true,retail
+100022,"John Martin","182 Station Road",M1 1AB,23/07/1962,"35,407.04",false,sme
+100024,"Anna Mueller","101 High Street",LS6 3AB,05/02/1960,"1,629.01",true,sme
+100025,"John Adeyemi","63 Hauptstrasse",M1 4AB,12/06/1982,"21,070.20",false,retail
+100026,"Anna Nilsson-Nilsson","45 Long Winding Countryside Lane",SW1A 9AB,06/05/1964,"624.39",false,retail
+100027,"Olu Adeyemi-Martin","80 Avenue des Champs-Elysees",EC2V 1AB,02/04/1941,"14,866.81",false,premier
+100028,"Fatima Nilsson","187 High Street",SW1A 7AB,18/02/1958,"13,016.51",true,premier
+100029,"Maria Garcia-Mueller","12 Station Road",EC2V 9AB,09/09/1983,"33,460.15",true,sme
+100030,"Chiara Sharma","187 Station Road, Flat 26",LS6 3AB,14/02/1940,"1,993.33",false,sme
+100031,"Fatima Garcia","194 Hauptstrasse, Flat 10",EC2V 5AB,02/12/1988,"13,824.46",true,sme
+100032,"Wei Sharma","114 Avenue des Champs-Elysees",EC2V 9AB,17/03/1948,"39732.92",true,retail
+100033,"John Adeyemi","58 Avenue des Champs",EC2V 4AB,10/02/1983,"11,487.04",false,retail
+100034,"Fatima Garcia-Adeyemi","139 High Street",SW1A 1AB,01/01/1950,"46,702.24",false,sme
+100035,"Lars Rossi","10 Station Road, Flat 9",EC2V 3AB,14/11/1947,"43,894.02",false,retail
+100036,"Lars Mueller","141 Long Winding Countryside Lane",M1 4AB,28/07/1952,"10,192.98",true,retail
+100037,"John Rossi","84 Station Road, Flat 21",EC2V 3AB,16/01/1947,"9,897.91",false,premier
+100038,"Olu Sharma","81 Station Road, Flat 25",SW1A 6AB,17/07/1945,"36,570.46",true,premier
+100039,"Rahul Rossi","151 Hauptstrasse",M1 7AB,12/04/1940,"33,282.59",true,premier
+100040,"Lars Adeyemi-Rossi","156 Avenue des Champs-Elysees",SW1A 2AB,13/02/1972,"20,409.99",true,retail
+100041,"Chiara Nilsson","24 High Street, Flat 18",LS6 7AB,14/04/1951,"4,311.92",true,sme
+100042,"Wei Mueller","95 Long Winding Countryside Lane",SW1A 9AB,06/03/1972,"15,613.82",true,sme
+100043,"Rahul Khan","119 Long Winding Countryside Lane",LS6 4AB,18/12/1943,"5,558.94",true,retail
+100044,"Lars Nilsson","113 Hauptstrasse",EC2V 1AB,16/02/1988,"46,687.19",false,sme
+100045,"John Martin","149 Long Winding Countryside Lane, Flat 8",M1 3AB,16/09/1967,"45,333.58",true,retail
+100046,"Lars Nilsson","39 High Street",M1 3AB,20/09/1957,"47,552.75",true,retail
+100047,"Anna Khan-Rossi","136 Hauptstrasse",SW1A 7AB,09/09/1999,"14,447.76",true,premier
+100048,"Anna Khan-Khan","175 Long Winding Countryside Lane",EC2V 8AB,25/06/1970,"5,503.45",false,premier
+100049,"Maria Sharma-Nilsson","124 Long Winding Countryside Lane",SW1A 5AB,18/07/1994,"44,190.31",true,retail
+100050,"Rahul Garcia","128 Avenue des Champs-Elysees, Flat 1",EC2V 2AB,17/10/1976,"4,162.53",false,retail
+100051,"Maria Zhang-Mueller","191 High Street, Flat 28",SW1A 1AB,07/03/1999,"42,145.49",false,sme
+100052,"Chiara Martin","45 Avenue des Champs-Elysees",LS6 2AB,14/09/1941,"12,836.36",true,premier
+100053,"Anna Adeyemi","13 Station Road, Flat 28",SW1A 6AB,24/10/1966,"3,219.73",false,retail
+100054,"Sophie Garcia-Adeyemi","102 Avenue des Champs-Elysees",M1 4AB,28/10/1972,"24,072.97",false,sme
+100055,"Maria Rossi-Adeyemi","120 Hauptstrasse",EC2V 8AB,27/06/1995,"1,151.73",true,retail
+100056,"Chiara Garcia","136 Hauptstrasse",EC2V 8AB,05/11/1941,"11,676.91",false,premier
+100057,"Olu Rossi","168 Long Winding Countryside Lane, Flat 30",LS6 4AB,24/09/1982,"15,647.02",false,retail
+100058,"Maria Adeyemi","198 High Street, Flat 16",SW1A 7AB,26/10/1987,"24,071.10",false,sme
+100059,"Chiara Zhang","119 Avenue des Champs-Elysees",LS6 2AB,12/08/1957,"21,842.03",false,retail
+100060,"Fatima Zhang","28 Long Winding Countryside Lane, Flat 10",LS6 6AB,15/04/1992,"44,165.08",true,sme
+100061,"Lars Smith-Zhang","66 Long Winding Countryside Lane",SW1A 4AB,09/09/1991,"24,332.27",true,sme
+100062,"Wei Smith","97 High Street",SW1A 1AB,09/06/1972,"32,020.20",true,sme
+100063,"Sophie Zhang","188 Avenue des Champ",SW1A 6AB,11/11/1972,"16,772.13",true,premier
+100064,"Chiara Martin-Smith","86 Long Winding Countryside Lane",LS6 8AB,13/06/1944,"10,250.44",true,retail
+100065,"Anna Smith-Martin","6 Station Road",EC2V 3AB,16/04/1993,"27,303.82",true,premier
+100066,"Sophie Garcia","178 Avenue des Champs-Elysees, Flat 30",SW1A 1AB,09/03/1991,"47,998.89",false,sme
+100067,"Sophie Sharma","179 Station Road",LS6 4AB,21/10/1969,"11,214.71",false,premier
+100068,"Rahul Rossi","181 Hauptstrasse",LS6 5AB,13/03/1997,"20,873.19",true,premier
+100069,"Fatima Garcia","5 Long Winding Countryside Lane, Flat 1",EC2V 8AB,18/01/1940,"1,561.88",false,retail
+100070,"Olu Rossi","40 Hauptstrasse",SW1A 9AB,05/03/1978,"48,658.37",false,premier
+100071,"Rahul Sharma","101 Avenue des Champs-Elysees",EC2V 2AB,12/05/1957,"9,564.49",true,premier
+100072,"Maria Martin-Nilsson","94 Hauptstrasse",M1 7AB,18/12/1955,"9,034.27",false,premier
+100074,"Rahul Mueller-Rossi","17 High Street",LS6 9AB,16/04/1971,"44,344.77",false,premier
+100075,"Lars Adeyemi","128 Long Winding Countryside Lane",LS6 7AB,06/02/1991,"4,195.75",false,retail
+100076,"John Zhang","119 Long Winding Countryside Lane",SW1A 1AB,26/04/1969,"40,610.74",true,premier
+100077,"Fatima Zhang","127 High Street",EC2V 2AB,08/05/1980,"8,881.97",true,premier
+100078,"Wei Khan","191 Hauptstrasse",EC2V 7AB,10/11/1962,"33,944.55",true,retail
+100079,"Olu Mueller-Adeyemi","189 Long Winding Countryside Lane",SW1A 2AB,21/11/1993,"15,820.67",true,sme
+100080,"Olu Nilsson","4 High Street",M1 6AB,04/11/1942,"17,724.78",true,sme
+100081,"Anna Sharma-Sharma","25 Hauptstrasse",M1 5AB,25/04/1993,"6,815.59",true,sme
+100082,"Olu Nilsson","73 High Street",M1 2AB,07/03/1970,"33,902.75",true,premier
+100083,"Rahul Smith","73 Long Winding Countryside Lane, Flat 26",EC2V 7AB,12/07/1975,"6,784.09",false,retail
+100084,"Lars Mueller","94 High Street",M1 1AB,12/01/1959,"49,888.40",false,sme
+100085,"Rahul Rossi","2 High Street",SW1A 9AB,08/12/1942,"10,313.21",false,retail
+100086,"Chiara Sharma","86 Hauptstrasse, Flat 29",LS6 3AB,07/28/1963,"30,344.25",false,retail
+100087,"Rahul Khan","10 Station Road",LS6 4AB,16/03/1968,"4,788.03",false,sme
+100088,"Wei Mueller","189 Hauptstrasse",SW1A 8AB,08/24/1987,"46,637.16",true,premier
+100089,"Fatima Garcia","185 Hauptstrasse",SW1A 8AB,04/06/1966,"5,875.22",true,sme
+100090,"Maria Garcia","192 Station Road, Flat 21",EC2V 7AB,24/12/1946,"5,161.90",false,retail
+100091,"Lars Khan","132 Long Winding Countryside Lane",LS6 2AB,05/11/1976,"33,362.83",true,sme
+100092,"Fatima Martin","88 High Street",SW1A 3AB,28/03/1975,"2,663.26",true,premier
+100093,"Wei Khan","139 Long Winding Countryside Lane",LS6 8AB,05/12/1959,"7,424.76",false,retail
+100094,"Olu Sharma-Nilsson","5 Long Winding Countryside Lane, Flat 7",LS6 7AB,26/04/1991,"20795.11",false,sme
+100095,"Lars Nilsson","46 Hauptstrasse, Flat 12",SW1A 4AB,20/10/1962,"27,225.37",true,sme
+100096,"Chiara Sharma","38 Avenue des Champs-Elysees",LS6 1AB,14/01/1979,"38,593.59",false,retail
+100097,"John Mueller","17 Long Winding Countryside Lane",SW1A 5AB,05/07/1999,"13,896.19",true,sme
+100098,"Olu Rossi","25 Avenue des Champs-Elysees, Flat 21",M1 7AB,15/01/1977,"31,202.57",false,sme
+100099,"Wei Martin","21 Hauptstrasse, Flat 5",M1 3AB,21/10/1974,"10,591.36",true,retail
+100100,"Chiara Nilsson-Sharma","129 Avenue des Champs-Elysees",SW1A 6AB,15/09/1971,"37,512.21",false,retail
+100101,"Rahul Khan","21 High Street, Flat",M1 6AB,26/06/1964,"28,765.72",true,sme
+100102,"Fatima Mueller","113 Avenue des Champs-Elysees, Flat 8",M1 3AB,04/05/1992,"33,280.05",true,retail
+100103,"Fatima Rossi","77 Hauptstrasse",SW1A 8AB,26/12/1966,"15,637.90",false,sme
+100104,"Lars Martin-Mueller","59 Avenue des Champs-Elysees",LS6 9AB,18/12/1959,"7,591.95",false,sme
+100105,"Anna Garcia","108 Hauptstrasse",LS6 1AB,15/12/1950,"48,640.21",true,premier
+100106,"Anna Adeyemi-Mueller","54 High Street",SW1A 7AB,26/07/1967,"34,533.00",true,premier
+100107,"Wei Martin","109 Long Winding Countryside Lane",M1 5AB,23/01/1974,"11,442.68",false,retail
+100108,"Sophie Rossi","2 Hauptstrasse, Flat 26",EC2V 7AB,04/19/1990,"35,783.70",true,sme
+100109,"Anna Nilsson-Smith","27 High Street, Flat 22",M1 1AB,19/11/1996,"28,275.07",true,sme
+100110,"Maria Rossi","46 Avenue des Champs-Elysees, Flat 14",LS6 2AB,15/07/1944,"22,649.67",false,premier
+100111,"Chiara Adeyemi","63 Station Road",M1 5AB,26/12/1950,"43,114.35",true,sme
+100112,"John Garcia","165 Station Road",LS6 2AB,14/03/1981,"17,373.02",true,premier
+100113,"Maria Sharma","43 High Street",M1 2AB,06/09/1983,"42,229.05",true,retail
+100114,"Fatima Garcia-Zhang","105 Station Road, Flat 3",LS6 9AB,02/06/1957,"24,903.18",false,sme
+100115,"Chiara Mueller","90 Hauptstrasse",EC2V 9AB,21/11/1953,"8,621.95",false,retail
+100116,"Maria Nilsson","153 Long Winding Countryside Lane",LS6 4AB,17/01/1946,"9,314.67",false,retail
+100117,"Lars Mueller","169 Long Winding Countryside Lane, Flat 1",LS6 4AB,06/07/1977,"19,569.95",true,retail
+100118,"Rahul Smith","154 Hauptstrasse",LS6 7AB,05/09/1992,"40,795.01",true,sme
+100119,"Sophie Khan","109 Station Road, Flat 2",EC2V 4AB,05/08/1973,"2,844.37",false,retail
+100120,"Olu Martin","145 Avenue des Champs-Elysees",SW1A 3AB,25/10/1953,"25,534.77",true,retail
+100121,"Wei Zhang","83 Avenue des Champs-Elysees",LS6 4AB,17/04/1964,"20,164.58",false,premier
+100122,"Olu Khan","179 Avenue des Champs-Elysees, Flat 1",LS6 5AB,15/08/1975,"31,811.15",true,premier
+100123,"Wei Smith-Khan","153 Avenue des Champs-Elysees",LS6 6AB,11/02/1962,"44,274.89",false,sme
+100124,"Sophie Mueller","93 Long Winding Countryside Lane",SW1A 2AB,11/11/1942,"14,856.91",true,retail
+100125,"Rahul Khan","128 Station Road, Flat 8",LS6 8AB,14/09/1988,"4,448.02",true,premier
+100126,"Anna Khan","4 Station Road, Flat",LS6 8AB,16/02/1967,"18,188.77",true,premier
+100127,"Olu Mueller","30 Hauptstrasse",M1 6AB,19/05/1953,"27,705.93",false,retail
+100128,"John Adeyemi","1 Long Winding Countryside Lane",EC2V 1AB,21/08/1974,"33,597.23",true,premier
+100129,"Olu Zhang","21 Avenue des Champs-Elysees",LS6 5AB,07/02/1950,"46,421.01",false,retail
+100130,"Fatima Zhang-Adeyemi","71 Station Road",M1 8AB,23/12/1984,"8,822.62",true,retail
+100131,"Maria Rossi","88 High Street, Flat 10",SW1A 4AB,06/21/1950,"46,792.45",false,premier
+100132,"Chiara Smith","183 Avenue des Champs-Elysees",SW1A 9AB,27/07/1945,"44,712.20",false,premier
+100133,"John Khan","133 Station Road",M1 4AB,22/12/1998,"21,621.37",true,sme
+100134,"Lars Garcia","21 Long Winding Countryside Lane",LS6 1AB,09/04/1949,"41,852.37",true,sme
+100135,"Fatima Martin","163 High Street",M1 7AB,14/12/1984,"44,275.80",false,sme
+100136,"John Adeyemi","26 Hauptstrasse, Flat 1",M1 3AB,15/11/1957,"31,678.61",true,premier
+100137,"Maria Garcia","79 Hauptstrasse",EC2V 6AB,14/11/1970,"41,976.07",true,retail
+100138,"Maria Smith-Sharma","146 Hauptstrasse",SW1A 4AB,11/09/1963,"17,507.89",true,premier
+100139,"Fatima Garcia","163 Long Winding Countryside Lane",SW1A 8AB,08/07/1964,"28,626.57",false,premier
+100140,"Rahul Martin","31 High Street",EC2V 9AB,17/08/1992,"7,182.72",true,sme
+100141,"Rahul Rossi-Khan","60 Long Winding Countryside Lane",EC2V 9AB,08/04/1998,"19,139.18",false,premier
+100142,"Wei Rossi","62 High Street, Flat 3",SW1A 7AB,20/11/1953,"5,953.64",false,premier
+100143,"Rahul Khan","18 Avenue des Champs-Elysees",SW1A 1AB,13/02/1965,"20,824.85",true,premier
+100144,"John Khan","200 Station Road",SW1A 3AB,26/03/1996,"47,254.60",true,premier
+100145,"Wei Sharma","125 Station Road",SW1A 6AB,09/12/1991,"8,993.60",true,premier
+100146,"Maria Mueller","132 Station Road",SW1A 7AB,02/05/1985,"27,815.19",false,premier
+100147,"Zhang Anna","91 Station Road",M1 7AB,06/06/1981,"4,152.82",true,retail
+100148,"John Rossi","194 Station Road",LS6 3AB,08/01/1947,"47,610.42",true,retail
+100149,"Rahul Nilsson","186 Long Winding Countryside Lane",LS6 4AB,21/02/1966,"7,295.43",false,premier
+100150,"Chiara Sharma","163 Long Winding Countryside Lane",LS6 3AB,07/02/1948,"32,331.20",true,sme
+100151,"John Nilsson","75 Station Road",EC2V 9AB,08/09/1975,"21,630.13",false,sme
+100152,"Chiara Khan","164 Long Winding Countryside Lane",EC2V 7AB,21/06/1980,"14,945.41",false,sme
+100153,"Sophie Adeyemi","115 Long Winding Countryside Lane",M1 6AB,12/08/1962,"19,979.46",true,premier
+100154,"John Garcia","27 Station Road",SW1A 5AB,14/05/1961,"1,740.32",true,retail
+100155,"Sophie Garcia","88 Avenue des Champs-Elysees",M1 4AB,17/05/1949,"3,253.18",true,sme
+100156,"Chiara Rossi-Martin","119 Hauptstrasse",EC2V 4AB,25/11/1995,"49,189.23",true,retail
+100157,"Chiara Garcia","28 High Street",LS6 3AB,06/08/1946,"39,443.12",false,sme
+100158,"Fatima Smith","35 Avenue des Champs-Elysees",SW1A 1AB,11/03/1988,"7,597.04",false,premier
+100159,"Lars Adeyemi","115 Hauptstrasse, Flat 11",LS6 7AB,02/09/1958,"44,818.97",true,retail
+100160,"Anna Rossi","129 Station Road",LS6 3AB,09/10/1990,"21,304.36",true,premier
+100161,"Chiara Smith","125 Station Road, Flat 14",M1 1AB,24/01/1962,"46,894.27",true,sme
+100162,"Olu Adeyemi","93 Station Road",EC2V 1AB,05/17/1998,"16,927.86",false,sme
+100163,"Rahul Adeyemi","96 Long Winding Countryside Lane",M1 2AB,14/10/1999,"5,623.16",true,retail
+100164,"Lars Smith","30 Long Winding Countryside Lane, Flat 8",LS6 8AB,13/02/1965,"28,011.90",true,premier
+100165,"Chiara Sharma","170 Hauptstrasse",SW1A 8AB,25/06/1973,"13,219.37",true,premier
+100166,"Chiara Zhang","110 High Street",LS6 1AB,06/04/1969,"28,473.17",true,retail
+100167,"Rahul Zhang","11 High Street",SW1A 2AB,24/10/1981,"43,834.16",false,retail
+100168,"Olu Adeyemi-Martin","161 High Street",EC2V 5AB,14/03/1945,"22,016.88",false,sme
+100169,"Fatima Sharma-Martin","179 Avenue des Champs-Elysees",SW1A 5AB,11/10/1983,"30,945.81",true,retail
+100170,"Anna Khan","130 Long Winding Countryside Lane, Flat 14",SW1A 3AB,07/04/1996,"47,786.93",true,sme
+100171,"Fatima Nilsson","90 Avenue des Champs-Elysees, Flat 10",EC2V 5AB,16/08/1983,"49,967.99",true,premier
+100172,"Wei Zhang-Khan","194 Avenue des Champs-Elysees, Flat 26",LS6 9AB,07/04/1977,"701.03",false,retail
+100173,"Olu Sharma","112 High Street",SW1A 6AB,26/03/1970,"49,330.28",true,premier
+100174,"Rahul Rossi","48 Station Road, Flat 9",LS6 3AB,15/10/1945,"11,419.92",true,retail
+100175,"Fatima Garcia","72 Long Winding Countryside Lane, Flat 19",EC2V 2AB,05/07/1991,"376.65",true,premier
+100176,"Wei Martin","70 High Street",EC2V 3AB,24/12/1994,"27,134.02",true,retail
+100177,"Rahul Nilsson","182 High Street",M1 3AB,26/02/1946,"28,026.25",false,retail
+100178,"John Nilsson","119 High Street, Flat 27",SW1A 4AB,25/06/1979,"48,405.13",true,sme
+100179,"Chiara Nilsson-Garcia","43 Long Winding Countryside Lane",EC2V 2AB,06/15/1990,"20,436.35",true,retail
+100180,"Maria Smith-Zhang","60 Avenue des Champs-Elysees",SW1A 5AB,03/09/1961,"902.76",true,sme
+100181,"Chiara Martin-Rossi","51 Avenue des Champs-Elysees",SW1A 2AB,05/04/1951,"49,555.38",true,sme
+100182,"Wei Khan-Zhang","134 Avenue des Champs-Elysees, Flat 19",M1 5AB,12/07/1997,"5,202.92",false,premier
+100183,"Sophie Mueller","1 Hauptstrasse",SW1A 8AB,12/08/1986,"19,442.31",,sme
+100184,"Wei Rossi","194 Avenue des Champs-Elysees",EC2V 3AB,16/09/1962,"38,006.94",true,retail
+100185,"Fatima Rossi","193 High Street",SW1A 4AB,03/12/1967,"39,052.86",false,retail
+100186,"Anna Smith","157 Long Winding Countryside Lane",EC2V 2AB,08/12/1950,"29,371.07",false,retail
+100187,"John Nilsson","59 High Street",SW1A 6AB,11/08/1978,"25,245.04",true,premier
+100188,"Anna Martin","111 High Street",LS6 8AB,27/04/1992,"42,762.09",true,premier
+100189,"Chiara Rossi","1 Hauptstrasse",LS6 6AB,07/07/1940,"35,998.05",true,premier
+100190,"Wei Sharma","58 High Street",EC2V 7AB,02/08/1966,"26,656.14",true,retail
+100191,"John Sharma-Nilsson","14 Station Road",SW1A 9AB,02/12/1978,"30,124.73",false,sme
+100192,"Maria Martin","68 Avenue des Champs",LS6 3AB,20/09/1959,"44,097.47",true,sme
+100193,"Wei Rossi","172 Station Road",LS6 5AB,11/04/1944,"17,220.94",true,sme
+100194,"Fatima Garcia","170 Long Winding Countryside Lane, Flat 10",M1 9AB,23/03/1996,"33,428.33",true,premier
+100195,"Lars Martin","173 Avenue des Champs-Elysees",M1 8AB,01/09/1977,"18,582.84",true,retail
+100196,"Rahul Khan","77 High Street, Flat 27",LS6 3AB,22/04/1995,"25424.27",true,premier
+100197,"Sophie Nilsson","119 Avenue des Champs-Elysees, Flat 1",SW1A 3AB,05/08/1976,"13,048.03",true,premier
+100198,"Lars Adeyemi","179 Hauptstrasse",M1 7AB,24/01/1980,"49,259.21",false,retail
+100199,"Fatima Adeyemi","137 High Street",EC2V 6AB,06/11/1994,"6,470.29",true,premier
+100200,"Sophie Nilsson","148 Long Winding Countryside Lane",LS6 3AB,04/02/1976,"22,518.77",false,retail
+100201,"Maria Adeyemi","41 Avenue des Champs-Elysees, Flat 6",SW1A 4AB,28/02/1966,"47,039.92",true,premier
+100202,"Rahul Smith","126 Hauptstrasse",LS6 8AB,06/04/1959,"5,838.92",true,sme
+100203,"Anna Garcia","170 Long Winding Countryside Lane",M1 9AB,18/11/1951,"6,757.26",true,sme
+100204,"Maria Nilsson","11 High Street",M1 4AB,18/03/1998,"8,958.59",true,retail
+100205,"Sophie Rossi","44 High Street",LS6 5AB,10/02/1975,"15,056.04",false,sme
+100206,"Maria Smith-Smith","109 Station Road, Flat 11",EC2V 4AB,19/07/1943,"3,876.15",,sme
+100207,"Rahul Rossi","72 Long Winding Countryside Lane",M1 2AB,12/01/1982,"9,184.57",false,premier
+100208,"Fatima Adeyemi","134 Avenue des Champs-Elysees",EC2V 9AB,12/06/1985,"29,672.63",true,premier
+100209,"John Nilsson","166 Avenue des Champs-Elysees, Flat 1",EC2V 7AB,25/01/1940,"41,187.65",false,retail
+100210,"Anna Mueller","196 High Street",M1 7AB,21/05/1967,"12,076.06",false,premier
+100211,"Maria Garcia","68 Hauptstrasse",LS6 9AB,17/03/1940,"31,797.97",false,retail
+100212,"Sophie Smith","180 High Street",EC2V 8AB,19/03/1992,"33,172.72",false,premier
+100213,"Fatima Zhang","165 Station Road, Flat 23",EC2V 8AB,05/10/1940,"23,233.73",true,premier
+100214,"Fatima Garcia","58 High Street",SW1A 4AB,11/09/1982,"3,001.27",true,premier
+100216,"Rahul Sharma","174 High Street, Flat 20",SW1A 3AB,24/12/1957,"5,980.17",false,sme
+100217,"Rahul Khan","93 Avenue des Champs-Elysees",SW1A 3AB,07/10/1952,"31,017.11",false,retail
+100218,"Chiara Mueller","107 Avenue des Champs-Elysees",SW1A 5AB,23/11/1983,"21,444.21",true,premier
+100219,"Maria Garcia","189 Long Winding Countryside Lane",EC2V 9AB,18/12/1977,"27,310.26",false,sme
+100220,"Chiara Garcia-Rossi","166 Station Road",SW1A 1AB,04/01/1999,"40,994.32",true,retail
+100221,"Wei Rossi","18 Hauptstrasse, Flat 25",SW1A 3AB,15/11/1984,"14,655.47",false,sme
+100222,"Sophie Rossi","122 High Street, Flat 28",SW1A 5AB,26/11/1970,"26,103.48",false,retail
+100223,"Sophie Adeyemi","30 Hauptstrasse",EC2V 2AB,27/07/1943,"22,272.10",false,retail
+100224,"Lars Zhang","148 High Street",LS6 6AB,04/11/1971,"9,557.76",false,sme
+100225,"Lars Mueller","139 Station Road, Flat 16",M1 9AB,01/06/1981,"6,982.71",false,premier
+100226,"Anna Smith","51 Hauptstrasse",LS6 4AB,11/04/1996,"12,819.66",false,sme
+100227,"Chiara Rossi","21 High Street",LS6 5AB,25/12/1962,"4,972.78",true,retail
+100228,"Sophie Martin-Khan","90 Station Road, Flat 20",M1 4AB,17/11/1958,"43,285.33",false,premier
+100229,"Maria Khan","48 Station Road",M1 7AB,28/02/1973,"31,264.66",true,sme
+100230,"Chiara Mueller","181 High Street, Flat 3",SW1A 5AB,03/10/1946,"598.13",true,retail
+100231,"Maria Adeyemi-Zhang","88 Station Road",M1 3AB,17/12/1988,"35,252.09",true,retail
+100232,"Lars Mueller","140 Station Road",EC2V 3AB,08/03/1953,"11,871.17",,premier
+100233,"Lars Sharma","23 Station Road, Flat 28",EC2V 6AB,10/06/1952,"12,329.04",true,sme
+100234,"Wei Zhang","78 Avenue des Champs-Elysees",LS6 2AB,28/12/1942,"25,431.43",false,premier
+100235,"Anna Adeyemi","124 High Street",EC2V 1AB,05/02/1954,"2,516.87",false,premier
+100237,"Wei Martin","100 Avenue des Champs-Elysees",LS6 1AB,21/03/1997,"32,184.18",true,premier
+100238,"Wei Garcia","98 Station Road",EC2V 2AB,05/07/1960,"46,290.71",false,premier
+100239,"John Smith-Rossi","86 Avenue des Champs-Elysees",LS6 6AB,22/08/1954,"31,900.23",false,premier
+100240,"Wei Mueller","196 Avenue des Champs-Elysees",EC2V 8AB,14/12/1974,"49,315.91",false,premier
+100241,"Anna Garcia","80 Avenue des Champs-Elysees",M1 6AB,27/10/1988,"38,792.65",true,retail
+100242,"John Adeyemi","162 Station Road, Flat 2",M1 2AB,07/24/1982,"13,014.14",false,sme
+100243,"Sophie Sharma-Zhang","154 Station Road",LS6 3AB,27/10/1954,"20,480.89",true,premier
+100244,"John Martin","196 Long Winding Countryside Lane, Flat 6",M1 1AB,25/10/1955,"9,787.38",true,retail
+100245,"Anna Smith","24 Long Winding Countryside Lane, Flat 7",EC2V 7AB,18/10/1997,"30,208.76",true,premier
+100246,"Sophie Adeyemi","28 Avenue des Champs-Elysees, Flat 3",M1 9AB,22/01/1997,"48073.42",true,premier
+100247,"Wei Martin-Zhang","155 High Street",EC2V 1AB,18/05/1955,"20,583.98",false,sme
+100248,"Chiara Khan","106 Hauptstrasse",SW1A 9AB,15/01/1969,"34,767.27",false,retail
+100249,"John Adeyemi-Khan","160 Hauptstrasse",LS6 9AB,07/10/1993,"31,869.90",true,premier
+100250,"Lars Garcia","74 Station Road",EC2V 6AB,24/10/1950,"47,107.28",true,premier
+100251,"Anna Garcia","112 Hauptstrasse",M1 7AB,15/06/1949,"4,893.03",true,sme
+100252,"Olu Khan","143 Station Road",M1 6AB,05/07/1951,"42,885.31",false,retail
+100253,"Chiara Zhang","142 Station Road",M1 2AB,23/10/1958,"4,902.12",false,premier
+100254,"Sophie Smith","93 Avenue des Champs-Elysees, Flat 27",EC2V 1AB,28/02/1983,"2,139.34",true,sme
+100255,"Fatima Sharma-Adeyemi","199 High Street, Flat 27",M1 5AB,19/04/1975,"23,885.90",true,sme
+100256,"Fatima Rossi-Rossi","199 Hauptstrasse, Flat 1",M1 8AB,01/10/1954,"21,784.22",false,sme
+100257,"John Mueller-Rossi","119 Station Road, Flat 27",LS6 3AB,27/08/1982,"14,194.56",false,retail
+100258,"Lars Garcia","62 Avenue des Champs-Elysees, Flat 24",LS6 7AB,20/06/1998,"27,812.96",false,sme
+100259,"Chiara Smith","9 Avenue des Champs-Elysees",M1 4AB,19/12/1956,"20,663.27",false,premier
+100260,"Olu Khan-Smith","47 Avenue des Champs-Elysees",LS6 3AB,12/03/1989,"34,939.43",true,premier
+100261,"Anna Adeyemi","115 Hauptstrasse, Flat 12",LS6 1AB,05/06/1994,"14,925.66",false,retail
+100262,"Rahul Sharma-Zhang","128 Long Winding Countryside Lane, Flat 24",SW1A 2AB,17/08/1944,"37,241.21",false,retail
+100263,"Fatima Adeyemi","167 High Street, Flat 18",M1 2AB,16/10/1948,"18,098.64",true,sme
+100264,"Olu Nilsson-Adeyemi","41 High Street",LS6 3AB,15/04/1955,"11,491.81",true,sme
+100266,"Rahul Mueller","34 Avenue des Champs-Elysees, Flat 5",LS6 7AB,05/06/1955,"36,802.10",true,premier
+100267,"Fatima Adeyemi","112 Long Winding Countryside Lane",LS6 8AB,21/04/1954,"13,788.21",true,retail
+100268,"Chiara Mueller-Khan","45 Station Road",EC2V 1AB,05/12/1969,"40,840.57",true,sme
+100269,"Maria Khan","168 Avenue des Champs-Elysees",M1 3AB,26/09/1997,"6,770.42",false,retail
+100270,"Fatima Zhang-Zhang","22 High Street",EC2V 9AB,20/12/1990,"16,562.84",true,retail
+100271,"Wei Nilsson","186 Hauptstrasse",SW1A 3AB,03/09/1951,"28,149.50",false,sme
+100272,"John Zhang","158 High Street",EC2V 9AB,12/12/1998,"43,378.97",false,retail
+100273,"Rahul Garcia","162 Hauptstrasse",SW1A 4AB,17/12/1977,"39,379.40",true,premier
+100274,"Lars Nilsson","39 Long Winding Countryside Lane",M1 2AB,16/11/1961,"42,211.95",false,retail
+100275,"Chiara Khan","81 High Street",SW1A 4AB,17/02/1990,"18,300.64",false,retail
+100276,"Olu Martin","158 Hauptstrasse, Flat 30",M1 4AB,21/12/1979,"8,382.95",false,sme
+100277,"Wei Rossi-Mueller","5 Long Winding Countryside Lane",M1 5AB,25/09/1966,"36,427.92",true,sme
+100278,"John Mueller","61 High Street",SW1A 2AB,23/08/1979,"35,714.07",false,retail
+100279,"Rahul Nilsson","71 High Street",EC2V 7AB,07/03/1942,"9,455.19",false,premier
+100280,"Wei Khan","139 High Street",SW1A 3AB,03/01/1977,"14,337.23",true,sme
+100281,"Maria Mueller","162 High Street",LS6 2AB,04/10/1969,"23,876.91",false,retail
+100282,"Anna Mueller","43 Avenue des Champs-Elysees, Flat 26",LS6 2AB,11/03/1998,"47,224.12",true,retail
+100283,"Rahul Rossi","23 Avenue des Champs-Elysees",M1 1AB,24/07/1944,"4,585.68",true,retail
+100284,"Rahul Rossi-Nilsson","134 Hauptstrasse",LS6 3AB,07/03/1976,"42,937.14",false,premier
+100285,"Olu Sharma","35 Long Winding Countryside Lane",LS6 6AB,07/03/1955,"49,021.30",true,premier
+100286,"Rahul Smith","2 Station Road",LS6 8AB,23/01/1958,"1,920.53",false,retail
+100287,"Chiara Garcia","188 Long Winding Countryside Lane",EC2V 8AB,11/11/1981,"27,660.66",true,sme
+100288,"Sophie Martin","17 Station Road",M1 4AB,11/10/1945,"49,900.63",true,sme
+100289,"Rahul Zhang","94 Hauptstrasse",EC2V 2AB,06/09/1980,"29,630.33",true,retail
+100290,"Wei Garcia","161 High Street, Flat 20",EC2V 7AB,04/07/1976,"20,052.58",false,sme
+100291,"Olu Rossi","44 Long Winding Countryside Lane",EC2V 7AB,17/10/1968,"40,028.69",false,retail
+100292,"Rahul Sharma","100 Hauptstrasse, Flat 21",LS6 3AB,17/02/1961,"7,436.13",false,premier
+100293,"Wei Martin","106 High Street",EC2V 1AB,17/12/1945,"44,249.31",true,sme
+100294,"Anna Nilsson-Mueller","22 High Street",M1 9AB,21/08/1985,"34,514.75",true,retail
+100295,"Sophie Smith","96 Long Winding Countryside Lane",LS6 2AB,25/06/1960,"48,947.35",true,premier
+100296,"Fatima Mueller","193 Long Winding Countryside Lane",EC2V 9AB,09/06/1953,"2,493.86",false,premier
+100297,"Anna Rossi","126 Station Road",M1 6AB,03/12/1984,"19,342.45",true,premier
+100298,"Chiara Garcia-Adeyemi","117 High Street, Flat 24",SW1A 9AB,07/06/1996,"25,921.79",false,premier
+100299,"Wei Mueller","107 Hauptstrasse",EC2V 6AB,09/08/1945,"28,951.85",true,premier
+900000,"New Person","1 New Road",N1 1AA,01/01/1990,"0.00",false,retail
+900001,"New Person","1 New Road",N1 1AA,01/01/1990,"0.00",false,retail

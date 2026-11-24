@@ -1,0 +1,1004 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Agent Payment Mandate Checker · Hyniqe Hub</title>
+<style>:root { --ink:#14213d; --muted:#5b6475; --line:#e3e7ef; --bg:#f7f8fb; --card:#fff; --accent:#1f5eff; --accent-ink:#fff; --ok:#137a3f; --warn:#b26a00; --bad:#b3261e; }
+* { box-sizing: border-box; }
+body { margin:0; font:15px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; color:var(--ink); background:var(--bg); }
+header { padding:28px clamp(16px,5vw,56px) 18px; background:var(--card); border-bottom:1px solid var(--line); }
+.brand { font-weight:700; letter-spacing:.2px; color:var(--muted); font-size:13px; text-transform:uppercase; }
+.brand span { color:var(--accent); }
+h1 { margin:6px 0 4px; font-size:clamp(22px,3vw,30px); }
+.tagline { margin:0; color:var(--muted); max-width:760px; }
+.local { margin:10px 0 0; font-size:13px; color:var(--ok); }
+main { padding:20px clamp(16px,5vw,56px) 40px; display:grid; gap:18px; max-width:1180px; }
+.card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:18px; }
+.card h2 { margin:0 0 10px; font-size:17px; }
+label { display:block; font-weight:600; margin:10px 0 4px; font-size:14px; }
+.hint { color:var(--muted); font-size:13px; font-weight:400; }
+textarea, input[type=text], select { width:100%; font:13px/1.45 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; border:1px solid var(--line); border-radius:8px; padding:9px; background:#fbfcfe; color:var(--ink); }
+input[type=text], select { font-family:inherit; font-size:14px; }
+textarea { min-height:140px; resize:vertical; }
+.row { display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:12px; }
+.actions { display:flex; flex-wrap:wrap; gap:8px; margin-top:14px; }
+button { font:inherit; font-weight:600; border-radius:8px; padding:9px 14px; border:1px solid var(--line); background:#fff; color:var(--ink); cursor:pointer; }
+button.primary { background:var(--accent); border-color:var(--accent); color:var(--accent-ink); }
+button:disabled { opacity:.5; cursor:default; }
+.tabs { display:flex; gap:6px; margin-bottom:6px; }
+.tabs button[aria-selected=true] { background:var(--ink); color:#fff; border-color:var(--ink); }
+#report { overflow-wrap:anywhere; }
+#report h2 { font-size:22px; margin:4px 0 8px; } #report h3 { font-size:18px; margin:22px 0 8px; } #report h4, #report h5 { font-size:15px; margin:18px 0 6px; }
+#report p { margin:8px 0; }
+.tablewrap { overflow-x:auto; margin:10px 0; }
+table { border-collapse:collapse; width:100%; font-size:13.5px; }
+th, td { border:1px solid var(--line); padding:6px 8px; text-align:left; vertical-align:top; }
+th { background:#f1f4f9; }
+code { background:#f1f4f9; padding:1px 4px; border-radius:4px; font-size:12.5px; }
+.error { color:var(--bad); font-weight:600; white-space:pre-wrap; }
+.empty { color:var(--muted); }
+footer { padding:20px clamp(16px,5vw,56px) 36px; color:var(--muted); font-size:12.5px; }
+@media (prefers-color-scheme: dark) {
+  :root { --ink:#e8ecf5; --muted:#a3acbf; --line:#2b3345; --bg:#10141d; --card:#171c27; --accent:#5b8cff; }
+  textarea, input[type=text], select { background:#121722; }
+  th, code { background:#1f2634; } button { background:#1d2330; } .tabs button[aria-selected=true] { background:#e8ecf5; color:#10141d; }
+}
+</style>
+</head>
+<body data-solution="agent-payment-mandate-checker">
+<header><div class="brand">Hyniqe <span>Hub</span></div><h1>Agent Payment Mandate Checker</h1><p class="tagline">When an AI agent pays a bill, prove who allowed it, within what limit, and why.</p><p class="local">🔒 Runs entirely in your browser. Nothing you load here is uploaded.</p></header>
+<main id="app"></main>
+<footer>Hyniqe Hub · open-source tools for financial operations. Outputs support your judgement; they are not legal, audit or security advice.</footer>
+<script>
+const __m = {};
+__m["shared/table.js"] = (() => {
+// Small, dependency-free table helpers shared by the Hyniqe Hub solutions in this batch.
+// Runs unchanged in Node (22+, type stripping) and in the browser after `tsc`.
+/** Parse CSV text into rows keyed by lower-cased, trimmed headers (spaces → underscores).
+ *  Handles quoted fields, escaped quotes, BOM, CRLF, and comma / semicolon / tab separators. */
+function parseCsv(text) {
+    const clean = text.replace(/^﻿/, "");
+    const firstLine = clean.split(/\r?\n/, 1)[0] ?? "";
+    const sep = pickSeparator(firstLine);
+    const records = [];
+    let field = "";
+    let record = [];
+    let inQuotes = false;
+    for (let i = 0; i < clean.length; i++) {
+        const ch = clean[i];
+        if (inQuotes) {
+            if (ch === '"') {
+                if (clean[i + 1] === '"') {
+                    field += '"';
+                    i++;
+                }
+                else {
+                    inQuotes = false;
+                }
+            }
+            else {
+                field += ch;
+            }
+            continue;
+        }
+        if (ch === '"') {
+            inQuotes = true;
+            continue;
+        }
+        if (ch === sep) {
+            record.push(field);
+            field = "";
+            continue;
+        }
+        if (ch === "\n" || ch === "\r") {
+            if (ch === "\r" && clean[i + 1] === "\n")
+                i++;
+            record.push(field);
+            field = "";
+            if (record.some((f) => f.trim() !== ""))
+                records.push(record);
+            record = [];
+            continue;
+        }
+        field += ch;
+    }
+    record.push(field);
+    if (record.some((f) => f.trim() !== ""))
+        records.push(record);
+    if (records.length === 0)
+        return [];
+    const headers = records[0].map(normaliseHeader);
+    return records.slice(1).map((r) => {
+        const row = {};
+        headers.forEach((h, idx) => { row[h] = (r[idx] ?? "").trim(); });
+        return row;
+    });
+}
+function normaliseHeader(h) {
+    return h.trim().toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_|_$/g, "");
+}
+function pickSeparator(line) {
+    const counts = [",", ";", "\t"].map((s) => [s, line.split(s).length - 1]);
+    counts.sort((a, b) => b[1] - a[1]);
+    return counts[0][1] > 0 ? counts[0][0] : ",";
+}
+/** Serialise rows to CSV with a fixed column order. */
+function toCsv(rows, columns) {
+    const esc = (v) => {
+        const s = v === undefined || v === null ? "" : String(v);
+        return /[",\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+    };
+    return [columns.join(","), ...rows.map((r) => columns.map((c) => esc(r[c])).join(","))].join("\n") + "\n";
+}
+/** Render a simple Markdown table. */
+function mdTable(headers, rows) {
+    const cell = (v) => String(v).replace(/\|/g, "\\|").replace(/\n/g, " ");
+    return [
+        `| ${headers.map(cell).join(" | ")} |`,
+        `| ${headers.map(() => "---").join(" | ")} |`,
+        ...rows.map((r) => `| ${r.map(cell).join(" | ")} |`),
+    ].join("\n");
+}
+/** Read the first non-empty value among several possible column names. */
+function pick(row, ...names) {
+    for (const n of names) {
+        const v = row[normaliseHeader(n)];
+        if (v !== undefined && v !== "")
+            return v;
+    }
+    return "";
+}
+function parseAmount(raw) {
+    if (!raw)
+        return null;
+    let s = raw.replace(/[^\d.,\-]/g, "");
+    if (s.includes(",") && s.includes(".")) {
+        s = s.lastIndexOf(",") > s.lastIndexOf(".") ? s.replace(/\./g, "").replace(",", ".") : s.replace(/,/g, "");
+    }
+    else if (s.includes(",")) {
+        const parts = s.split(",");
+        s = parts.length === 2 && parts[1].length !== 3 ? s.replace(",", ".") : s.replace(/,/g, "");
+    }
+    const n = Number(s);
+    return Number.isFinite(n) ? n : null;
+}
+function parseBool(raw) {
+    const s = raw.trim().toLowerCase();
+    if (["y", "yes", "true", "1", "done", "passed", "pass"].includes(s))
+        return true;
+    if (["n", "no", "false", "0", "not done", "failed", "fail", ""].includes(s))
+        return s === "" ? null : false;
+    return null;
+}
+/** Parse ISO-ish timestamps ("2026-11-24 14:05", "2026-11-24T14:05:00Z", "24/11/2026 14:05"). */
+function parseTimestamp(raw) {
+    const s = raw.trim();
+    if (!s)
+        return null;
+    const dmy = s.match(/^(\d{1,2})[\/.](\d{1,2})[\/.](\d{4})(?:[ T](\d{1,2}):(\d{2})(?::(\d{2}))?)?$/);
+    if (dmy) {
+        const [, d, m, y, hh = "0", mm = "0", ss = "0"] = dmy;
+        return new Date(Date.UTC(+y, +m - 1, +d, +hh, +mm, +ss));
+    }
+    const iso = s.includes("T") ? s : s.replace(" ", "T");
+    const withZone = /[zZ]|[+\-]\d{2}:?\d{2}$/.test(iso) ? iso : iso + (iso.length > 10 ? "Z" : "T00:00:00Z");
+    const d = new Date(withZone);
+    return Number.isNaN(d.getTime()) ? null : d;
+}
+
+return { parseCsv, normaliseHeader, toCsv, mdTable, pick, parseAmount, parseBool, parseTimestamp };
+})();
+__m["agent-payment-mandate-checker/src/checker.js"] = (() => {
+// Agent Payment Mandate Checker
+// Checks every payment an AI agent made against the mandate a human gave it:
+// who authorised the agent, for which payees/categories/currencies, within what limits,
+// and whether the audit trail is complete enough to defend each payment.
+const { pick, parseAmount, parseTimestamp } = __m["shared/table.js"];
+const RULES = {
+    NO_MANDATE: { severity: "critical", title: "Agent paid with no mandate on file" },
+    MANDATE_AGENT_MISMATCH: { severity: "critical", title: "Payment cites a mandate granted to a different agent" },
+    MANDATE_NOT_ACTIVE: { severity: "critical", title: "Mandate expired or not yet valid" },
+    PAYEE_NOT_ALLOWED: { severity: "critical", title: "Payee is not on the mandate's allowed list" },
+    CATEGORY_BLOCKED: { severity: "critical", title: "Spend category is explicitly blocked" },
+    OVER_PER_PAYMENT_LIMIT: { severity: "critical", title: "Single payment above per-payment limit" },
+    SELF_APPROVAL: { severity: "critical", title: "Agent approved its own payment" },
+    NO_HUMAN_APPROVAL: { severity: "high", title: "Above approval threshold with no named human approver" },
+    APPROVAL_AFTER_PAYMENT: { severity: "high", title: "Approval recorded after the payment was made" },
+    OVER_DAILY_LIMIT: { severity: "high", title: "Cumulative daily limit exceeded" },
+    OVER_MONTHLY_LIMIT: { severity: "high", title: "Cumulative monthly limit exceeded" },
+    SPLIT_PAYMENT_SUSPECTED: { severity: "high", title: "Same-day payments to one payee look split to stay under a limit" },
+    CURRENCY_NOT_ALLOWED: { severity: "high", title: "Currency not allowed by mandate" },
+    CATEGORY_NOT_ALLOWED: { severity: "medium", title: "Spend category not on the allowed list" },
+    TOO_MANY_PAYMENTS: { severity: "medium", title: "More payments in a day than the mandate allows" },
+    POSSIBLE_DUPLICATE: { severity: "medium", title: "Same payee, amount and currency within 24 hours" },
+    OUTSIDE_ALLOWED_TIME: { severity: "medium", title: "Paid outside the mandate's allowed hours or days" },
+    NO_FX_RATE: { severity: "medium", title: "No FX rate to check limits for this currency" },
+    MISSING_CORE_FIELDS: { severity: "high", title: "Payment record missing core fields (id, time, agent, payee, amount, currency)" },
+    NO_PURPOSE: { severity: "low", title: "No purpose / reason recorded" },
+    NO_MANDATE_REFERENCE: { severity: "low", title: "Payment does not cite which mandate it relied on" },
+};
+const DAY_MS = 24 * 60 * 60 * 1000;
+const NON_SETTLING = /^(rejected|failed|cancel+ed|reversed|declined|blocked)$/i;
+function normaliseName(s) {
+    return s
+        .toLowerCase()
+        .replace(/&/g, " and ")
+        .replace(/[^a-z0-9 ]+/g, " ")
+        .replace(/\b(ltd|limited|llc|inc|incorporated|plc|gmbh|pvt|private|co|corp|corporation|the|sa|ag|bv)\b/g, " ")
+        .replace(/\s+/g, " ")
+        .trim();
+}
+function readPayments(rows) {
+    return rows.map((r, i) => {
+        const ts = pick(r, "timestamp", "paid_at", "payment_time", "date", "datetime", "created_at");
+        const appr = pick(r, "approval_time", "approved_at", "approval_timestamp");
+        return {
+            line: i + 2,
+            payment_id: pick(r, "payment_id", "id", "reference", "txn_id", "transaction_id"),
+            timestamp: parseTimestamp(ts),
+            timestamp_raw: ts,
+            agent_id: pick(r, "agent_id", "agent", "bot", "initiated_by"),
+            mandate_id: pick(r, "mandate_id", "mandate", "authority_id"),
+            payee: pick(r, "payee", "beneficiary", "vendor", "merchant", "creditor"),
+            amount: parseAmount(pick(r, "amount", "value", "amt")),
+            currency: pick(r, "currency", "ccy").toUpperCase(),
+            category: pick(r, "category", "spend_category", "type"),
+            approved_by: pick(r, "approved_by", "approver", "human_approver"),
+            approval_time: parseTimestamp(appr),
+            purpose: pick(r, "purpose", "reason", "description", "memo", "narrative"),
+            status: pick(r, "status", "state"),
+        };
+    });
+}
+function dayKey(d, offsetMin) {
+    return new Date(d.getTime() + offsetMin * 60000).toISOString().slice(0, 10);
+}
+function monthKey(d, offsetMin) {
+    return dayKey(d, offsetMin).slice(0, 7);
+}
+function minutesOfDay(hhmm) {
+    const [h, m] = hhmm.split(":").map(Number);
+    return h * 60 + (m || 0);
+}
+function findMandate(p, file) {
+    if (p.mandate_id) {
+        const m = file.mandates.find((x) => x.id.toLowerCase() === p.mandate_id.toLowerCase());
+        if (!m)
+            return { finding: f("NO_MANDATE", `Mandate "${p.mandate_id}" is not in the mandate file.`) };
+        if (p.agent_id && m.agent_id.toLowerCase() !== p.agent_id.toLowerCase()) {
+            return { mandate: m, finding: f("MANDATE_AGENT_MISMATCH", `Mandate ${m.id} belongs to agent "${m.agent_id}", but "${p.agent_id}" used it.`) };
+        }
+        return { mandate: m };
+    }
+    // No mandate cited: choose the agent's mandate that was active at payment time (or any of the agent's mandates).
+    const mine = file.mandates.filter((x) => x.agent_id.toLowerCase() === p.agent_id.toLowerCase());
+    if (mine.length === 0) {
+        return { finding: f("NO_MANDATE", `No mandate exists for agent "${p.agent_id || "(blank)"}".`) };
+    }
+    const active = p.timestamp ? mine.find((m) => isActive(m, p.timestamp)) : undefined;
+    return { mandate: active ?? mine[0] };
+}
+function isActive(m, at) {
+    const day = at.toISOString().slice(0, 10);
+    if (m.valid_from && day < m.valid_from)
+        return false;
+    if (m.valid_to && day > m.valid_to)
+        return false;
+    return true;
+}
+function f(rule, message) {
+    return { rule, severity: RULES[rule].severity, message };
+}
+function baseCurrency(m) {
+    return (m.base_currency || m.currencies?.[0] || "USD").toUpperCase();
+}
+function toBase(amount, ccy, m, file) {
+    if (amount === null || !m)
+        return amount;
+    const base = baseCurrency(m);
+    if (!ccy || ccy === base)
+        return amount;
+    const rate = file.fx_rates?.[ccy];
+    return rate ? amount * rate : null;
+}
+function checkPayments(file, payments) {
+    const checked = payments.map((p) => {
+        const { mandate, finding } = findMandate(p, file);
+        const findings = finding ? [finding] : [];
+        return { ...p, mandate, amount_base: toBase(p.amount, p.currency, mandate, file), verdict: "OK", findings, audit_complete: true };
+    });
+    // --- Per-payment checks -------------------------------------------------
+    for (const p of checked) {
+        const m = p.mandate;
+        const missing = [];
+        if (!p.payment_id)
+            missing.push("payment id");
+        if (!p.timestamp)
+            missing.push(p.timestamp_raw ? `timestamp ("${p.timestamp_raw}" unreadable)` : "timestamp");
+        if (!p.agent_id)
+            missing.push("agent");
+        if (!p.payee)
+            missing.push("payee");
+        if (p.amount === null)
+            missing.push("amount");
+        if (!p.currency)
+            missing.push("currency");
+        if (missing.length)
+            p.findings.push(f("MISSING_CORE_FIELDS", `Missing: ${missing.join(", ")}.`));
+        if (!p.purpose)
+            p.findings.push(f("NO_PURPOSE", "No purpose recorded, so nobody can later say why the agent paid."));
+        if (!p.mandate_id && m)
+            p.findings.push(f("NO_MANDATE_REFERENCE", `Payment did not cite a mandate; assumed ${m.id}.`));
+        if (p.approved_by && p.agent_id && p.approved_by.toLowerCase() === p.agent_id.toLowerCase()) {
+            p.findings.push(f("SELF_APPROVAL", `"${p.approved_by}" is the agent itself, not a human.`));
+        }
+        if (p.approval_time && p.timestamp && p.approval_time.getTime() > p.timestamp.getTime()) {
+            const mins = Math.round((p.approval_time.getTime() - p.timestamp.getTime()) / 60000);
+            p.findings.push(f("APPROVAL_AFTER_PAYMENT", `Approval logged ${mins} min after payment.`));
+        }
+        if (!m)
+            continue;
+        if (p.timestamp && !isActive(m, p.timestamp)) {
+            p.findings.push(f("MANDATE_NOT_ACTIVE", `Mandate ${m.id} valid ${m.valid_from ?? "…"} to ${m.valid_to ?? "…"}; payment on ${p.timestamp.toISOString().slice(0, 10)}.`));
+        }
+        if (m.currencies?.length && p.currency && !m.currencies.map((c) => c.toUpperCase()).includes(p.currency)) {
+            p.findings.push(f("CURRENCY_NOT_ALLOWED", `${p.currency} not in allowed ${m.currencies.join(", ")}.`));
+        }
+        if (p.amount !== null && p.currency && p.amount_base === null) {
+            p.findings.push(f("NO_FX_RATE", `No fx_rates entry for ${p.currency} → ${baseCurrency(m)}; limits not checked for this payment.`));
+        }
+        if (m.allowed_payees?.length && p.payee) {
+            const ok = m.allowed_payees.some((a) => normaliseName(a) === normaliseName(p.payee));
+            if (!ok)
+                p.findings.push(f("PAYEE_NOT_ALLOWED", `"${p.payee}" is not one of the ${m.allowed_payees.length} allowed payees.`));
+        }
+        const cat = p.category.toLowerCase();
+        if (cat && m.blocked_categories?.some((c) => c.toLowerCase() === cat)) {
+            p.findings.push(f("CATEGORY_BLOCKED", `Category "${p.category}" is blocked.`));
+        }
+        else if (cat && m.allowed_categories?.length && !m.allowed_categories.some((c) => c.toLowerCase() === cat)) {
+            p.findings.push(f("CATEGORY_NOT_ALLOWED", `Category "${p.category}" not in ${m.allowed_categories.join(", ")}.`));
+        }
+        if (p.amount_base !== null && m.per_payment_limit !== undefined && p.amount_base > m.per_payment_limit) {
+            p.findings.push(f("OVER_PER_PAYMENT_LIMIT", `${fmt(p.amount_base)} ${baseCurrency(m)} > limit ${fmt(m.per_payment_limit)}.`));
+        }
+        if (p.amount_base !== null && m.human_approval_above !== undefined && p.amount_base > m.human_approval_above) {
+            const human = p.approved_by && p.approved_by.toLowerCase() !== p.agent_id.toLowerCase();
+            if (!human)
+                p.findings.push(f("NO_HUMAN_APPROVAL", `${fmt(p.amount_base)} ${baseCurrency(m)} needs a human approver above ${fmt(m.human_approval_above)}.`));
+        }
+        if (p.timestamp && (m.allowed_hours || m.allowed_weekdays)) {
+            const off = m.allowed_hours?.utc_offset_minutes ?? 0;
+            const local = new Date(p.timestamp.getTime() + off * 60000);
+            const mins = local.getUTCHours() * 60 + local.getUTCMinutes();
+            const reasons = [];
+            if (m.allowed_hours) {
+                const s = minutesOfDay(m.allowed_hours.start);
+                const e = minutesOfDay(m.allowed_hours.end);
+                const inside = s <= e ? mins >= s && mins <= e : mins >= s || mins <= e;
+                if (!inside)
+                    reasons.push(`time ${local.toISOString().slice(11, 16)} outside ${m.allowed_hours.start}–${m.allowed_hours.end}`);
+            }
+            if (m.allowed_weekdays && !m.allowed_weekdays.includes(local.getUTCDay())) {
+                reasons.push(`${["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][local.getUTCDay()]} not an allowed day`);
+            }
+            if (reasons.length)
+                p.findings.push(f("OUTSIDE_ALLOWED_TIME", reasons.join("; ") + "."));
+        }
+    }
+    // --- Cumulative checks (per mandate, in time order, settled payments only) ---
+    const settling = checked
+        .filter((p) => p.mandate && p.timestamp && p.amount_base !== null && !NON_SETTLING.test(p.status))
+        .sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime());
+    const dayTotals = new Map();
+    const dayCounts = new Map();
+    const monthTotals = new Map();
+    for (const p of settling) {
+        const m = p.mandate;
+        const off = m.allowed_hours?.utc_offset_minutes ?? 0;
+        const dk = `${m.id}|${dayKey(p.timestamp, off)}`;
+        const mk = `${m.id}|${monthKey(p.timestamp, off)}`;
+        const amt = p.amount_base;
+        const dt = (dayTotals.get(dk) ?? 0) + amt;
+        const dc = (dayCounts.get(dk) ?? 0) + 1;
+        const mt = (monthTotals.get(mk) ?? 0) + amt;
+        dayTotals.set(dk, dt);
+        dayCounts.set(dk, dc);
+        monthTotals.set(mk, mt);
+        if (m.daily_limit !== undefined && dt > m.daily_limit) {
+            p.findings.push(f("OVER_DAILY_LIMIT", `Day total reached ${fmt(dt)} ${baseCurrency(m)} (limit ${fmt(m.daily_limit)}).`));
+        }
+        if (m.monthly_limit !== undefined && mt > m.monthly_limit) {
+            p.findings.push(f("OVER_MONTHLY_LIMIT", `Month total reached ${fmt(mt)} ${baseCurrency(m)} (limit ${fmt(m.monthly_limit)}).`));
+        }
+        if (m.max_payments_per_day !== undefined && dc > m.max_payments_per_day) {
+            p.findings.push(f("TOO_MANY_PAYMENTS", `Payment #${dc} today (max ${m.max_payments_per_day}).`));
+        }
+    }
+    // --- Duplicates (same agent, payee, amount, currency within 24h) ---------
+    const byKey = new Map();
+    for (const p of settling) {
+        const k = [p.agent_id.toLowerCase(), normaliseName(p.payee), p.amount, p.currency].join("|");
+        const list = byKey.get(k) ?? [];
+        const prev = list.find((q) => Math.abs(p.timestamp.getTime() - q.timestamp.getTime()) <= DAY_MS);
+        if (prev)
+            p.findings.push(f("POSSIBLE_DUPLICATE", `Matches ${prev.payment_id || "line " + prev.line} (${prev.timestamp_raw}).`));
+        list.push(p);
+        byKey.set(k, list);
+    }
+    // --- Split payments: ≥2 same-day payments to one payee, each under a limit, together over it ---
+    const groups = new Map();
+    for (const p of settling) {
+        const m = p.mandate;
+        const off = m.allowed_hours?.utc_offset_minutes ?? 0;
+        const k = `${m.id}|${normaliseName(p.payee)}|${dayKey(p.timestamp, off)}`;
+        groups.set(k, [...(groups.get(k) ?? []), p]);
+    }
+    for (const list of groups.values()) {
+        if (list.length < 2)
+            continue;
+        const m = list[0].mandate;
+        const thresholds = [
+            ["approval threshold", m.human_approval_above],
+            ["per-payment limit", m.per_payment_limit],
+        ];
+        for (const [label, limit] of thresholds) {
+            if (limit === undefined)
+                continue;
+            // Structuring pattern: every payment sits just under the line (≥ 50% of it) and together they cross it.
+            const justUnder = list.filter((p) => p.amount_base <= limit && p.amount_base >= limit * 0.5);
+            const subtotal = justUnder.reduce((s, p) => s + p.amount_base, 0);
+            if (justUnder.length >= 2 && subtotal > limit) {
+                for (const p of justUnder) {
+                    if (!p.findings.some((x) => x.rule === "SPLIT_PAYMENT_SUSPECTED")) {
+                        p.findings.push(f("SPLIT_PAYMENT_SUSPECTED", `${justUnder.length} payments to "${p.payee}" today total ${fmt(subtotal)}, each just under the ${label} of ${fmt(limit)}.`));
+                    }
+                }
+                break;
+            }
+        }
+    }
+    // --- Verdicts & summary ---------------------------------------------------
+    const byRule = {};
+    let totalValue = 0;
+    let riskValue = 0;
+    let complete = 0;
+    for (const p of checked) {
+        const sev = new Set(p.findings.map((x) => x.severity));
+        p.verdict = sev.has("critical") ? "BLOCK" : sev.has("high") || sev.has("medium") ? "REVIEW" : "OK";
+        const needsApprover = p.mandate?.human_approval_above !== undefined && (p.amount_base ?? 0) > (p.mandate.human_approval_above ?? Infinity);
+        p.audit_complete =
+            !!(p.payment_id && p.timestamp && p.agent_id && p.payee && p.amount !== null && p.currency && p.purpose && p.mandate_id) &&
+                (!needsApprover || (!!p.approved_by && !!p.approval_time));
+        if (p.audit_complete)
+            complete++;
+        for (const x of p.findings)
+            byRule[x.rule] = (byRule[x.rule] ?? 0) + 1;
+        const v = p.amount_base ?? 0;
+        totalValue += v;
+        if (p.verdict !== "OK")
+            riskValue += v;
+    }
+    const used = new Set(checked.map((p) => p.mandate?.id).filter(Boolean));
+    return {
+        payments: checked,
+        summary: {
+            total: checked.length,
+            block: checked.filter((p) => p.verdict === "BLOCK").length,
+            review: checked.filter((p) => p.verdict === "REVIEW").length,
+            ok: checked.filter((p) => p.verdict === "OK").length,
+            total_value_base: round2(totalValue),
+            value_at_risk_base: round2(riskValue),
+            audit_trail_completeness: checked.length ? complete / checked.length : 1,
+            by_rule: byRule,
+            agents: [...new Set(checked.map((p) => p.agent_id).filter(Boolean))],
+            mandates_unused: file.mandates.filter((m) => !used.has(m.id)).map((m) => m.id),
+        },
+    };
+}
+function validateMandateFile(raw) {
+    const errors = [];
+    const obj = raw;
+    const mandates = Array.isArray(obj) ? obj : obj?.mandates;
+    if (!Array.isArray(mandates) || mandates.length === 0)
+        return { errors: ["Mandate file must contain a non-empty \"mandates\" array."] };
+    mandates.forEach((m, i) => {
+        if (!m.id)
+            errors.push(`Mandate #${i + 1} has no id.`);
+        if (!m.agent_id)
+            errors.push(`Mandate ${m.id ?? "#" + (i + 1)} has no agent_id.`);
+        for (const k of ["per_payment_limit", "daily_limit", "monthly_limit", "human_approval_above", "max_payments_per_day"]) {
+            if (m[k] !== undefined && (typeof m[k] !== "number" || m[k] < 0))
+                errors.push(`Mandate ${m.id}: ${k} must be a non-negative number.`);
+        }
+        if (m.allowed_hours && !/^\d{1,2}:\d{2}$/.test(m.allowed_hours.start + ""))
+            errors.push(`Mandate ${m.id}: allowed_hours.start must be HH:MM.`);
+        if (m.allowed_hours && !/^\d{1,2}:\d{2}$/.test(m.allowed_hours.end + ""))
+            errors.push(`Mandate ${m.id}: allowed_hours.end must be HH:MM.`);
+    });
+    const ids = mandates.map((m) => m.id);
+    const dupes = ids.filter((id, i) => ids.indexOf(id) !== i);
+    if (dupes.length)
+        errors.push(`Duplicate mandate ids: ${[...new Set(dupes)].join(", ")}.`);
+    return { file: { mandates, fx_rates: Array.isArray(obj) ? undefined : obj.fx_rates }, errors };
+}
+function fmt(n) {
+    return n.toLocaleString("en-US", { maximumFractionDigits: 2 });
+}
+function round2(n) {
+    return Math.round(n * 100) / 100;
+}
+
+return { RULES, normaliseName, readPayments, checkPayments, validateMandateFile };
+})();
+__m["agent-payment-mandate-checker/src/report.js"] = (() => {
+const { mdTable, toCsv } = __m["shared/table.js"];
+const { RULES } = __m["agent-payment-mandate-checker/src/checker.js"];
+function toMarkdown(r, title = "Agent Payment Mandate Check") {
+    const s = r.summary;
+    const pct = (x) => `${Math.round(x * 100)}%`;
+    const lines = [];
+    lines.push(`# ${title}`, "");
+    lines.push(`**${s.total} payments** by ${s.agents.length} agent(s): **${s.block} BLOCK**, **${s.review} REVIEW**, ${s.ok} OK.`, `Value needing attention: **${s.value_at_risk_base.toLocaleString("en-US")}** of ${s.total_value_base.toLocaleString("en-US")} (mandate base currency).`, `Audit-trail completeness: **${pct(s.audit_trail_completeness)}** of payments carry id, time, agent, payee, amount, currency, purpose, mandate reference and (where required) a timed human approval.`, "");
+    const ruleRows = Object.entries(s.by_rule)
+        .sort((a, b) => sevRank(RULES[a[0]].severity) - sevRank(RULES[b[0]].severity) || b[1] - a[1])
+        .map(([rule, n]) => [RULES[rule].severity.toUpperCase(), RULES[rule].title, n]);
+    if (ruleRows.length) {
+        lines.push("## What we found", "", mdTable(["Severity", "Issue", "Payments"], ruleRows), "");
+    }
+    const flagged = r.payments.filter((p) => p.verdict !== "OK");
+    if (flagged.length) {
+        lines.push("## Payments to act on", "");
+        lines.push(mdTable(["Verdict", "Payment", "When", "Agent", "Payee", "Amount", "Why"], flagged
+            .sort((a, b) => (a.verdict === b.verdict ? 0 : a.verdict === "BLOCK" ? -1 : 1))
+            .map((p) => [
+            p.verdict,
+            p.payment_id || `line ${p.line}`,
+            p.timestamp_raw,
+            p.agent_id,
+            p.payee,
+            `${p.amount ?? "?"} ${p.currency}`,
+            p.findings.filter((x) => x.severity !== "low").map((x) => x.message).join(" "),
+        ])), "");
+    }
+    if (s.mandates_unused.length)
+        lines.push(`Mandates with no payments in this log: ${s.mandates_unused.join(", ")} (consider revoking unused authority).`, "");
+    lines.push("## What to do next", "", "1. Stop or recall BLOCK payments first; they had no valid authority.", "2. For REVIEW payments, get a named human to confirm or reject, and record the time.", "3. Fix the mandate or the agent's configuration so the same issue can't repeat.", "", "_Generated by Hyniqe Hub · Agent Payment Mandate Checker. Runs locally; no data leaves your machine. This is a control check, not legal or audit advice._");
+    return lines.join("\n") + "\n";
+}
+function toResultCsv(r) {
+    return toCsv(r.payments.map((p) => ({
+        line: p.line,
+        payment_id: p.payment_id,
+        timestamp: p.timestamp_raw,
+        agent_id: p.agent_id,
+        mandate_id: p.mandate?.id ?? "",
+        payee: p.payee,
+        amount: p.amount ?? "",
+        currency: p.currency,
+        verdict: p.verdict,
+        audit_complete: p.audit_complete ? "yes" : "no",
+        rules: p.findings.map((x) => x.rule).join(";"),
+        details: p.findings.map((x) => x.message).join(" "),
+    })), ["line", "payment_id", "timestamp", "agent_id", "mandate_id", "payee", "amount", "currency", "verdict", "audit_complete", "rules", "details"]);
+}
+function sevRank(s) {
+    return { critical: 0, high: 1, medium: 2, low: 3 }[s] ?? 4;
+}
+
+return { toMarkdown, toResultCsv };
+})();
+const SAMPLES = {"mandates":"{\n  \"fx_rates\": { \"EUR\": 1.08, \"GBP\": 1.27 },\n  \"mandates\": [\n    {\n      \"id\": \"M-AP-001\",\n      \"agent_id\": \"ap-agent\",\n      \"owner\": \"Finance Controller\",\n      \"valid_from\": \"2026-11-01\",\n      \"valid_to\": \"2027-01-31\",\n      \"base_currency\": \"USD\",\n      \"currencies\": [\"USD\", \"EUR\"],\n      \"per_payment_limit\": 5000,\n      \"daily_limit\": 12000,\n      \"monthly_limit\": 60000,\n      \"max_payments_per_day\": 10,\n      \"human_approval_above\": 2000,\n      \"allowed_payees\": [\"Acme Cloud Ltd\", \"Northwind Office Supplies\", \"Contoso Travel\", \"Globex Logistics\"],\n      \"allowed_categories\": [\"software\", \"office\", \"travel\", \"logistics\"],\n      \"blocked_categories\": [\"gift cards\", \"crypto\"],\n      \"allowed_hours\": { \"start\": \"08:00\", \"end\": \"19:00\", \"utc_offset_minutes\": 0 },\n      \"allowed_weekdays\": [1, 2, 3, 4, 5]\n    },\n    {\n      \"id\": \"M-TRAVEL-002\",\n      \"agent_id\": \"travel-agent\",\n      \"owner\": \"HR Lead\",\n      \"valid_from\": \"2026-11-01\",\n      \"valid_to\": \"2026-11-30\",\n      \"currencies\": [\"USD\"],\n      \"per_payment_limit\": 1500,\n      \"daily_limit\": 3000,\n      \"allowed_categories\": [\"travel\"]\n    },\n    {\n      \"id\": \"M-OLD-003\",\n      \"agent_id\": \"procurement-agent\",\n      \"valid_from\": \"2026-01-01\",\n      \"valid_to\": \"2026-06-30\",\n      \"per_payment_limit\": 1000\n    }\n  ]\n}\n","payments":"payment_id,timestamp,agent_id,mandate_id,payee,amount,currency,category,approved_by,approval_time,purpose,status\nP-1001,2026-11-23 09:12,ap-agent,M-AP-001,Acme Cloud Ltd,1200.00,USD,software,,,\"Monthly cloud hosting, invoice INV-8812\",settled\nP-1002,2026-11-23 10:05,ap-agent,M-AP-001,Northwind Office Supplies,2450.00,USD,office,Priya S,2026-11-23 09:58,Desks for new joiners,settled\nP-1003,2026-11-23 10:40,ap-agent,M-AP-001,Globex Logistics,6200.00,USD,logistics,Priya S,2026-11-23 10:30,Q4 freight,settled\nP-1004,2026-11-23 11:15,ap-agent,M-AP-001,QuickGift Online,900.00,USD,gift cards,,,Client gifts,settled\nP-1005,2026-11-23 13:02,ap-agent,M-AP-001,Contoso Travel,1900.00,USD,travel,,,Flights for audit team,settled\nP-1006,2026-11-23 13:04,ap-agent,M-AP-001,Contoso Travel,1900.00,USD,travel,,,Flights for audit team,settled\nP-1007,2026-11-23 21:30,ap-agent,M-AP-001,Acme Cloud Ltd,300.00,USD,software,,,Extra storage,settled\nP-1008,2026-11-24 09:00,ap-agent,M-AP-001,Acme Cloud Ltd,3000.00,EUR,software,ap-agent,2026-11-24 08:59,Annual licence,settled\nP-1009,2026-11-24 09:30,ap-agent,,Northwind Office Supplies,150.00,GBP,office,,,,settled\nP-1010,2026-11-24 10:00,procurement-agent,M-OLD-003,Globex Logistics,400.00,USD,logistics,,,Pallets,settled\nP-1011,2026-11-24 10:20,travel-agent,M-AP-001,Contoso Travel,800.00,USD,travel,,,Hotel,settled\nP-1012,2026-11-24 11:00,marketing-agent,,Ad Network Inc,750.00,USD,ads,,,Campaign boost,settled\nP-1013,2026-11-24 12:00,ap-agent,M-AP-001,Acme Cloud Ltd,1800.00,USD,software,Priya S,2026-11-24 12:45,Support plan,settled\nP-1014,2026-11-24 12:30,ap-agent,M-AP-001,Contoso Travel,500.00,USD,travel,,,Train tickets,rejected\n"};
+// Minimal, safe Markdown → HTML for the reports these tools produce (headings, tables, lists, checkboxes,
+// bold/italic/code, line breaks). All text is HTML-escaped first.
+function renderMarkdown(md) {
+  const esc = (s) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  const inline = (s) => esc(s)
+    .replace(/`([^`]+)`/g, "<code>$1</code>")
+    .replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>")
+    .replace(/(^|[\s(])_([^_]+)_(?=[\s).,:;]|$)/g, "$1<em>$2</em>")
+    .replace(/ {2}$/g, "<br>");
+  const lines = md.replace(/\r/g, "").split("\n");
+  const html = [];
+  let i = 0;
+  while (i < lines.length) {
+    const l = lines[i];
+    if (/^#{1,4} /.test(l)) { const n = l.match(/^#+/)[0].length; html.push(`<h${n + 1}>${inline(l.slice(n + 1))}</h${n + 1}>`); i++; continue; }
+    if (/^\|.*\|$/.test(l) && /^\|\s*-+/.test(lines[i + 1] || "")) {
+      const cells = (row) => row.slice(1, -1).split(/(?<!\\)\|/).map((c) => inline(c.trim().replace(/\\\|/g, "|")));
+      const head = cells(l);
+      i += 2;
+      const body = [];
+      while (i < lines.length && /^\|.*\|$/.test(lines[i])) body.push(cells(lines[i++]));
+      html.push(`<div class="tablewrap"><table><thead><tr>${head.map((c) => `<th>${c}</th>`).join("")}</tr></thead><tbody>${body.map((r) => `<tr>${r.map((c) => `<td>${c}</td>`).join("")}</tr>`).join("")}</tbody></table></div>`);
+      continue;
+    }
+    if (/^(\d+\.|-) /.test(l)) {
+      const ordered = /^\d+\./.test(l);
+      const items = [];
+      while (i < lines.length && (/^(\d+\.|-) /.test(lines[i]) || /^ {2,}\S/.test(lines[i]))) {
+        if (/^ {2,}\S/.test(lines[i]) && items.length) items[items.length - 1] += "<br>" + inline(lines[i].trim());
+        else items.push(inline(lines[i].replace(/^(\d+\.|-) /, "")).replace(/^\[ \] /, '<input type="checkbox"> ').replace(/^\[x\] /i, '<input type="checkbox" checked> '));
+        // keep "  " line-break markers inside items
+        if (/ {2}$/.test(lines[i])) items[items.length - 1] = items[items.length - 1].replace(/<br>$/, "");
+        i++;
+      }
+      html.push(`<${ordered ? "ol" : "ul"}>${items.map((x) => `<li>${x}</li>`).join("")}</${ordered ? "ol" : "ul"}>`);
+      continue;
+    }
+    if (!l.trim()) { i++; continue; }
+    const para = [];
+    while (i < lines.length && lines[i].trim() && !/^(#|\||\d+\. |- )/.test(lines[i])) para.push(inline(lines[i++]));
+    html.push(`<p>${para.join(" ")}</p>`);
+  }
+  return html.join("\n");
+}
+
+// Page UI for each Hub solution. Expects: __m (bundled modules), SAMPLES, renderMarkdown.
+(function () {
+  const $ = (sel, el = document) => el.querySelector(sel);
+  const h = (html) => { const t = document.createElement("template"); t.innerHTML = html.trim(); return t.content.firstElementChild; };
+  const app = $("#app");
+  const table = __m["shared/table.js"];
+  const solution = document.body.dataset.solution;
+
+  function download(name, text, type = "text/plain") {
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(new Blob([text], { type }));
+    a.download = name;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+  }
+  async function readFiles(input) {
+    return Promise.all([...input.files].map(async (f) => ({ name: f.webkitRelativePath || f.name, text: await f.text() })));
+  }
+  function fileInto(input, textarea) {
+    input.addEventListener("change", async () => { const [f] = await readFiles(input); if (f) textarea.value = f.text; });
+  }
+  const resultCard = h(`<section class="card"><div id="downloads" class="actions" style="margin:0 0 8px"></div><div id="report" class="empty">Your report will appear here.</div></section>`);
+  function show(md, downloads = []) {
+    const r = $("#report", resultCard);
+    r.className = "";
+    r.innerHTML = renderMarkdown(md);
+    const d = $("#downloads", resultCard);
+    d.innerHTML = "";
+    for (const [label, name, text, type] of [["Download report (.md)", "report.md", md, "text/markdown"], ...downloads]) {
+      const b = h(`<button>${label}</button>`);
+      b.onclick = () => download(name, text, type);
+      d.append(b);
+    }
+    resultCard.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+  function showError(e) {
+    const r = $("#report", resultCard);
+    r.className = "error";
+    r.textContent = e && e.message ? e.message : String(e);
+  }
+  const safe = (fn) => () => { try { fn(); } catch (e) { console.error(e); showError(e); } };
+
+  // ------------------------------------------------------------------ Agent Payment Mandate Checker
+  if (solution === "agent-payment-mandate-checker") {
+    const c = __m["agent-payment-mandate-checker/src/checker.js"], rep = __m["agent-payment-mandate-checker/src/report.js"];
+    const card = h(`<section class="card"><h2>1 · Mandates <span class="hint">(JSON: what each agent may pay, to whom, up to what limit)</span></h2>
+      <input type="file" id="mf" accept=".json"><textarea id="m" placeholder='{"mandates":[{"id":"M-1","agent_id":"ap-agent","per_payment_limit":5000}]}'></textarea>
+      <h2 style="margin-top:16px">2 · Agent payment log <span class="hint">(CSV: payment_id, timestamp, agent_id, mandate_id, payee, amount, currency, category, approved_by, approval_time, purpose, status)</span></h2>
+      <input type="file" id="pf" accept=".csv,.txt"><textarea id="p"></textarea>
+      <div class="actions"><button class="primary" id="run">Check payments</button><button id="sample">Load sample data</button></div></section>`);
+    app.append(card, resultCard);
+    fileInto($("#mf", card), $("#m", card)); fileInto($("#pf", card), $("#p", card));
+    $("#sample", card).onclick = () => { $("#m", card).value = SAMPLES.mandates; $("#p", card).value = SAMPLES.payments; };
+    $("#run", card).onclick = safe(() => {
+      let raw;
+      try { raw = JSON.parse($("#m", card).value); } catch (e) { throw new Error("Mandates must be valid JSON: " + e.message); }
+      const { file, errors } = c.validateMandateFile(raw);
+      if (!file || errors.length) throw new Error(errors.join("\n"));
+      const res = c.checkPayments(file, c.readPayments(table.parseCsv($("#p", card).value)));
+      show(rep.toMarkdown(res), [["Download results (.csv)", "mandate-check.csv", rep.toResultCsv(res), "text/csv"]]);
+    });
+  }
+
+  // ------------------------------------------------------------------ Verify-Before-You-Pay
+  if (solution === "verify-before-you-pay") {
+    const a = __m["verify-before-you-pay/src/assess.js"], rep = __m["verify-before-you-pay/src/report.js"];
+    const card = h(`<section class="card"><div class="tabs"><button aria-selected="true" data-t="one">Check one request</button><button aria-selected="false" data-t="log">Audit an approval log</button></div>
+      <label>Your company's and key suppliers' email domains <span class="hint">(comma-separated, so look-alikes can be spotted)</span></label><input type="text" id="dom" placeholder="yourbank.com, mainsupplier.com">
+      <div data-p="one"><label>Paste the message, email or call notes</label><textarea id="txt" placeholder="Paste the payment request here…"></textarea>
+        <div class="row"><div><label>Who is asking?</label><input type="text" id="from" placeholder="e.g. Jane Smith"></div><div><label>Their title</label><input type="text" id="title" placeholder="e.g. CFO, Supplier"></div>
+        <div><label>How did it arrive?</label><select id="ch"><option value="">(not sure)</option><option>email</option><option>phone</option><option>voice note</option><option>video</option><option>teams</option><option>whatsapp</option><option>sms</option><option>in person</option></select></div></div>
+        <div class="row"><div><label>Amount</label><input type="text" id="amt" placeholder="e.g. 48500"></div><div><label>Currency</label><input type="text" id="ccy" placeholder="USD"></div>
+        <div><label>New payee?</label><select id="np"><option value="">(not sure)</option><option value="yes">Yes</option><option value="no">No</option></select></div><div><label>Bank details changed?</label><select id="bc"><option value="">(not sure)</option><option value="yes">Yes</option><option value="no">No</option></select></div></div>
+        <div class="actions"><button class="primary" id="go1">Check this request</button><button id="ex">Try an example</button></div></div>
+      <div data-p="log" hidden><label>Approval log CSV <span class="hint">(request_id, received_at, requested_by, requester_title, channel, sender, amount, currency, payee, payee_new, bank_details_changed, bank_change_at, message, callback_done, callback_source, challenge_passed, approver_1, approver_2, released_by, paid_at)</span></label>
+        <input type="file" id="lf" accept=".csv,.txt"><textarea id="log"></textarea><div class="actions"><button class="primary" id="go2">Audit log</button><button id="sl">Load sample log</button></div></div></section>`);
+    app.append(card, resultCard);
+    card.querySelectorAll(".tabs button").forEach((b) => b.onclick = () => {
+      card.querySelectorAll(".tabs button").forEach((x) => x.setAttribute("aria-selected", x === b));
+      card.querySelectorAll("[data-p]").forEach((p) => (p.hidden = p.dataset.p !== b.dataset.t));
+    });
+    fileInto($("#lf", card), $("#log", card));
+    const policy = () => ({ ...a.DEFAULT_POLICY, company_domains: $("#dom", card).value.split(",").map((s) => s.trim()).filter(Boolean) });
+    $("#ex", card).onclick = () => {
+      $("#txt", card).value = "From: d.chen@northwind-group.co\nHi, are you at your desk? I need a favour. Please wire $48,500 today to our new legal counsel for a confidential acquisition. Don't discuss this with anyone yet. I'm in a board meeting so can't talk, just email me when it's done.";
+      $("#dom", card).value = "northwind.com"; $("#from", card).value = "David Chen"; $("#title", card).value = "CEO"; $("#ch", card).value = "email"; $("#np", card).value = "yes";
+    };
+    $("#sl", card).onclick = () => { $("#log", card).value = SAMPLES.log; if (!$("#dom", card).value) $("#dom", card).value = "northwind-demo.com, globex-logistics.com"; };
+    $("#go1", card).onclick = safe(() => {
+      const text = $("#txt", card).value;
+      if (!text.trim()) throw new Error("Paste the request text first.");
+      const yn = (v) => (v === "yes" ? true : v === "no" ? false : null);
+      const extra = { requested_by: $("#from", card).value, requester_title: $("#title", card).value, payee_new: yn($("#np", card).value) };
+      if ($("#ch", card).value) extra.channel = $("#ch", card).value;
+      if ($("#amt", card).value) extra.amount = table.parseAmount($("#amt", card).value);
+      if ($("#ccy", card).value) extra.currency = $("#ccy", card).value.toUpperCase();
+      if (yn($("#bc", card).value) !== null) extra.bank_details_changed = yn($("#bc", card).value);
+      const req = a.requestFromText(text, extra);
+      show("# Verify-Before-You-Pay\n\n" + rep.oneToMarkdown(a.assess(req, policy())));
+    });
+    $("#go2", card).onclick = safe(() => {
+      const list = a.readRequests(table.parseCsv($("#log", card).value)).map((r) => a.assess(r, policy()));
+      if (!list.length) throw new Error("No rows found in the log.");
+      show(rep.toMarkdown(list), [["Download results (.csv)", "verify-report.csv", rep.toResultCsv(list), "text/csv"]]);
+    });
+  }
+
+  // ------------------------------------------------------------------ AI Use Register
+  if (solution === "ai-use-register") {
+    const c = __m["ai-use-register/src/classify.js"], rep = __m["ai-use-register/src/report.js"];
+    const card = h(`<section class="card"><h2>Your AI inventory <span class="hint">(CSV. Only name and description are required; every other column sharpens the register.)</span></h2>
+      <input type="file" id="f" accept=".csv,.txt"><textarea id="t"></textarea>
+      <div class="actions"><button class="primary" id="go">Build register</button><button id="tpl">Download blank template</button><button id="s">Load sample inventory</button></div></section>`);
+    app.append(card, resultCard);
+    fileInto($("#f", card), $("#t", card));
+    $("#tpl", card).onclick = () => download("ai-inventory-template.csv", rep.templateCsv(), "text/csv");
+    $("#s", card).onclick = () => ($("#t", card).value = SAMPLES.inventory);
+    $("#go", card).onclick = safe(() => {
+      const rows = table.parseCsv($("#t", card).value).filter((r) => !/^your reference/i.test(Object.values(r)[0] || ""));
+      if (!rows.length) throw new Error("No rows found. Load a CSV or the sample.");
+      const list = c.readUseCases(rows).map((u) => c.classify(u));
+      show(rep.toMarkdown(list), [["Download register (.csv)", "ai-register.csv", rep.toRegisterCsv(list), "text/csv"]]);
+    });
+  }
+
+  // ------------------------------------------------------------------ PQC Crypto Inventory
+  if (solution === "pqc-crypto-inventory") {
+    const sc = __m["pqc-crypto-inventory/src/scan.js"], rep = __m["pqc-crypto-inventory/src/report.js"];
+    const card = h(`<section class="card"><h2>Choose a code folder or files <span class="hint">(source, configs, scripts, certificates; read locally, never uploaded)</span></h2>
+      <div class="row"><div><label>Folder</label><input type="file" id="dir" webkitdirectory multiple></div><div><label>Or individual files</label><input type="file" id="files" multiple></div></div>
+      <label>Or paste code / config</label><textarea id="t" placeholder='KeyPairGenerator.getInstance("RSA") …'></textarea>
+      <div class="actions"><button class="primary" id="go">Scan</button><button id="s">Scan the demo repo</button></div><p class="hint" id="status"></p></section>`);
+    app.append(card, resultCard);
+    const SKIP = /(^|\/)(node_modules|\.git|dist|build|target|vendor|\.venv|venv|__pycache__)\//;
+    async function run(inputs) {
+      const findings = [];
+      let n = 0;
+      for (const f of inputs) {
+        if (SKIP.test(f.name) || (!sc.isScannable(f.name) && f.name !== "pasted.txt") || f.text.length > 2000000 || f.text.includes("\u0000")) continue;
+        n++;
+        findings.push(...sc.scanText(f.name, f.text));
+      }
+      const s = sc.summarise(findings, n);
+      $("#status", card).textContent = `Scanned ${n} file(s).`;
+      show(rep.toMarkdown(findings, s), [["Download findings (.csv)", "pqc-inventory.csv", rep.toResultCsv(findings), "text/csv"], ["Download CBOM (.json)", "cbom.json", JSON.stringify(sc.toCbom(findings), null, 2), "application/json"]]);
+    }
+    $("#go", card).onclick = async () => {
+      try {
+        const inputs = [...(await readFiles($("#dir", card))), ...(await readFiles($("#files", card)))];
+        if ($("#t", card).value.trim()) inputs.push({ name: "pasted.txt", text: $("#t", card).value });
+        if (!inputs.length) throw new Error("Choose a folder, some files, or paste code first.");
+        $("#status", card).textContent = `Reading ${inputs.length} file(s)…`;
+        await run(inputs);
+      } catch (e) { showError(e); }
+    };
+    $("#s", card).onclick = () => run(Object.entries(SAMPLES).map(([name, text]) => ({ name, text }))).catch(showError);
+  }
+
+  // ------------------------------------------------------------------ Legacy Runbook Builder
+  if (solution === "legacy-runbook-builder") {
+    const x = __m["legacy-runbook-builder/src/extract.js"], rep = __m["legacy-runbook-builder/src/report.js"];
+    const card = h(`<section class="card"><h2>Old procedures, handover notes and scripts <span class="hint">(text, shell/batch scripts, JCL, crontabs, SQL)</span></h2>
+      <input type="file" id="files" multiple><label>Or paste text</label><textarea id="t" placeholder="Paste a handover email, procedure or script…"></textarea>
+      <label>Runbook title <span class="hint">(optional)</span></label><input type="text" id="title" placeholder="e.g. USD nostro reconciliation">
+      <div class="actions"><button class="primary" id="go">Build runbook</button><button id="s">Load sample handover</button></div></section>`);
+    app.append(card, resultCard);
+    let sampleLoaded = false;
+    $("#s", card).onclick = () => { sampleLoaded = true; $("#t", card).value = "(sample: nostro recon handover email + SWIFT batch script + JCL + crontab will be used)"; $("#title", card).value = "Payments ops: SWIFT batch, GL extract & USD nostro recon"; };
+    $("#go", card).onclick = async () => {
+      try {
+        let inputs = await readFiles($("#files", card));
+        const pasted = $("#t", card).value;
+        if (sampleLoaded && pasted.startsWith("(sample")) inputs = inputs.concat(Object.entries(SAMPLES).map(([name, text]) => ({ name, text })));
+        else if (pasted.trim()) inputs.push({ name: "pasted.txt", text: pasted });
+        if (!inputs.length) throw new Error("Choose files or paste text first.");
+        const rb = x.buildRunbook(inputs, $("#title", card).value || undefined);
+        const prompt = rep.aiPrompt(rb, inputs);
+        show(rep.toMarkdown(rb), [["Download knowledge gaps (.csv)", "knowledge-gaps.csv", rep.gapsCsv(rb), "text/csv"], ["Download AI prompt (.txt)", "ai-prompt.txt", prompt, "text/plain"]]);
+      } catch (e) { showError(e); }
+    };
+  }
+
+  // ------------------------------------------------------------------ helpers for the second batch
+  const fromB64 = (s) => Uint8Array.from(atob(s.replace(/^base64:/, "")), (c) => c.charCodeAt(0));
+  async function readBytes(input) { return Promise.all([...input.files].map(async (f) => ({ name: f.webkitRelativePath || f.name, bytes: new Uint8Array(await f.arrayBuffer()) }))); }
+  function simpleCard(html) { const c = h(`<section class="card">${html}</section>`); app.append(c, resultCard); return c; }
+  const csvBox = (id, label, hint) => `<label>${label} <span class="hint">${hint || ""}</span></label><input type="file" id="${id}f" accept=".csv,.txt"><textarea id="${id}"></textarea>`;
+  const wire = (card, ids) => ids.forEach((id) => fileInto($(`#${id}f`, card), $(`#${id}`, card)));
+
+  if (solution === "t1-settlement-predictor") {
+    const m = __m["t1-settlement-predictor/src/predict.js"], rep = __m["t1-settlement-predictor/src/report.js"];
+    const card = simpleCard(`<h2>Trades and SSIs</h2>${csvBox("tr", "Trade blotter (CSV)", "trade_id, trade_date, trade_time, settlement_date, isin, counterparty, place_of_settlement, currency, account_currency, allocation_time, affirmation_time, instruction_time")}${csvBox("ss", "Standing settlement instructions (CSV)", "counterparty, place_of_settlement, currency, agent_bic, account, valid_from, valid_to, last_verified")}
+      <div class="row"><div><label><input type="checkbox" id="t1"> Treat all trades as T+1 (test today's blotter)</label></div><div><label>Holidays <span class="hint">(YYYY-MM-DD, comma-separated)</span></label><input type="text" id="hol"></div></div>
+      <div class="actions"><button class="primary" id="go">Check trades</button><button id="s">Load sample</button></div>`);
+    wire(card, ["tr", "ss"]);
+    $("#s", card).onclick = () => { $("#tr", card).value = SAMPLES.trades; $("#ss", card).value = SAMPLES.ssis; };
+    $("#go", card).onclick = safe(() => {
+      const cfg = { ...m.DEFAULT_CONFIG, assume_t1: $("#t1", card).checked, holidays: $("#hol", card).value.split(",").map((x) => x.trim()).filter(Boolean) };
+      const list = m.assessTrades(m.readTrades(table.parseCsv($("#tr", card).value)), m.readSsis(table.parseCsv($("#ss", card).value)), cfg);
+      if (!list.length) throw new Error("No trades found.");
+      show(rep.toMarkdown(list), [["Download results (.csv)", "t1-report.csv", rep.toResultCsv(list), "text/csv"]]);
+    });
+  }
+
+  if (solution === "vop-precheck") {
+    const m = __m["vop-precheck/src/precheck.js"], rep = __m["vop-precheck/src/report.js"];
+    const card = simpleCard(`<h2>Payment file and supplier master</h2>${csvBox("pa", "Payment file (CSV)", "payee_name, iban, amount")}${csvBox("ma", "Supplier master (CSV, optional but recommended)", "iban, account_holder_name, trading_names")}
+      <div class="actions"><button class="primary" id="go">Check payments</button><button id="s">Load sample</button></div>`);
+    wire(card, ["pa", "ma"]);
+    $("#s", card).onclick = () => { $("#pa", card).value = SAMPLES.payments; $("#ma", card).value = SAMPLES.master; };
+    $("#go", card).onclick = safe(() => {
+      const list = m.precheck(m.readPayments(table.parseCsv($("#pa", card).value)), $("#ma", card).value.trim() ? m.readMaster(table.parseCsv($("#ma", card).value)) : []);
+      if (!list.length) throw new Error("No payments found.");
+      show(rep.toMarkdown(list), [["Download results (.csv)", "vop-precheck.csv", rep.toResultCsv(list), "text/csv"]]);
+    });
+  }
+
+  if (solution === "payment-investigation-assistant") {
+    const m = __m["payment-investigation-assistant/src/investigate.js"], rep = __m["payment-investigation-assistant/src/report.js"];
+    const card = simpleCard(`<h2>Payment query</h2><label>Paste an MT199/n99, an email or call notes</label><textarea id="t" style="min-height:200px"></textarea>
+      <div class="actions"><button class="primary" id="go">Analyse</button><button id="s1">Sample: MT199 non-receipt</button><button id="s2">Sample: fraud recall email</button></div>`);
+    $("#s1", card).onclick = () => ($("#t", card).value = SAMPLES.mt199);
+    $("#s2", card).onclick = () => ($("#t", card).value = SAMPLES.fraud);
+    $("#go", card).onclick = safe(() => { const t = $("#t", card).value; if (!t.trim()) throw new Error("Paste a query first."); show(rep.toMarkdown(m.analyse(t))); });
+  }
+
+  if (solution === "translation-loss-auditor") {
+    const m = __m["translation-loss-auditor/src/audit.js"], rep = __m["translation-loss-auditor/src/report.js"];
+    const card = simpleCard(`<h2>The two versions of one payment</h2><div class="row"><div><label>ISO 20022 pacs.008 (XML)</label><input type="file" id="mxf" accept=".xml,.txt"><textarea id="mx" style="min-height:220px"></textarea></div>
+      <div><label>MT103 (FIN text)</label><input type="file" id="mtf" accept=".txt,.fin,.mt"><textarea id="mt" style="min-height:220px"></textarea></div></div>
+      <div class="actions"><button class="primary" id="go">Compare</button><button id="s">Load sample</button></div>`);
+    wire(card, ["mx", "mt"]);
+    $("#s", card).onclick = () => { $("#mx", card).value = SAMPLES.mx; $("#mt", card).value = SAMPLES.mt; };
+    $("#go", card).onclick = safe(() => {
+      const mx = m.parsePacs008($("#mx", card).value), mt = m.parseMt103($("#mt", card).value);
+      const pairs = [{ name: "payment", uetr: mx.uetr, findings: m.audit(mx, mt) }];
+      show(rep.toMarkdown(pairs), [["Download findings (.csv)", "translation-audit.csv", rep.toResultCsv(pairs), "text/csv"]]);
+    });
+  }
+
+  if (solution === "sanctions-fp-analyser") {
+    const m = __m["sanctions-fp-analyser/src/analyse.js"], rep = __m["sanctions-fp-analyser/src/report.js"];
+    const card = simpleCard(`<h2>Closed alerts export</h2>${csvBox("al", "Alerts (CSV)", "alert_id, created_at, screened_name, matched_name, list, match_score, matched_field, message_type, disposition, handling_minutes, customer_id")}
+      <div class="row"><div><label>Cleared at least … times to count as a repeat pair</label><input type="text" id="mc" value="3"></div><div><label>Minutes per alert when not recorded</label><input type="text" id="mn" value="30"></div></div>
+      <div class="actions"><button class="primary" id="go">Analyse</button><button id="s">Load sample (invented names)</button></div>`);
+    wire(card, ["al"]);
+    $("#s", card).onclick = () => ($("#al", card).value = SAMPLES.alerts);
+    $("#go", card).onclick = safe(() => {
+      const a = m.analyse(m.readAlerts(table.parseCsv($("#al", card).value)), { minClears: Number($("#mc", card).value) || 3, defaultMinutes: Number($("#mn", card).value) || 30 });
+      if (!a.total) throw new Error("No alerts found.");
+      show(rep.toMarkdown(a), [["Download good-guy candidates (.csv)", "good-guy-candidates.csv", rep.goodGuysCsv(a), "text/csv"]]);
+    });
+  }
+
+  if (solution === "report-sanity-checker") {
+    const m = __m["report-sanity-checker/src/check.js"], rep = __m["report-sanity-checker/src/report.js"];
+    const card = simpleCard(`<h2>Report extract</h2>${csvBox("rp", "Report (CSV)", "columns are recognised by name: uti, *_lei, isin, notional, currency, *_date, country…")}
+      <div class="row"><div><label>Required columns <span class="hint">(comma-separated, optional)</span></label><input type="text" id="req"></div><div><label>Report date <span class="hint">(optional)</span></label><input type="text" id="rd" placeholder="YYYY-MM-DD"></div></div>
+      <div class="actions"><button class="primary" id="go">Check report</button><button id="s">Load sample</button></div>`);
+    wire(card, ["rp"]);
+    $("#s", card).onclick = () => ($("#rp", card).value = SAMPLES.report);
+    $("#go", card).onclick = safe(() => {
+      const res = m.checkReport(table.parseCsv($("#rp", card).value), { required: $("#req", card).value.split(",").map((x) => x.trim()).filter(Boolean), reportDate: $("#rd", card).value || undefined });
+      if (!res.rows) throw new Error("No rows found.");
+      show(rep.toMarkdown(res), [["Download issues (.csv)", "report-issues.csv", rep.toIssuesCsv(res.issues), "text/csv"]]);
+    });
+  }
+
+  if (solution === "dora-register-precheck") {
+    const m = __m["dora-register-precheck/src/precheck.js"], rep = __m["dora-register-precheck/src/report.js"];
+    const card = simpleCard(`<h2>Working register</h2>${csvBox("rg", "Register (CSV, one row per contractual arrangement)", "")}
+      <label>Reference date <span class="hint">(end of the reporting year)</span></label><input type="text" id="rd" placeholder="e.g. 2026-12-31">
+      <div class="actions"><button class="primary" id="go">Check register</button><button id="s">Load sample</button></div>`);
+    wire(card, ["rg"]);
+    $("#s", card).onclick = () => { $("#rg", card).value = SAMPLES.register; $("#rd", card).value = "2026-12-31"; };
+    $("#go", card).onclick = safe(() => {
+      const list = m.readRegister(table.parseCsv($("#rg", card).value));
+      if (!list.length) throw new Error("No arrangements found.");
+      const issues = m.precheck(list, { referenceDate: $("#rd", card).value || undefined });
+      show(rep.toMarkdown(list, issues), [["Download fix list (.csv)", "dora-issues.csv", rep.toIssuesCsv(issues), "text/csv"]]);
+    });
+  }
+
+  if (solution === "copybook-decoder") {
+    const m = __m["copybook-decoder/src/copybook.js"], rep = __m["copybook-decoder/src/report.js"];
+    const card = simpleCard(`<h2>Copybook and data file</h2><label>COBOL copybook</label><input type="file" id="cbf" accept=".cpy,.cbl,.cob,.txt"><textarea id="cb" style="min-height:200px"></textarea>
+      <label>Data file <span class="hint">(optional: fixed-length records; read locally)</span></label><input type="file" id="df">
+      <div class="row"><div><label>Encoding</label><select id="enc"><option value="ebcdic">EBCDIC (mainframe)</option><option value="ascii">ASCII</option></select></div><div><label>Record format</label><select id="fmt"><option value="fixed">Fixed length</option><option value="rdw">Variable (RDW)</option><option value="lines">One record per line</option></select></div></div>
+      <div class="actions"><button class="primary" id="go">Decode</button><button id="s">Load sample</button></div><p class="hint" id="st"></p>`);
+    fileInto($("#cbf", card), $("#cb", card));
+    let sampleData = null;
+    $("#s", card).onclick = () => { $("#cb", card).value = SAMPLES.copybook; sampleData = fromB64(SAMPLES.data); $("#st", card).textContent = `Sample data loaded (${sampleData.length} bytes, EBCDIC).`; };
+    $("#go", card).onclick = async () => {
+      try {
+        const { root, warnings } = m.parseCopybook($("#cb", card).value);
+        const l = m.layout(root);
+        let md = rep.dictionaryMarkdown(l.fields, l.recordLength, [...warnings, ...l.warnings]);
+        const dl = [["Download data dictionary (.csv)", "data-dictionary.csv", rep.dictionaryCsv(l.fields), "text/csv"]];
+        const [f] = await readBytes($("#df", card));
+        const bytes = f ? f.bytes : sampleData;
+        if (bytes) {
+          const fmt = $("#fmt", card).value;
+          const d = m.decodeData(l.fields, bytes, { encoding: $("#enc", card).value, recordLength: l.recordLength, rdw: fmt === "rdw", lineSeparated: fmt === "lines" });
+          md += "\n" + rep.decodeSummary(d);
+          dl.push(["Download decoded data (.csv)", "decoded.csv", rep.dataCsv(d), "text/csv"]);
+        }
+        show(md, dl);
+      } catch (e) { showError(e); }
+    };
+  }
+
+  if (solution === "migration-reconciler") {
+    const m = __m["migration-reconciler/src/reconcile.js"], rep = __m["migration-reconciler/src/report.js"];
+    const card = simpleCard(`<h2>Source and target extracts</h2><div class="row"><div>${csvBox("src", "Source (legacy) CSV", "")}</div><div>${csvBox("tgt", "Target (new system) CSV", "")}</div></div>
+      <div class="row"><div><label>Key column(s) in source</label><input type="text" id="key" placeholder="customer_id"></div><div><label>Column mapping <span class="hint">source:target, comma-separated</span></label><input type="text" id="map"></div></div>
+      <div class="row"><div><label>Numeric tolerance</label><input type="text" id="tol" value="0"></div><div><label>Ignore columns</label><input type="text" id="ign"></div></div>
+      <label><input type="checkbox" id="lz" checked> Ignore leading zeros in keys</label> <label><input type="checkbox" id="ic" checked> Ignore case in keys</label>
+      <div class="actions"><button class="primary" id="go">Reconcile</button><button id="s">Load sample</button></div>`);
+    wire(card, ["src", "tgt"]);
+    $("#s", card).onclick = () => { $("#src", card).value = SAMPLES.source; $("#tgt", card).value = SAMPLES.target; $("#key", card).value = "customer_id"; $("#map", card).value = "customer_id:cust_no,full_name:customer_name,address_line:address,postcode:post_code,date_of_birth:dob,balance:balance_amt,marketing_consent:consent_marketing"; };
+    $("#go", card).onclick = safe(() => {
+      const map = Object.fromEntries($("#map", card).value.split(",").filter(Boolean).map((p) => p.split(":").map((x) => x.trim())));
+      const r = m.reconcile(table.parseCsv($("#src", card).value), table.parseCsv($("#tgt", card).value), { key: $("#key", card).value.split(",").map((x) => x.trim()).filter(Boolean), map, tolerance: Number($("#tol", card).value) || 0, ignoreLeadingZeros: $("#lz", card).checked, ignoreCase: $("#ic", card).checked, ignoreFields: $("#ign", card).value.split(",").map((x) => x.trim()).filter(Boolean) });
+      show(rep.toMarkdown(r), [["Download differences (.csv)", "differences.csv", rep.diffsCsv(r), "text/csv"]]);
+    });
+  }
+
+  if (solution === "euc-risk-scanner") {
+    const m = __m["euc-risk-scanner/src/scan.js"], rep = __m["euc-risk-scanner/src/report.js"], zip = __m["shared/zip.js"];
+    const card = simpleCard(`<h2>Spreadsheets to scan</h2><div class="row"><div><label>Folder</label><input type="file" id="dir" webkitdirectory multiple></div><div><label>Or files</label><input type="file" id="files" multiple accept=".xlsx,.xlsm,.xls,.xltx,.xltm"></div></div>
+      <div class="actions"><button class="primary" id="go">Scan</button><button id="s">Scan samples</button></div><p class="hint" id="st"></p>`);
+    async function run(items) {
+      const reports = [];
+      for (const it of items.filter((x) => /\.(xlsx|xlsm|xls|xltx|xltm)$/i.test(x.name) && !/(^|\/)~\$/.test(x.name))) {
+        try { reports.push(await m.scanWorkbook(it.name, it.bytes, zip.browserInflate)); } catch (e) { console.warn(it.name, e); }
+      }
+      if (!reports.length) throw new Error("No Excel workbooks found.");
+      $("#st", card).textContent = `Scanned ${reports.length} workbook(s).`;
+      show(rep.toMarkdown(reports), [["Download EUC register (.csv)", "euc-register.csv", rep.registerCsv(reports), "text/csv"]]);
+    }
+    $("#go", card).onclick = async () => { try { await run([...(await readBytes($("#dir", card))), ...(await readBytes($("#files", card)))]); } catch (e) { showError(e); } };
+    $("#s", card).onclick = () => run(Object.entries(SAMPLES).map(([name, v]) => ({ name, bytes: fromB64(v) }))).catch(showError);
+  }
+
+  if (solution === "batch-dependency-mapper") {
+    const m = __m["batch-dependency-mapper/src/map.js"], rep = __m["batch-dependency-mapper/src/report.js"];
+    const card = simpleCard(`<h2>Batch files</h2><p class="hint">JCL, Control-M XML exports, crontabs and shell scripts.</p><div class="row"><div><label>Folder</label><input type="file" id="dir" webkitdirectory multiple></div><div><label>Or files</label><input type="file" id="files" multiple></div></div>
+      <div class="actions"><button class="primary" id="go">Map</button><button id="s">Load sample</button></div>`);
+    const diagram = h(`<section class="card" hidden><h2>Diagram</h2><div id="svg" style="overflow:auto"></div></section>`);
+    app.insertBefore(diagram, resultCard);
+    function run(files) {
+      const { jobs, skipped } = m.parseAll(files);
+      if (!jobs.length) throw new Error("No jobs found in these files.");
+      const g = m.buildGraph(jobs);
+      const svgText = rep.svg(g);
+      diagram.hidden = false;
+      $("#svg", diagram).innerHTML = svgText;
+      show(rep.toMarkdown(g, skipped).replace(/```mermaid[\s\S]*?```\n/, ""), [["Download diagram (.svg)", "batch-map.svg", svgText, "image/svg+xml"], ["Download dependencies (.csv)", "dependencies.csv", rep.edgesCsv(g), "text/csv"], ["Download Mermaid (.mmd)", "batch-map.mmd", rep.mermaid(g), "text/plain"]]);
+    }
+    $("#go", card).onclick = async () => { try { run([...(await readFiles($("#dir", card))), ...(await readFiles($("#files", card)))]); } catch (e) { showError(e); } };
+    $("#s", card).onclick = safe(() => run(Object.entries(SAMPLES).map(([name, text]) => ({ name, text }))));
+  }
+})();
+
+</script>
+</body>
+</html>

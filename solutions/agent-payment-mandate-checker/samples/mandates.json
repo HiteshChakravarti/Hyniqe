@@ -1,0 +1,42 @@
+{
+  "fx_rates": { "EUR": 1.08, "GBP": 1.27 },
+  "mandates": [
+    {
+      "id": "M-AP-001",
+      "agent_id": "ap-agent",
+      "owner": "Finance Controller",
+      "valid_from": "2026-11-01",
+      "valid_to": "2027-01-31",
+      "base_currency": "USD",
+      "currencies": ["USD", "EUR"],
+      "per_payment_limit": 5000,
+      "daily_limit": 12000,
+      "monthly_limit": 60000,
+      "max_payments_per_day": 10,
+      "human_approval_above": 2000,
+      "allowed_payees": ["Acme Cloud Ltd", "Northwind Office Supplies", "Contoso Travel", "Globex Logistics"],
+      "allowed_categories": ["software", "office", "travel", "logistics"],
+      "blocked_categories": ["gift cards", "crypto"],
+      "allowed_hours": { "start": "08:00", "end": "19:00", "utc_offset_minutes": 0 },
+      "allowed_weekdays": [1, 2, 3, 4, 5]
+    },
+    {
+      "id": "M-TRAVEL-002",
+      "agent_id": "travel-agent",
+      "owner": "HR Lead",
+      "valid_from": "2026-11-01",
+      "valid_to": "2026-11-30",
+      "currencies": ["USD"],
+      "per_payment_limit": 1500,
+      "daily_limit": 3000,
+      "allowed_categories": ["travel"]
+    },
+    {
+      "id": "M-OLD-003",
+      "agent_id": "procurement-agent",
+      "valid_from": "2026-01-01",
+      "valid_to": "2026-06-30",
+      "per_payment_limit": 1000
+    }
+  ]
+}

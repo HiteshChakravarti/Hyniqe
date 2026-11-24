@@ -1,0 +1,97 @@
+{
+ "wb00.xlsx": [
+  "BROKEN_NAMES",
+  "ERRORS",
+  "HARDCODED",
+  "HIDDEN_SHEETS"
+ ],
+ "wb01.xlsx": [
+  "BROKEN_NAMES",
+  "EXTERNAL_LINKS"
+ ],
+ "wb02.xlsx": [
+  "BROKEN_NAMES",
+  "ERRORS",
+  "EXTERNAL_LINKS"
+ ],
+ "wb03.xlsx": [
+  "PASSWORD_IN_CONNECTION"
+ ],
+ "wb04.xlsx": [
+  "BROKEN_NAMES",
+  "HIDDEN_SHEETS"
+ ],
+ "wb05.xlsm": [
+  "BROKEN_NAMES",
+  "HIDDEN_SHEETS",
+  "MACROS",
+  "VOLATILE"
+ ],
+ "wb06.xlsx": [],
+ "wb07.xlsx": [
+  "ERRORS",
+  "HARDCODED",
+  "VOLATILE"
+ ],
+ "wb08.xlsx": [
+  "BROKEN_NAMES",
+  "HARDCODED",
+  "HIDDEN_SHEETS",
+  "VOLATILE"
+ ],
+ "wb09.xlsx": [
+  "HIDDEN_SHEETS"
+ ],
+ "wb10.xlsx": [
+  "BROKEN_NAMES",
+  "HARDCODED",
+  "VOLATILE"
+ ],
+ "wb11.xlsm": [
+  "EXTERNAL_LINKS",
+  "MACROS",
+  "VERY_HIDDEN_SHEETS"
+ ],
+ "wb12.xlsx": [
+  "EXTERNAL_LINKS",
+  "HARDCODED",
+  "VOLATILE"
+ ],
+ "wb13.xlsx": [
+  "PASSWORD_IN_CONNECTION"
+ ],
+ "wb14.xlsx": [
+  "VOLATILE"
+ ],
+ "wb15.xlsm": [
+  "HIDDEN_SHEETS",
+  "MACROS",
+  "VERY_HIDDEN_SHEETS"
+ ],
+ "wb16.xlsx": [],
+ "wb17.xlsx": [
+  "VOLATILE"
+ ],
+ "wb18.xlsx": [
+  "ERRORS"
+ ],
+ "wb19.xlsx": [
+  "EXTERNAL_LINKS",
+  "HIDDEN_SHEETS"
+ ],
+ "wb20.xlsx": [
+  "HIDDEN_SHEETS"
+ ],
+ "wb21.xlsm": [
+  "BROKEN_NAMES",
+  "EXTERNAL_LINKS",
+  "HARDCODED",
+  "MACROS"
+ ],
+ "wb22.xlsm": [
+  "MACROS"
+ ],
+ "wb23.xlsx": [
+  "EXTERNAL_LINKS"
+ ]
+}

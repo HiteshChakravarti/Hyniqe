@@ -1,0 +1,15 @@
+payment_id,timestamp,agent_id,mandate_id,payee,amount,currency,category,approved_by,approval_time,purpose,status
+P-1001,2026-11-23 09:12,ap-agent,M-AP-001,Acme Cloud Ltd,1200.00,USD,software,,,"Monthly cloud hosting, invoice INV-8812",settled
+P-1002,2026-11-23 10:05,ap-agent,M-AP-001,Northwind Office Supplies,2450.00,USD,office,Priya S,2026-11-23 09:58,Desks for new joiners,settled
+P-1003,2026-11-23 10:40,ap-agent,M-AP-001,Globex Logistics,6200.00,USD,logistics,Priya S,2026-11-23 10:30,Q4 freight,settled
+P-1004,2026-11-23 11:15,ap-agent,M-AP-001,QuickGift Online,900.00,USD,gift cards,,,Client gifts,settled
+P-1005,2026-11-23 13:02,ap-agent,M-AP-001,Contoso Travel,1900.00,USD,travel,,,Flights for audit team,settled
+P-1006,2026-11-23 13:04,ap-agent,M-AP-001,Contoso Travel,1900.00,USD,travel,,,Flights for audit team,settled
+P-1007,2026-11-23 21:30,ap-agent,M-AP-001,Acme Cloud Ltd,300.00,USD,software,,,Extra storage,settled
+P-1008,2026-11-24 09:00,ap-agent,M-AP-001,Acme Cloud Ltd,3000.00,EUR,software,ap-agent,2026-11-24 08:59,Annual licence,settled
+P-1009,2026-11-24 09:30,ap-agent,,Northwind Office Supplies,150.00,GBP,office,,,,settled
+P-1010,2026-11-24 10:00,procurement-agent,M-OLD-003,Globex Logistics,400.00,USD,logistics,,,Pallets,settled
+P-1011,2026-11-24 10:20,travel-agent,M-AP-001,Contoso Travel,800.00,USD,travel,,,Hotel,settled
+P-1012,2026-11-24 11:00,marketing-agent,,Ad Network Inc,750.00,USD,ads,,,Campaign boost,settled
+P-1013,2026-11-24 12:00,ap-agent,M-AP-001,Acme Cloud Ltd,1800.00,USD,software,Priya S,2026-11-24 12:45,Support plan,settled
+P-1014,2026-11-24 12:30,ap-agent,M-AP-001,Contoso Travel,500.00,USD,travel,,,Train tickets,rejected

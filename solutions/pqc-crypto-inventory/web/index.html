@@ -1,0 +1,1042 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PQC Crypto Inventory · Hyniqe Hub</title>
+<style>:root { --ink:#14213d; --muted:#5b6475; --line:#e3e7ef; --bg:#f7f8fb; --card:#fff; --accent:#1f5eff; --accent-ink:#fff; --ok:#137a3f; --warn:#b26a00; --bad:#b3261e; }
+* { box-sizing: border-box; }
+body { margin:0; font:15px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; color:var(--ink); background:var(--bg); }
+header { padding:28px clamp(16px,5vw,56px) 18px; background:var(--card); border-bottom:1px solid var(--line); }
+.brand { font-weight:700; letter-spacing:.2px; color:var(--muted); font-size:13px; text-transform:uppercase; }
+.brand span { color:var(--accent); }
+h1 { margin:6px 0 4px; font-size:clamp(22px,3vw,30px); }
+.tagline { margin:0; color:var(--muted); max-width:760px; }
+.local { margin:10px 0 0; font-size:13px; color:var(--ok); }
+main { padding:20px clamp(16px,5vw,56px) 40px; display:grid; gap:18px; max-width:1180px; }
+.card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:18px; }
+.card h2 { margin:0 0 10px; font-size:17px; }
+label { display:block; font-weight:600; margin:10px 0 4px; font-size:14px; }
+.hint { color:var(--muted); font-size:13px; font-weight:400; }
+textarea, input[type=text], select { width:100%; font:13px/1.45 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; border:1px solid var(--line); border-radius:8px; padding:9px; background:#fbfcfe; color:var(--ink); }
+input[type=text], select { font-family:inherit; font-size:14px; }
+textarea { min-height:140px; resize:vertical; }
+.row { display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:12px; }
+.actions { display:flex; flex-wrap:wrap; gap:8px; margin-top:14px; }
+button { font:inherit; font-weight:600; border-radius:8px; padding:9px 14px; border:1px solid var(--line); background:#fff; color:var(--ink); cursor:pointer; }
+button.primary { background:var(--accent); border-color:var(--accent); color:var(--accent-ink); }
+button:disabled { opacity:.5; cursor:default; }
+.tabs { display:flex; gap:6px; margin-bottom:6px; }
+.tabs button[aria-selected=true] { background:var(--ink); color:#fff; border-color:var(--ink); }
+#report { overflow-wrap:anywhere; }
+#report h2 { font-size:22px; margin:4px 0 8px; } #report h3 { font-size:18px; margin:22px 0 8px; } #report h4, #report h5 { font-size:15px; margin:18px 0 6px; }
+#report p { margin:8px 0; }
+.tablewrap { overflow-x:auto; margin:10px 0; }
+table { border-collapse:collapse; width:100%; font-size:13.5px; }
+th, td { border:1px solid var(--line); padding:6px 8px; text-align:left; vertical-align:top; }
+th { background:#f1f4f9; }
+code { background:#f1f4f9; padding:1px 4px; border-radius:4px; font-size:12.5px; }
+.error { color:var(--bad); font-weight:600; white-space:pre-wrap; }
+.empty { color:var(--muted); }
+footer { padding:20px clamp(16px,5vw,56px) 36px; color:var(--muted); font-size:12.5px; }
+@media (prefers-color-scheme: dark) {
+  :root { --ink:#e8ecf5; --muted:#a3acbf; --line:#2b3345; --bg:#10141d; --card:#171c27; --accent:#5b8cff; }
+  textarea, input[type=text], select { background:#121722; }
+  th, code { background:#1f2634; } button { background:#1d2330; } .tabs button[aria-selected=true] { background:#e8ecf5; color:#10141d; }
+}
+</style>
+</head>
+<body data-solution="pqc-crypto-inventory">
+<header><div class="brand">Hyniqe <span>Hub</span></div><h1>PQC Crypto Inventory</h1><p class="tagline">Find the cryptography in your code and configs, and what quantum computers will break.</p><p class="local">🔒 Runs entirely in your browser. Nothing you load here is uploaded.</p></header>
+<main id="app"></main>
+<footer>Hyniqe Hub · open-source tools for financial operations. Outputs support your judgement; they are not legal, audit or security advice.</footer>
+<script>
+const __m = {};
+__m["shared/table.js"] = (() => {
+// Small, dependency-free table helpers shared by the Hyniqe Hub solutions in this batch.
+// Runs unchanged in Node (22+, type stripping) and in the browser after `tsc`.
+/** Parse CSV text into rows keyed by lower-cased, trimmed headers (spaces → underscores).
+ *  Handles quoted fields, escaped quotes, BOM, CRLF, and comma / semicolon / tab separators. */
+function parseCsv(text) {
+    const clean = text.replace(/^﻿/, "");
+    const firstLine = clean.split(/\r?\n/, 1)[0] ?? "";
+    const sep = pickSeparator(firstLine);
+    const records = [];
+    let field = "";
+    let record = [];
+    let inQuotes = false;
+    for (let i = 0; i < clean.length; i++) {
+        const ch = clean[i];
+        if (inQuotes) {
+            if (ch === '"') {
+                if (clean[i + 1] === '"') {
+                    field += '"';
+                    i++;
+                }
+                else {
+                    inQuotes = false;
+                }
+            }
+            else {
+                field += ch;
+            }
+            continue;
+        }
+        if (ch === '"') {
+            inQuotes = true;
+            continue;
+        }
+        if (ch === sep) {
+            record.push(field);
+            field = "";
+            continue;
+        }
+        if (ch === "\n" || ch === "\r") {
+            if (ch === "\r" && clean[i + 1] === "\n")
+                i++;
+            record.push(field);
+            field = "";
+            if (record.some((f) => f.trim() !== ""))
+                records.push(record);
+            record = [];
+            continue;
+        }
+        field += ch;
+    }
+    record.push(field);
+    if (record.some((f) => f.trim() !== ""))
+        records.push(record);
+    if (records.length === 0)
+        return [];
+    const headers = records[0].map(normaliseHeader);
+    return records.slice(1).map((r) => {
+        const row = {};
+        headers.forEach((h, idx) => { row[h] = (r[idx] ?? "").trim(); });
+        return row;
+    });
+}
+function normaliseHeader(h) {
+    return h.trim().toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_|_$/g, "");
+}
+function pickSeparator(line) {
+    const counts = [",", ";", "\t"].map((s) => [s, line.split(s).length - 1]);
+    counts.sort((a, b) => b[1] - a[1]);
+    return counts[0][1] > 0 ? counts[0][0] : ",";
+}
+/** Serialise rows to CSV with a fixed column order. */
+function toCsv(rows, columns) {
+    const esc = (v) => {
+        const s = v === undefined || v === null ? "" : String(v);
+        return /[",\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+    };
+    return [columns.join(","), ...rows.map((r) => columns.map((c) => esc(r[c])).join(","))].join("\n") + "\n";
+}
+/** Render a simple Markdown table. */
+function mdTable(headers, rows) {
+    const cell = (v) => String(v).replace(/\|/g, "\\|").replace(/\n/g, " ");
+    return [
+        `| ${headers.map(cell).join(" | ")} |`,
+        `| ${headers.map(() => "---").join(" | ")} |`,
+        ...rows.map((r) => `| ${r.map(cell).join(" | ")} |`),
+    ].join("\n");
+}
+/** Read the first non-empty value among several possible column names. */
+function pick(row, ...names) {
+    for (const n of names) {
+        const v = row[normaliseHeader(n)];
+        if (v !== undefined && v !== "")
+            return v;
+    }
+    return "";
+}
+function parseAmount(raw) {
+    if (!raw)
+        return null;
+    let s = raw.replace(/[^\d.,\-]/g, "");
+    if (s.includes(",") && s.includes(".")) {
+        s = s.lastIndexOf(",") > s.lastIndexOf(".") ? s.replace(/\./g, "").replace(",", ".") : s.replace(/,/g, "");
+    }
+    else if (s.includes(",")) {
+        const parts = s.split(",");
+        s = parts.length === 2 && parts[1].length !== 3 ? s.replace(",", ".") : s.replace(/,/g, "");
+    }
+    const n = Number(s);
+    return Number.isFinite(n) ? n : null;
+}
+function parseBool(raw) {
+    const s = raw.trim().toLowerCase();
+    if (["y", "yes", "true", "1", "done", "passed", "pass"].includes(s))
+        return true;
+    if (["n", "no", "false", "0", "not done", "failed", "fail", ""].includes(s))
+        return s === "" ? null : false;
+    return null;
+}
+/** Parse ISO-ish timestamps ("2026-11-24 14:05", "2026-11-24T14:05:00Z", "24/11/2026 14:05"). */
+function parseTimestamp(raw) {
+    const s = raw.trim();
+    if (!s)
+        return null;
+    const dmy = s.match(/^(\d{1,2})[\/.](\d{1,2})[\/.](\d{4})(?:[ T](\d{1,2}):(\d{2})(?::(\d{2}))?)?$/);
+    if (dmy) {
+        const [, d, m, y, hh = "0", mm = "0", ss = "0"] = dmy;
+        return new Date(Date.UTC(+y, +m - 1, +d, +hh, +mm, +ss));
+    }
+    const iso = s.includes("T") ? s : s.replace(" ", "T");
+    const withZone = /[zZ]|[+\-]\d{2}:?\d{2}$/.test(iso) ? iso : iso + (iso.length > 10 ? "Z" : "T00:00:00Z");
+    const d = new Date(withZone);
+    return Number.isNaN(d.getTime()) ? null : d;
+}
+
+return { parseCsv, normaliseHeader, toCsv, mdTable, pick, parseAmount, parseBool, parseTimestamp };
+})();
+__m["pqc-crypto-inventory/src/report.js"] = (() => {
+const { mdTable, toCsv } = __m["shared/table.js"];
+const LABEL = {
+    SECRET_EXPOSED: "🔑 Private key in files",
+    BROKEN_NOW: "🔴 Broken today",
+    QUANTUM_VULNERABLE: "🟠 Quantum-vulnerable",
+    REVIEW: "🟡 Review",
+    QUANTUM_SAFE: "🟢 Quantum-safe",
+    PQC_READY: "✅ Post-quantum ready",
+};
+function toMarkdown(findings, s, title = "Post-Quantum Crypto Inventory") {
+    const active = findings.filter((f) => !f.in_comment);
+    const out = [
+        `# ${title}`, "",
+        `Scanned **${s.files_scanned} files** and found **${s.active_findings} uses of cryptography** (${s.findings - s.active_findings} more in comments, listed at the end).`,
+        `**${s.by_category.BROKEN_NOW}** are weak today, **${s.by_category.QUANTUM_VULNERABLE}** will break once large quantum computers arrive, and ${s.files_with_quantum_vulnerable} file(s) need migration work.`,
+        `Post-quantum readiness of public-key crypto: **${Math.round(s.pqc_readiness * 100)}%**.`, "",
+        mdTable(["Status", "Count", "Meaning"], Object.keys(LABEL).map((c) => [LABEL[c], s.by_category[c], MEANING[c]])), "",
+    ];
+    const order = ["SECRET_EXPOSED", "BROKEN_NOW", "QUANTUM_VULNERABLE", "REVIEW"];
+    for (const c of order) {
+        const list = active.filter((f) => f.category === c);
+        if (!list.length)
+            continue;
+        out.push(`## ${LABEL[c]} (${list.length})`, "");
+        out.push(mdTable(["Where", "What", "Why", "Move to"], list.map((f) => [`${f.file}:${f.line}`, `${f.family}${f.param ? " (" + f.param + ")" : ""}`, f.why, f.fix])), "");
+    }
+    const good = active.filter((f) => f.category === "PQC_READY");
+    if (good.length)
+        out.push(`## ${LABEL.PQC_READY}`, "", ...good.map((f) => `- ${f.file}:${f.line}: ${f.family}${f.param ? " (" + f.param + ")" : ""}`), "");
+    const comments = findings.filter((f) => f.in_comment);
+    if (comments.length)
+        out.push("## Mentions in comments (not counted)", "", ...comments.map((f) => `- ${f.file}:${f.line}: ${f.family}: \`${f.snippet}\``), "");
+    out.push("## Suggested order of work", "", "1. **Remove and rotate exposed private keys.**", "2. **Fix what is broken today**: MD5/SHA-1, DES/3DES/RC4, ECB mode, RSA under 2048 bits, TLS 1.0/1.1.", "3. **Protect long-lived secrets first** from \"record now, decrypt later\": move key exchange and encryption (TLS, VPN, file encryption, key wrapping) to hybrid X25519MLKEM768 / ML-KEM.", "4. **Plan signatures** (code signing, certificates, payment message signing, JWT) for ML-DSA / SLH-DSA as your vendors, HSMs and partners support them.", "5. Ask vendors and counterparties (SWIFT, card schemes, HSM and cloud providers) for their post-quantum roadmaps; much of your crypto lives in their products, not your code.", "", "_Generated by Hyniqe Hub · PQC Crypto Inventory. Runs locally. A pattern scan finds most crypto in code and config, but not crypto hidden inside binaries, libraries, HSMs or third-party services._");
+    return out.join("\n") + "\n";
+}
+const MEANING = {
+    SECRET_EXPOSED: "Private key stored in the code base: remove and rotate",
+    BROKEN_NOW: "Weak against today's attackers: fix first",
+    QUANTUM_VULNERABLE: "Fine today, broken by a large quantum computer: plan migration",
+    REVIEW: "Probably fine; confirm key size or mode",
+    QUANTUM_SAFE: "Symmetric crypto with enough margin: no action",
+    PQC_READY: "Already uses NIST post-quantum or hybrid algorithms",
+};
+function toResultCsv(findings) {
+    return toCsv(findings, ["file", "line", "category", "family", "param", "primitive", "priority", "in_comment", "rule", "snippet", "why", "fix"]);
+}
+
+return { toMarkdown, toResultCsv };
+})();
+__m["pqc-crypto-inventory/src/rules.js"] = (() => {
+// Detection rules for cryptography in source code, configs, scripts and key/certificate material.
+// Each rule names the algorithm family; classification and migration advice live in classify.ts.
+const bits = (line) => line.match(/(?:^|\s)-b\s+(\d{3,5})\b/)?.[1] ??
+    line.match(/\bgenrsa\b.*?\b(\d{3,5})\s*$/)?.[1] ??
+    line.match(/\b(?:key_?size|keysize|modulus_?length|modulusLength|bits|-b|rsa:|genrsa(?:\s+-\S+)*)\s*[=:]?\s*(\d{3,5})\b/i)?.[1] ??
+    line.match(/\binitialize\(\s*(\d{3,5})/)?.[1] ??
+    line.match(/\bGenerateKey\([^,]+,\s*(\d{3,5})\)/)?.[1] ??
+    line.match(/\bRSA(?:CryptoServiceProvider)?\s*\(\s*(\d{3,5})\s*\)/)?.[1] ??
+    line.match(/\bRSA\.Create\(\s*(\d{3,5})\s*\)/)?.[1];
+const curve = (line) => line.match(/\b(secp256r1|prime256v1|p-?256|secp384r1|p-?384|secp521r1|p-?521|secp256k1|brainpoolP\d+r1|curve25519|ed25519|ed448|x25519|x448)\b/i)?.[1];
+function asymFamily(name) {
+    const n = name.toLowerCase().replace(/["'`]/g, "");
+    if (/^(rsa|rsassa-pss|rsa-pss)$/.test(n))
+        return "RSA";
+    if (n === "dsa" || n === "ssh-dss" || n === "dss")
+        return "DSA";
+    if (/^(dh|diffiehellman|dhe|ffdhe)/.test(n))
+        return "DH";
+    if (/ecdsa/.test(n))
+        return "ECDSA";
+    if (/ecdh/.test(n))
+        return "ECDH";
+    if (/^(ed25519|ed448|eddsa)$/.test(n))
+        return "EdDSA";
+    if (/^(x25519|x448)$/.test(n))
+        return "X25519";
+    return "EC";
+}
+function hashFamily(name) {
+    const n = name.toLowerCase().replace(/[^a-z0-9]/g, "");
+    if (n === "md5" || n === "md4" || n === "md2")
+        return "MD5";
+    if (n === "sha1" || n === "sha")
+        return "SHA1";
+    if (n.startsWith("sha3"))
+        return "SHA3";
+    return "SHA2";
+}
+function cipherFamily(spec) {
+    const s = spec.toLowerCase();
+    if (/\b(a?rc4|arcfour)\b/.test(s))
+        return "RC4";
+    if (/\brc2\b/.test(s))
+        return "RC2";
+    if (/(desede|des-ede3?|des3|3des|tripledes|des_ede|tdea)/.test(s))
+        return "3DES";
+    if (/(^|[^a-z])des([^a-z]|$)|des-cbc|des-ecb/.test(s))
+        return "DES";
+    if (/blowfish|\bbf-/.test(s))
+        return "Blowfish";
+    if (/\becb\b|-ecb|\/ecb\//.test(s) && /aes/.test(s))
+        return "ECB";
+    if (/chacha20/.test(s))
+        return "ChaCha20";
+    if (/aes[-_/]?256|aes256/.test(s))
+        return "AES256";
+    if (/aes[-_/]?128|aes128/.test(s))
+        return "AES128";
+    if (/^rsa|\/rsa|rsa\//.test(s))
+        return "RSA";
+    return "AES";
+}
+const RULES = [
+    // ---------- Java / Kotlin / Scala ----------
+    { id: "java.keypairgen", context: "code", re: /KeyPairGenerator\.getInstance\(\s*"(RSA|RSASSA-PSS|EC|DSA|DH|DiffieHellman|Ed25519|Ed448|EdDSA|X25519|X448|XDH|ML-KEM[^"]*|ML-DSA[^"]*)"/, family: (m) => /ml-kem/i.test(m[1]) ? "ML-KEM" : /ml-dsa/i.test(m[1]) ? "ML-DSA" : m[1] === "XDH" ? "X25519" : asymFamily(m[1]), param: (_m, l) => bits(l) ?? curve(l) },
+    { id: "java.keyagreement", context: "code", re: /KeyAgreement\.getInstance\(\s*"(ECDH|DH|DiffieHellman|X25519|XDH)"/, family: (m) => (m[1] === "ECDH" ? "ECDH" : m[1] === "X25519" || m[1] === "XDH" ? "X25519" : "DH") },
+    { id: "java.signature", context: "code", re: /Signature\.getInstance\(\s*"(\w+?)with(RSA|ECDSA|DSA|RSA\/PSS|RSAandMGF1)"/i, family: (m) => (/ecdsa/i.test(m[2]) ? "ECDSA" : /dsa/i.test(m[2]) && !/rsa/i.test(m[2]) ? "DSA" : "RSA"), param: (m) => m[1] },
+    { id: "java.signature.hash", context: "code", re: /Signature\.getInstance\(\s*"((MD5|SHA1|SHA-1)with\w+)"/i, family: (m) => hashFamily(m[2]), param: (m) => m[1] },
+    { id: "java.signature.ed", context: "code", re: /Signature\.getInstance\(\s*"(Ed25519|Ed448|EdDSA|ML-DSA[^"]*)"/, family: (m) => (/ml-dsa/i.test(m[1]) ? "ML-DSA" : "EdDSA") },
+    { id: "java.messagedigest", context: "code", re: /MessageDigest\.getInstance\(\s*"(MD5|MD2|SHA-?1|SHA|SHA-?256|SHA-?384|SHA-?512|SHA3-\d+)"/i, family: (m) => hashFamily(m[1]) },
+    { id: "java.cipher", context: "code", re: /Cipher\.getInstance\(\s*"([^"]+)"/, family: (m) => cipherFamily(m[1]), param: (m) => m[1] },
+    { id: "java.mac", context: "code", re: /Mac\.getInstance\(\s*"Hmac(MD5|SHA1|SHA256|SHA384|SHA512)"/i, family: (m) => (/md5|sha1/i.test(m[1]) ? hashFamily(m[1]) : "HMAC"), param: (m) => "Hmac" + m[1] },
+    { id: "java.ecgenspec", context: "code", re: /ECGenParameterSpec\(\s*"([^"]+)"/, family: "EC", param: (m) => m[1] },
+    // ---------- Python ----------
+    { id: "py.asym.import", context: "code", re: /from\s+cryptography\.hazmat\.primitives\.asymmetric\s+import\s+([\w, ]+)/, family: (m) => {
+            const names = m[1].split(",").map((s) => s.trim());
+            return names.includes("rsa") ? "RSA" : names.includes("ec") ? "EC" : names.includes("dsa") ? "DSA" : names.includes("dh") ? "DH" : names.some((n) => n.startsWith("ed")) ? "EdDSA" : names.some((n) => n.startsWith("x")) ? "X25519" : "EC";
+        } },
+    { id: "py.rsa.generate", context: "code", re: /\brsa\.generate_private_key\(|\bRSA\.generate\(|\brsa\.newkeys\(/, family: "RSA", param: (_m, l) => bits(l) ?? l.match(/(?:generate|newkeys)\(\s*(\d{3,5})/)?.[1] },
+    { id: "py.ec.curve", context: "code", re: /\bec\.(SECP\w+|BrainpoolP\w+)\(\)/, family: "EC", param: (m) => m[1] },
+    { id: "py.ec.generate", context: "code", re: /\bec\.generate_private_key\(|\bECC\.generate\(|\bECDSA\.generate\(/, family: "EC", param: (_m, l) => curve(l) },
+    { id: "py.dsa", context: "code", re: /\bdsa\.generate_private_key\(|\bDSA\.generate\(/, family: "DSA", param: (_m, l) => bits(l) },
+    { id: "py.ed", context: "code", re: /\b(Ed25519|Ed448)PrivateKey\.generate\(|\bX25519PrivateKey\.generate\(/, family: (m) => (m[0].startsWith("X") ? "X25519" : "EdDSA") },
+    { id: "py.hashlib", context: "code", re: /\bhashlib\.(md5|sha1|sha224|sha256|sha384|sha512|sha3_\d+)\b|hashlib\.new\(\s*["'](md5|sha1)["']/, family: (m) => hashFamily(m[1] ?? m[2]) },
+    { id: "py.pycrypto.cipher", context: "code", re: /from\s+Crypto(?:dome)?\.Cipher\s+import\s+([\w, ]+)|\b(DES3|DES|ARC4|ARC2|Blowfish)\.new\(/, family: (m) => cipherFamily(m[1] ?? m[2]) },
+    { id: "py.pycrypto.hash", context: "code", re: /from\s+Crypto(?:dome)?\.Hash\s+import\s+(MD5|SHA1|SHA|MD4)\b/, family: (m) => hashFamily(m[1]) },
+    { id: "py.hazmat.cipher", context: "code", re: /algorithms\.(TripleDES|ARC4|Blowfish|IDEA|CAST5)\(|modes\.ECB\(/, family: (m) => (/ecb/i.test(m[0]) ? "ECB" : cipherFamily(m[1] ?? "")) },
+    // ---------- Node.js / JavaScript / TypeScript ----------
+    { id: "node.keypair", context: "code", re: /generateKeyPair(?:Sync)?\(\s*['"`](rsa|rsa-pss|dsa|ec|ed25519|ed448|x25519|x448|dh|ml-kem-\d+|ml-dsa-\d+)['"`]/i, family: (m) => (/ml-kem/i.test(m[1]) ? "ML-KEM" : /ml-dsa/i.test(m[1]) ? "ML-DSA" : asymFamily(m[1].replace("-pss", ""))), param: (_m, l) => bits(l) ?? curve(l) },
+    { id: "node.hash", context: "code", re: /create(?:Hash|Hmac)\(\s*['"`](md5|md4|sha1|sha-1|sha256|sha384|sha512|sha3-\d+)['"`]/i, family: (m) => hashFamily(m[1]) },
+    { id: "node.cipher", context: "code", re: /create(?:Cipher|Decipher)(?:iv)?\(\s*['"`]([\w-]+)['"`]/i, family: (m) => cipherFamily(m[1]), param: (m) => m[1] },
+    { id: "node.ecdh", context: "code", re: /createECDH\(\s*['"`]([\w-]+)['"`]|createDiffieHellman(?:Group)?\(/, family: (m) => (m[1] ? "ECDH" : "DH"), param: (m) => m[1] },
+    { id: "node.webcrypto", context: "code", re: /name:\s*['"`](RSA-OAEP|RSASSA-PKCS1-v1_5|RSA-PSS|ECDSA|ECDH|Ed25519|X25519|AES-CBC|AES-GCM|AES-CTR)['"`]/, family: (m) => (/^RSA/.test(m[1]) ? "RSA" : m[1] === "ECDSA" ? "ECDSA" : m[1] === "ECDH" ? "ECDH" : m[1] === "Ed25519" ? "EdDSA" : m[1] === "X25519" ? "X25519" : "AES"), param: (_m, l) => bits(l) ?? curve(l) },
+    { id: "js.forge", context: "code", re: /forge\.pki\.rsa\.generateKeyPair\(|forge\.md\.(md5|sha1)\.create\(/, family: (m) => (m[1] ? hashFamily(m[1]) : "RSA"), param: (_m, l) => bits(l) ?? l.match(/generateKeyPair\(\s*\{?\s*(?:bits:\s*)?(\d{3,5})/)?.[1] },
+    // ---------- Go ----------
+    { id: "go.rsa", context: "code", re: /\brsa\.GenerateKey\(|\brsa\.(SignPKCS1v15|SignPSS|EncryptPKCS1v15|EncryptOAEP)\(/, family: "RSA", param: (_m, l) => bits(l) },
+    { id: "go.ecdsa", context: "code", re: /\becdsa\.(GenerateKey|Sign|SignASN1)\(|\belliptic\.(P224|P256|P384|P521)\(\)|\becdh\.(P256|P384|P521|X25519)\(\)/, family: (m) => (/ecdh\.X25519/.test(m[0]) ? "X25519" : /ecdh\./.test(m[0]) ? "ECDH" : "ECDSA"), param: (m) => m[0].match(/P\d{3}|X25519/)?.[0] },
+    { id: "go.ed25519", context: "code", re: /\bed25519\.(GenerateKey|Sign)\(/, family: "EdDSA" },
+    { id: "go.hash", context: "code", re: /\b(md5|sha1)\.(New|Sum)\(/, family: (m) => hashFamily(m[1]) },
+    { id: "go.des", context: "code", re: /\bdes\.(NewCipher|NewTripleDESCipher)\(|\brc4\.NewCipher\(/, family: (m) => (/rc4/.test(m[0]) ? "RC4" : /Triple/.test(m[0]) ? "3DES" : "DES") },
+    { id: "go.tls", context: "code", re: /tls\.Version(SSL30|TLS10|TLS11)\b/, family: (m) => (m[1] === "SSL30" ? "SSL" : "TLS_OLD"), param: (m) => m[1] },
+    { id: "go.mlkem", context: "code", re: /\bmlkem\.(GenerateKey768|GenerateKey1024|NewDecapsulationKey\w*)\(|tls\.X25519MLKEM768/, family: (m) => (/X25519MLKEM/.test(m[0]) ? "HYBRID_PQ" : "ML-KEM") },
+    // ---------- .NET ----------
+    { id: "dotnet.asym", context: "code", re: /\b(RSA|DSA|ECDsa|ECDiffieHellman)(CryptoServiceProvider|Cng|OpenSsl)?\.Create\(|new\s+(RSA|DSA)CryptoServiceProvider\(/, family: (m) => asymFamily((m[1] ?? m[3]) === "ECDsa" ? "ecdsa" : (m[1] ?? m[3]) === "ECDiffieHellman" ? "ecdh" : (m[1] ?? m[3])), param: (_m, l) => bits(l) },
+    { id: "dotnet.hash", context: "code", re: /\b(MD5|SHA1)(CryptoServiceProvider|Managed|Cng)?\.Create\(|new\s+(MD5|SHA1)(CryptoServiceProvider|Managed)\(/, family: (m) => hashFamily(m[1] ?? m[3]) },
+    { id: "dotnet.sym", context: "code", re: /\b(TripleDES|DES|RC2)(CryptoServiceProvider)?\.Create\(|new\s+(TripleDES|DES|RC2)CryptoServiceProvider\(|CipherMode\.ECB/, family: (m) => (/ECB/.test(m[0]) ? "ECB" : cipherFamily(m[1] ?? m[3])) },
+    { id: "dotnet.tls", context: "code", re: /SslProtocols\.(Ssl2|Ssl3|Tls|Tls11)\b(?!\d)|SecurityProtocolType\.(Ssl3|Tls|Tls11)\b(?!\d)/, family: (m) => (/Ssl/.test(m[1] ?? m[2]) ? "SSL" : "TLS_OLD"), param: (m) => m[1] ?? m[2] },
+    // ---------- CLI / shell ----------
+    { id: "cli.openssl.rsa", context: "cli", re: /\bopenssl\s+(genrsa|req\b.*-newkey\s+rsa|genpkey\b.*-algorithm\s+rsa)/i, family: "RSA", param: (_m, l) => bits(l) ?? l.match(/rsa:(\d+)/i)?.[1] ?? l.match(/rsa_keygen_bits:(\d+)/i)?.[1] },
+    { id: "cli.openssl.ec", context: "cli", re: /\bopenssl\s+(ecparam|genpkey\b.*-algorithm\s+(ec|ed25519|x25519))/i, family: (m) => (/ed25519/i.test(m[0]) ? "EdDSA" : /x25519/i.test(m[0]) ? "X25519" : "EC"), param: (_m, l) => curve(l) ?? l.match(/-name\s+(\S+)/)?.[1] },
+    { id: "cli.openssl.dsa", context: "cli", re: /\bopenssl\s+(dsaparam|gendsa|dhparam)/i, family: (m) => (/dh/i.test(m[1]) ? "DH" : "DSA"), param: (_m, l) => l.match(/\b(\d{3,5})\b/)?.[1] },
+    { id: "cli.openssl.weak", context: "cli", re: /\bopenssl\s+(?:dgst\s+-(md5|sha1)|enc\s+-(des\S*|rc4\S*|bf\S*))/i, family: (m) => (m[1] ? hashFamily(m[1]) : cipherFamily(m[2])) },
+    { id: "cli.sshkeygen", context: "cli", re: /\bssh-keygen\b.*-t\s+(rsa|dsa|ecdsa|ed25519)/i, family: (m) => asymFamily(m[1]), param: (_m, l) => bits(l) },
+    { id: "cli.keytool", context: "cli", re: /\bkeytool\b.*-keyalg\s+(RSA|EC|DSA)/i, family: (m) => asymFamily(m[1]), param: (_m, l) => l.match(/-keysize\s+(\d+)/)?.[1] },
+    { id: "cli.md5sum", context: "cli", re: /\b(md5sum|sha1sum)\b/, family: (m) => hashFamily(m[1].replace("sum", "")) },
+    // ---------- Config ----------
+    { id: "cfg.tls.protocols", context: "config", re: /\b(ssl_protocols|SSLProtocol|enabled-protocols|enabledProtocols|sslEnabledProtocols|MinProtocol|tls_min_version|min_version|minimum_protocol_version|ssl-min-ver|TLSMinVersion)\b\s*[=:]?\s*(.+)/i, family: (m) => {
+            // ignore protocols that are switched off: Apache "-SSLv3", OpenSSL "!TLSv1"
+            const on = m[2].split(/[\s,;:"']+/).filter((t) => t && !t.startsWith("-") && !t.startsWith("!"));
+            const joined = on.join(" ");
+            if (/\b(SSLv2|SSLv3)\b/i.test(joined))
+                return "SSL";
+            if (/\b(TLSv1(\.0)?|TLSv1\.1|TLS1_0|TLS1_1|TLS10|TLS11|tls1\.0|tls1\.1)\b(?!\.[23])/i.test(joined) || /^(1\.0|1\.1)$/.test(on[0] ?? ""))
+                return "TLS_OLD";
+            if (/^all$/i.test(on[0] ?? ""))
+                return m[2].includes("-TLSv1.1") && m[2].includes("-TLSv1 ") ? undefined : "TLS_OLD";
+            return undefined;
+        }, param: (m) => m[2].trim().slice(0, 60) },
+    { id: "cfg.ciphers", context: "config", re: /\b(ssl_ciphers|SSLCipherSuite|ciphers|cipherSuites|CipherString|tls_cipher_suites)\b\s*[=:]?\s*["']?([^"'\n;]+)/i, family: (m) => {
+            const c = m[2];
+            if (/(^|[:,\s])(?!!)(\w+-)*(RC4)\b/i.test(c) && !/!RC4/i.test(c))
+                return "RC4";
+            if (/\b(DES-CBC3|3DES|DES-CBC)\b/i.test(c) && !/!3DES|!DES/i.test(c))
+                return "3DES";
+            if (/\b(NULL|eNULL|aNULL|EXPORT|EXP)\b/.test(c) && !/!(e|a)?NULL|!EXP/.test(c))
+                return "NULL_CIPHER";
+            if (/\bMD5\b/.test(c) && !/!MD5/.test(c))
+                return "MD5";
+            if (/(ECDHE|DHE|RSA)/i.test(c))
+                return /ECDHE/i.test(c) ? "ECDH" : /DHE/i.test(c) ? "DH" : "RSA";
+            return "AES";
+        }, param: (m) => m[2].slice(0, 80) },
+    { id: "cfg.ssh.hostkey", context: "config", re: /\b(HostKeyAlgorithms|PubkeyAcceptedKeyTypes|PubkeyAcceptedAlgorithms|KexAlgorithms)\b\s+(.+)/i, family: (m) => (/mlkem|sntrup/i.test(m[2]) ? "HYBRID_PQ" : /ssh-dss/i.test(m[2]) ? "DSA" : /ssh-rsa|rsa-sha2/i.test(m[2]) ? "RSA" : /ecdsa|ecdh/i.test(m[2]) ? "ECDSA" : /curve25519|ed25519/i.test(m[2]) ? "X25519" : "DH"), param: (m) => m[2].slice(0, 80) },
+    { id: "cfg.groups", context: "config", re: /\b(ssl_ecdh_curve|Groups|Curves|ecdhCurves|named_groups|supported_groups)\b\s*[=:]?\s*["']?([\w:,-]+)/i, family: (m) => (/mlkem|kyber/i.test(m[2]) ? "HYBRID_PQ" : /x25519/i.test(m[2]) ? "X25519" : "ECDH"), param: (m) => m[2] },
+    { id: "cfg.keyalg", context: "config", re: /\b(key[_-]?(algorithm|alg|type))\s*[=:]\s*["']?(RSA|EC|ECDSA|DSA|Ed25519|ML-DSA\S*|ML-KEM\S*)\b/i, family: (m) => (/ml-dsa/i.test(m[3]) ? "ML-DSA" : /ml-kem/i.test(m[3]) ? "ML-KEM" : asymFamily(m[3])), param: (_m, l) => bits(l) ?? curve(l) },
+    // ---------- JOSE / JWT ----------
+    { id: "jose.alg", context: "jose", re: /["']?(?:alg|algorithm|algorithms)["']?\s*[:=]\s*\[?\s*["'](RS256|RS384|RS512|PS256|PS384|PS512|ES256|ES384|ES512|EdDSA|HS256|HS384|HS512|none)["']/i, family: (m) => {
+            const a = m[1].toUpperCase();
+            return a === "NONE" ? "JWT_NONE" : a.startsWith("RS") || a.startsWith("PS") ? "RSA" : a.startsWith("ES") ? "ECDSA" : a === "EDDSA" ? "EdDSA" : "HMAC";
+        }, param: (m) => m[1] },
+    // ---------- Key & certificate material ----------
+    { id: "pem.private", context: "material", re: /-----BEGIN (RSA |EC |DSA |OPENSSH |ENCRYPTED |)PRIVATE KEY-----/, family: "PRIVATE_KEY", param: (m) => (m[1].trim() || "PKCS#8") },
+    { id: "ssh.pubkey", context: "material", re: /\b(ssh-rsa|ssh-dss|ecdsa-sha2-nistp(?:256|384|521)|ssh-ed25519) AAAA[0-9A-Za-z+/]/, family: (m) => (m[1] === "ssh-rsa" ? "RSA" : m[1] === "ssh-dss" ? "DSA" : m[1].startsWith("ecdsa") ? "ECDSA" : "EdDSA"), param: (m) => m[1] },
+    // ---------- Post-quantum (good news) ----------
+    { id: "pqc.names", context: "any", re: /\b(ML-?KEM-?(512|768|1024)|Kyber-?(512|768|1024)?|ML-?DSA-?(44|65|87)|Dilithium[235]?|SLH-?DSA[\w-]*|SPHINCS\+?[\w-]*|FN-?DSA|Falcon-?(512|1024)|X25519MLKEM768|X25519Kyber768\w*|SecP256r1MLKEM768|mlkem768x25519|sntrup761x25519)\b/i, family: (m) => {
+            const s = m[0].toLowerCase();
+            if (/x25519|secp256r1mlkem|sntrup/.test(s))
+                return "HYBRID_PQ";
+            if (/kem|kyber/.test(s))
+                return "ML-KEM";
+            if (/slh|sphincs/.test(s))
+                return "SLH-DSA";
+            if (/falcon|fn-?dsa/.test(s))
+                return "FN-DSA";
+            return "ML-DSA";
+        }, param: (m) => m[0] },
+];
+/** Decode a PEM certificate body and read its public-key and signature algorithm from known OIDs. */
+function certAlgorithms(base64) {
+    let bytes;
+    try {
+        const bin = atob(base64.replace(/\s+/g, ""));
+        bytes = Uint8Array.from(bin, (c) => c.charCodeAt(0));
+    }
+    catch {
+        return {};
+    }
+    const hex = Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("");
+    const has = (oidHex) => hex.includes(oidHex);
+    const out = {};
+    if (has("06092a864886f70d010101"))
+        out.key = "RSA";
+    else if (has("06072a8648ce3d0201")) {
+        out.key = "ECDSA";
+        out.keyParam = has("06082a8648ce3d030107") ? "P-256" : has("06052b81040022") ? "P-384" : has("06052b81040023") ? "P-521" : undefined;
+    }
+    else if (has("06032b6570"))
+        out.key = "EdDSA";
+    else if (has("06072a8648ce380401"))
+        out.key = "DSA";
+    else if (/0609608648016503040311|0609608648016503040312|0609608648016503040313/.test(hex))
+        out.key = "ML-DSA";
+    if (has("06092a864886f70d010104"))
+        out.sig = "md5WithRSA";
+    else if (has("06092a864886f70d010105"))
+        out.sig = "sha1WithRSA";
+    else if (has("06092a864886f70d01010b"))
+        out.sig = "sha256WithRSA";
+    else if (has("06092a864886f70d01010c"))
+        out.sig = "sha384WithRSA";
+    else if (has("06092a864886f70d01010d"))
+        out.sig = "sha512WithRSA";
+    else if (has("06082a8648ce3d040302"))
+        out.sig = "ecdsa-with-SHA256";
+    else if (has("06082a8648ce3d040303"))
+        out.sig = "ecdsa-with-SHA384";
+    if (out.key === "RSA") {
+        // modulus length: find the BIT STRING / INTEGER of the modulus (approximate from the first large INTEGER after the OID)
+        const idx = hex.indexOf("06092a864886f70d0101010500");
+        const tail = idx >= 0 ? hex.slice(idx) : "";
+        const m = tail.match(/02820(1|2|4)([0-9a-f]{2})/);
+        if (m) {
+            const len = parseInt("0" + m[1] + m[2], 16);
+            const n = len - 1; // leading 00
+            out.keyParam = String(Math.round((n * 8) / 1024) * 1024 || n * 8);
+        }
+        else if (/028181/.test(tail))
+            out.keyParam = "1024";
+    }
+    return out;
+}
+
+return { RULES, certAlgorithms };
+})();
+__m["pqc-crypto-inventory/src/scan.js"] = (() => {
+// Scanner + classifier: finds cryptography, rates it for quantum and classical risk, and tells you what to move to.
+const { certAlgorithms, RULES } = __m["pqc-crypto-inventory/src/rules.js"];
+const SHOR = "Breakable by a large quantum computer (Shor's algorithm). Data protected today can be recorded now and decrypted later.";
+const FAMILY = {
+    RSA: { primitive: "pke", category: "QUANTUM_VULNERABLE", why: SHOR, fix: "Key exchange/encryption → ML-KEM (FIPS 203), ideally hybrid X25519MLKEM768. Signatures → ML-DSA (FIPS 204) or SLH-DSA (FIPS 205).", nistLevel: 0 },
+    DSA: { primitive: "signature", category: "BROKEN_NOW", why: "DSA is deprecated for new signatures and is also quantum-vulnerable.", fix: "Replace with ML-DSA (FIPS 204); use Ed25519/ECDSA only as a short-term hybrid partner.", nistLevel: 0 },
+    DH: { primitive: "key-agree", category: "QUANTUM_VULNERABLE", why: SHOR, fix: "Move key exchange to hybrid X25519MLKEM768 (TLS 1.3) or ML-KEM.", nistLevel: 0 },
+    ECDSA: { primitive: "signature", category: "QUANTUM_VULNERABLE", why: SHOR, fix: "Plan migration to ML-DSA (FIPS 204); consider composite/hybrid certificates during transition.", nistLevel: 0 },
+    ECDH: { primitive: "key-agree", category: "QUANTUM_VULNERABLE", why: SHOR, fix: "Use hybrid X25519MLKEM768 key exchange (TLS 1.3) or ML-KEM.", nistLevel: 0 },
+    EC: { primitive: "pke", category: "QUANTUM_VULNERABLE", why: SHOR, fix: "Elliptic-curve keys: signatures → ML-DSA; key exchange → ML-KEM / hybrid X25519MLKEM768.", nistLevel: 0 },
+    EdDSA: { primitive: "signature", category: "QUANTUM_VULNERABLE", why: SHOR + " (Modern and fine classically; still needs a PQ plan.)", fix: "Keep for now; plan ML-DSA or a hybrid Ed25519+ML-DSA scheme.", nistLevel: 0 },
+    X25519: { primitive: "key-agree", category: "QUANTUM_VULNERABLE", why: SHOR + " (Modern and fine classically.)", fix: "Upgrade to hybrid X25519MLKEM768 so it stays safe against record-now-decrypt-later.", nistLevel: 0 },
+    MD5: { primitive: "hash", category: "BROKEN_NOW", why: "MD5 collisions are practical today.", fix: "Use SHA-256 or better (SHA-384/SHA-512/SHA3). For passwords use Argon2id, scrypt or bcrypt.", nistLevel: 0 },
+    SHA1: { primitive: "hash", category: "BROKEN_NOW", why: "SHA-1 collisions have been demonstrated; it's being withdrawn.", fix: "Use SHA-256 or better. (HMAC-SHA1 is less urgent but still worth retiring.)", nistLevel: 0 },
+    DES: { primitive: "block-cipher", category: "BROKEN_NOW", why: "56-bit DES can be brute-forced.", fix: "Use AES-256-GCM.", nistLevel: 0 },
+    "3DES": { primitive: "block-cipher", category: "BROKEN_NOW", why: "Triple DES is withdrawn for encryption and has a 64-bit block (Sweet32).", fix: "Use AES-256-GCM. (Check card/HSM key blocks too: banking still uses TDES in places.)", nistLevel: 0 },
+    RC4: { primitive: "stream-cipher", category: "BROKEN_NOW", why: "RC4 has known practical biases; banned in TLS.", fix: "Use AES-256-GCM or ChaCha20-Poly1305.", nistLevel: 0 },
+    RC2: { primitive: "block-cipher", category: "BROKEN_NOW", why: "RC2 is obsolete and weak.", fix: "Use AES-256-GCM.", nistLevel: 0 },
+    Blowfish: { primitive: "block-cipher", category: "BROKEN_NOW", why: "64-bit block cipher; vulnerable to birthday attacks on large data.", fix: "Use AES-256-GCM (or bcrypt only for password hashing).", nistLevel: 0 },
+    ECB: { primitive: "block-cipher", category: "BROKEN_NOW", why: "ECB mode leaks patterns in the data.", fix: "Use an authenticated mode: AES-256-GCM.", nistLevel: 0 },
+    TLS_OLD: { primitive: "protocol", category: "BROKEN_NOW", why: "TLS 1.0/1.1 are deprecated.", fix: "Allow TLS 1.2+ only; prefer TLS 1.3 with hybrid X25519MLKEM768 key exchange.", nistLevel: 0 },
+    SSL: { primitive: "protocol", category: "BROKEN_NOW", why: "SSLv2/v3 are broken.", fix: "Disable; allow TLS 1.2+ only, prefer TLS 1.3.", nistLevel: 0 },
+    NULL_CIPHER: { primitive: "protocol", category: "BROKEN_NOW", why: "NULL / EXPORT cipher suites give no or trivially breakable encryption.", fix: "Remove; use TLS 1.3 suites.", nistLevel: 0 },
+    JWT_NONE: { primitive: "signature", category: "BROKEN_NOW", why: "alg 'none' means tokens are not signed at all.", fix: "Reject 'none'; pin the expected algorithm server-side.", nistLevel: 0 },
+    AES128: { primitive: "block-cipher", category: "REVIEW", why: "Grover's algorithm halves effective strength; AES-128 is acceptable today but weaker for decades-long secrets.", fix: "For long-lived data prefer AES-256.", nistLevel: 1 },
+    AES256: { primitive: "block-cipher", category: "QUANTUM_SAFE", why: "AES-256 keeps ample margin against quantum attacks.", fix: "No change needed (check mode: prefer GCM).", nistLevel: 5 },
+    AES: { primitive: "block-cipher", category: "REVIEW", why: "AES key size not visible from this line.", fix: "Confirm 256-bit keys and an authenticated mode (GCM).", nistLevel: 1 },
+    SHA2: { primitive: "hash", category: "QUANTUM_SAFE", why: "SHA-2 remains secure; SHA-384/512 give extra quantum margin.", fix: "No change needed.", nistLevel: 2 },
+    SHA3: { primitive: "hash", category: "QUANTUM_SAFE", why: "SHA-3 remains secure.", fix: "No change needed.", nistLevel: 2 },
+    ChaCha20: { primitive: "stream-cipher", category: "QUANTUM_SAFE", why: "256-bit key; fine against quantum attacks.", fix: "No change needed.", nistLevel: 5 },
+    HMAC: { primitive: "mac", category: "QUANTUM_SAFE", why: "HMAC with SHA-2 remains secure (symmetric).", fix: "No change needed; keep keys ≥ 256 bits for long-term use.", nistLevel: 2 },
+    "ML-KEM": { primitive: "kem", category: "PQC_READY", why: "NIST post-quantum key encapsulation (FIPS 203).", fix: "Already post-quantum. Prefer hybrid with X25519 during transition.", nistLevel: 3 },
+    "ML-DSA": { primitive: "signature", category: "PQC_READY", why: "NIST post-quantum signature (FIPS 204).", fix: "Already post-quantum.", nistLevel: 3 },
+    "SLH-DSA": { primitive: "signature", category: "PQC_READY", why: "NIST hash-based post-quantum signature (FIPS 205).", fix: "Already post-quantum.", nistLevel: 3 },
+    "FN-DSA": { primitive: "signature", category: "PQC_READY", why: "Falcon / FN-DSA post-quantum signature.", fix: "Already post-quantum.", nistLevel: 1 },
+    HYBRID_PQ: { primitive: "kem", category: "PQC_READY", why: "Hybrid classical + post-quantum key exchange.", fix: "Already quantum-resistant.", nistLevel: 3 },
+    PRIVATE_KEY: { primitive: "key-material", category: "SECRET_EXPOSED", why: "A private key is stored in the code base or config files.", fix: "Remove it, rotate the key, and keep keys in an HSM, KMS or secrets vault.", nistLevel: 0 },
+};
+const COMMENT = /^\s*(\/\/|#|\*|\/\*|--(?!-)|;|<!--|REM\b)/i;
+const TEXT_EXT = /\.(java|kt|kts|scala|groovy|py|js|mjs|cjs|ts|tsx|jsx|go|cs|vb|c|cc|cpp|h|hpp|rs|rb|php|swift|m|sh|bash|zsh|ps1|bat|cmd|conf|cfg|cnf|ini|properties|yaml|yml|json|toml|xml|env|tf|hcl|pem|crt|cer|key|pub|txt|md|sql|cob|cbl|jcl|dockerfile|gradle|pom|config)$/i;
+function isScannable(path) {
+    const base = path.split(/[\\/]/).pop() ?? path;
+    return TEXT_EXT.test(base) || /^(dockerfile|makefile|sshd_config|ssh_config|nginx\.conf|httpd\.conf|openssl\.cnf|authorized_keys|known_hosts|id_\w+)$/i.test(base);
+}
+function scanText(file, text) {
+    const findings = [];
+    const lines = text.split(/\r?\n/);
+    const seen = new Set();
+    for (let i = 0; i < lines.length; i++) {
+        const line = lines[i];
+        if (line.length > 4000)
+            continue; // minified / binary-ish
+        const inComment = COMMENT.test(line);
+        for (const r of RULES) {
+            const m = line.match(r.re);
+            if (!m)
+                continue;
+            const family = typeof r.family === "function" ? r.family(m) : r.family;
+            if (!family)
+                continue;
+            let param = r.param?.(m, line);
+            // key size often set a few lines later, e.g. kpg.initialize(1024)
+            if (!param && ["RSA", "DSA", "DH"].includes(family)) {
+                for (let j = i + 1; j <= Math.min(i + 4, lines.length - 1) && !param; j++) {
+                    param = lines[j].match(/\b(?:initialize|key_?size|modulusLength|bits)\s*[(=:]\s*(\d{3,5})\b/i)?.[1];
+                }
+            }
+            const key = `${i}|${family}`;
+            if (seen.has(key))
+                continue;
+            seen.add(key);
+            findings.push(make(file, i + 1, r.id, family, param, inComment, line));
+        }
+    }
+    // certificates: decode PEM blocks
+    const certRe = /-----BEGIN CERTIFICATE-----([\s\S]*?)-----END CERTIFICATE-----/g;
+    for (const m of text.matchAll(certRe)) {
+        const lineNo = text.slice(0, m.index).split("\n").length;
+        const info = certAlgorithms(m[1]);
+        if (info.key)
+            findings.push(make(file, lineNo, "pem.certificate", info.key, info.keyParam ? `${info.keyParam}${info.sig ? ", " + info.sig : ""}` : info.sig, false, "-----BEGIN CERTIFICATE-----"));
+        if (info.sig && /md5|sha1/i.test(info.sig))
+            findings.push(make(file, lineNo, "pem.certificate.sig", /md5/i.test(info.sig) ? "MD5" : "SHA1", info.sig, false, "-----BEGIN CERTIFICATE-----"));
+    }
+    return findings;
+}
+function make(file, line, rule, family, param, inComment, text) {
+    const info = FAMILY[family];
+    let category = info.category;
+    let why = info.why;
+    // small key sizes are broken today, not just quantum-vulnerable
+    const n = param && /^\d+$/.test(param) ? Number(param) : param?.match(/^(\d{3,5})\b/) ? Number(param.match(/^(\d{3,5})/)?.[1]) : NaN;
+    if ((family === "RSA" || family === "DH" || family === "DSA") && n && n < 2048) {
+        category = "BROKEN_NOW";
+        why = `${n}-bit ${family} is below today's 2048-bit minimum, and quantum-vulnerable too.`;
+    }
+    if (family === "EC" && param && /secp256k1/i.test(param))
+        why += " (secp256k1 is a blockchain curve; unusual in banking systems.)";
+    const priority = category === "SECRET_EXPOSED" || category === "BROKEN_NOW" ? 1
+        : category === "QUANTUM_VULNERABLE" ? (info.primitive === "key-agree" || info.primitive === "pke" || info.primitive === "kem" ? 2 : 3)
+            : category === "REVIEW" ? 3 : 4;
+    return {
+        file, line, rule, family, param, category, primitive: info.primitive, in_comment: inComment,
+        snippet: text.trim().slice(0, 160), why, fix: info.fix, priority: inComment ? 4 : priority,
+    };
+}
+function summarise(findings, filesScanned) {
+    const active = findings.filter((f) => !f.in_comment);
+    const by_category = { BROKEN_NOW: 0, QUANTUM_VULNERABLE: 0, REVIEW: 0, QUANTUM_SAFE: 0, PQC_READY: 0, SECRET_EXPOSED: 0 };
+    const by_family = {};
+    for (const f of active) {
+        by_category[f.category]++;
+        by_family[f.family] = (by_family[f.family] ?? 0) + 1;
+    }
+    const asym = active.filter((f) => ["pke", "signature", "key-agree", "kem"].includes(f.primitive) && f.family !== "JWT_NONE" && f.family !== "HMAC");
+    const pq = asym.filter((f) => f.category === "PQC_READY").length;
+    return {
+        files_scanned: filesScanned,
+        findings: findings.length,
+        active_findings: active.length,
+        by_category,
+        by_family,
+        files_with_quantum_vulnerable: new Set(active.filter((f) => f.category === "QUANTUM_VULNERABLE" || (f.category === "BROKEN_NOW" && ["pke", "signature", "key-agree"].includes(f.primitive))).map((f) => f.file)).size,
+        pqc_readiness: asym.length ? pq / asym.length : 1,
+    };
+}
+/** CycloneDX 1.6-style Cryptographic Bill of Materials (CBOM). */
+function toCbom(findings, name = "scanned-codebase") {
+    const groups = new Map();
+    for (const f of findings.filter((x) => !x.in_comment)) {
+        const k = `${f.family}${f.param && f.family !== "PRIVATE_KEY" ? "-" + f.param : ""}`;
+        groups.set(k, [...(groups.get(k) ?? []), f]);
+    }
+    return {
+        bomFormat: "CycloneDX",
+        specVersion: "1.6",
+        version: 1,
+        metadata: { timestamp: new Date().toISOString(), tools: { components: [{ type: "application", name: "Hyniqe Hub PQC Crypto Inventory" }] }, component: { type: "application", name } },
+        components: [...groups.entries()].map(([k, list], i) => {
+            const f = list[0];
+            const isMaterial = f.family === "PRIVATE_KEY";
+            return {
+                type: "cryptographic-asset",
+                "bom-ref": `crypto-${i + 1}`,
+                name: k,
+                cryptoProperties: isMaterial
+                    ? { assetType: "related-crypto-material", relatedCryptoMaterialProperties: { type: "private-key" } }
+                    : f.primitive === "protocol"
+                        ? { assetType: "protocol", protocolProperties: { type: "tls", version: f.param } }
+                        : { assetType: "algorithm", algorithmProperties: { primitive: f.primitive, parameterSetIdentifier: f.param, nistQuantumSecurityLevel: FAMILY[f.family].nistLevel } },
+                properties: [
+                    { name: "hyniqe:category", value: list.some((x) => x.category === "BROKEN_NOW") ? "BROKEN_NOW" : f.category },
+                    { name: "hyniqe:fix", value: f.fix },
+                ],
+                evidence: { occurrences: list.map((x) => ({ location: x.file, line: x.line })) },
+            };
+        }),
+    };
+}
+
+return { FAMILY, isScannable, scanText, summarise, toCbom };
+})();
+const SAMPLES = {"src/main/java/com/bank/payments/MessageSigner.java":"package com.bank.payments;\n\nimport java.security.*;\nimport javax.crypto.Cipher;\n\npublic class MessageSigner {\n    // Legacy signer for outbound payment files (do not change without Ops sign-off)\n    public KeyPair newKeys() throws Exception {\n        KeyPairGenerator kpg = KeyPairGenerator.getInstance(\"RSA\");\n        kpg.initialize(1024);\n        return kpg.generateKeyPair();\n    }\n\n    public byte[] sign(byte[] data, PrivateKey key) throws Exception {\n        Signature s = Signature.getInstance(\"SHA1withRSA\");\n        s.initSign(key);\n        s.update(data);\n        return s.sign();\n    }\n\n    public byte[] checksum(byte[] data) throws Exception {\n        return MessageDigest.getInstance(\"MD5\").digest(data);\n    }\n\n    public byte[] encryptPin(byte[] pinBlock, Key k) throws Exception {\n        Cipher c = Cipher.getInstance(\"DESede/ECB/NoPadding\");\n        c.init(Cipher.ENCRYPT_MODE, k);\n        return c.doFinal(pinBlock);\n    }\n\n    public byte[] encryptFile(byte[] data, Key k) throws Exception {\n        Cipher c = Cipher.getInstance(\"AES/GCM/NoPadding\");\n        c.init(Cipher.ENCRYPT_MODE, k);\n        return c.doFinal(data);\n    }\n}\n","python/statement_api.py":"import hashlib\nfrom cryptography.hazmat.primitives.asymmetric import ec\nfrom cryptography.hazmat.primitives import hashes\n\ndef session_key():\n    return ec.generate_private_key(ec.SECP256R1())\n\ndef file_id(data: bytes) -> str:\n    return hashlib.sha256(data).hexdigest()\n\ndef legacy_id(data: bytes) -> str:\n    # kept for old clients\n    return hashlib.sha1(data).hexdigest()\n","node/auth.js":"const crypto = require(\"crypto\");\nconst jwt = require(\"jsonwebtoken\");\n\nconst { publicKey, privateKey } = crypto.generateKeyPairSync(\"rsa\", { modulusLength: 2048 });\n\nfunction issue(user) {\n  return jwt.sign({ sub: user }, privateKey, { algorithm: \"RS256\", expiresIn: \"15m\" });\n}\n\nfunction verify(token) {\n  return jwt.verify(token, publicKey, { algorithms: [\"RS256\"] });\n}\n\nconst kem = crypto.generateKeyPairSync(\"ml-kem-768\"); // pilot: post-quantum key exchange\nmodule.exports = { issue, verify, kem };\n","config/nginx.conf":"server {\n    listen 443 ssl;\n    server_name payments.bank.example;\n    ssl_protocols TLSv1 TLSv1.1 TLSv1.2;\n    ssl_ciphers ECDHE-RSA-AES256-GCM-SHA384:DES-CBC3-SHA;\n    ssl_ecdh_curve X25519:prime256v1;\n    ssl_certificate /etc/ssl/legacy-gateway.crt;\n}\n","config/sshd_config":"KexAlgorithms sntrup761x25519-sha512@openssh.com,curve25519-sha256\nHostKeyAlgorithms ssh-ed25519,rsa-sha2-512\n","scripts/rotate-keys.sh":"#!/bin/bash\n# Rotate SFTP keys for the clearing house connection\nssh-keygen -t rsa -b 2048 -f /keys/clearing_sftp -N \"\"\nopenssl genrsa -out /keys/swift-gateway.key 2048\nopenssl req -new -newkey rsa:4096 -nodes -keyout /keys/api.key -out /keys/api.csr\n","certs/legacy-gateway.crt":"-----BEGIN CERTIFICATE-----\nMIIDLTCCAhWgAwIBAgIUF7JiZ6YMqP1Q9EdwU18TvpfoYiQwDQYJKoZIhvcNAQEF\nBQAwJjEkMCIGA1UEAwwbbGVnYWN5LWdhdGV3YXkuYmFuay5leGFtcGxlMB4XDTI2\nMTEyNDA4NTIxOVoXDTI3MTEyNDA4NTIxOVowJjEkMCIGA1UEAwwbbGVnYWN5LWdh\ndGV3YXkuYmFuay5leGFtcGxlMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKC\nAQEA9rOsRvHRBCTuGSw2NTyRefBITFfnVTcpR8BwtjYtlDF6HyTuRGtCKy+RuV8b\nRw2Qxwa/JiCH2x/tNU1xjOVhi62RZwtpqG5Q6BDki8ALxgUuH5ioEWJf7asX4JY+\nCnpXLmFTA6haAkupbiYx3F32Ceji2tLMKbZqiBT5DEwB0wWpYtRdqWv2GayK6lgd\nW5lXtAmkrpB9n6uO609zByls3ZrZVEaQYmuOykDZ2j7dxznP+b/7NATIgKxzxd+T\nYzkcpO7Kwh34qs4kJ8C3q4dGT2TLL1uQ/qGrxtMGfdzqfi//HGwDDoI9NRW8JlLD\nzCm9gC/NIh2X2Fd2W0srI3ExhwIDAQABo1MwUTAdBgNVHQ4EFgQU5WtWPV3inV+A\nywXZ6DjCrX2Z3GUwHwYDVR0jBBgwFoAU5WtWPV3inV+AywXZ6DjCrX2Z3GUwDwYD\nVR0TAQH/BAUwAwEB/zANBgkqhkiG9w0BAQUFAAOCAQEAKqVAfMkSVx6Rdgz0AIuT\nlE1BspgEWMMaffkTQTzmqJ1dHKJeTwsuRpg/1LHOkvWbAT+dglv9u4Vym2JaKdKb\n1O3ZF7rXDDAwtOq9dPl6xx2ANrCD+v6OnpOlRLXZdEM/URGNWtqIQyt1VK3eZ0Pz\nLydrnRbao6geBPWmKhlnn++cp4hO8hBacdXnGZosxcxGICp+avCzwyhcHVpAMTLT\nVg/qXrjD6OYV5otZkp18G5g9/5ucEfdupa39qu5edb2EeBccgMCqxcdyKHTsHNzw\neXUFKAfDU3YegmBFkrmmcDOWoEQWcJPBlfHxXjQOikZWyMRqbuzjANQMaD/xXpXw\nLA==\n-----END CERTIFICATE-----\n"};
+// Minimal, safe Markdown → HTML for the reports these tools produce (headings, tables, lists, checkboxes,
+// bold/italic/code, line breaks). All text is HTML-escaped first.
+function renderMarkdown(md) {
+  const esc = (s) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  const inline = (s) => esc(s)
+    .replace(/`([^`]+)`/g, "<code>$1</code>")
+    .replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>")
+    .replace(/(^|[\s(])_([^_]+)_(?=[\s).,:;]|$)/g, "$1<em>$2</em>")
+    .replace(/ {2}$/g, "<br>");
+  const lines = md.replace(/\r/g, "").split("\n");
+  const html = [];
+  let i = 0;
+  while (i < lines.length) {
+    const l = lines[i];
+    if (/^#{1,4} /.test(l)) { const n = l.match(/^#+/)[0].length; html.push(`<h${n + 1}>${inline(l.slice(n + 1))}</h${n + 1}>`); i++; continue; }
+    if (/^\|.*\|$/.test(l) && /^\|\s*-+/.test(lines[i + 1] || "")) {
+      const cells = (row) => row.slice(1, -1).split(/(?<!\\)\|/).map((c) => inline(c.trim().replace(/\\\|/g, "|")));
+      const head = cells(l);
+      i += 2;
+      const body = [];
+      while (i < lines.length && /^\|.*\|$/.test(lines[i])) body.push(cells(lines[i++]));
+      html.push(`<div class="tablewrap"><table><thead><tr>${head.map((c) => `<th>${c}</th>`).join("")}</tr></thead><tbody>${body.map((r) => `<tr>${r.map((c) => `<td>${c}</td>`).join("")}</tr>`).join("")}</tbody></table></div>`);
+      continue;
+    }
+    if (/^(\d+\.|-) /.test(l)) {
+      const ordered = /^\d+\./.test(l);
+      const items = [];
+      while (i < lines.length && (/^(\d+\.|-) /.test(lines[i]) || /^ {2,}\S/.test(lines[i]))) {
+        if (/^ {2,}\S/.test(lines[i]) && items.length) items[items.length - 1] += "<br>" + inline(lines[i].trim());
+        else items.push(inline(lines[i].replace(/^(\d+\.|-) /, "")).replace(/^\[ \] /, '<input type="checkbox"> ').replace(/^\[x\] /i, '<input type="checkbox" checked> '));
+        // keep "  " line-break markers inside items
+        if (/ {2}$/.test(lines[i])) items[items.length - 1] = items[items.length - 1].replace(/<br>$/, "");
+        i++;
+      }
+      html.push(`<${ordered ? "ol" : "ul"}>${items.map((x) => `<li>${x}</li>`).join("")}</${ordered ? "ol" : "ul"}>`);
+      continue;
+    }
+    if (!l.trim()) { i++; continue; }
+    const para = [];
+    while (i < lines.length && lines[i].trim() && !/^(#|\||\d+\. |- )/.test(lines[i])) para.push(inline(lines[i++]));
+    html.push(`<p>${para.join(" ")}</p>`);
+  }
+  return html.join("\n");
+}
+
+// Page UI for each Hub solution. Expects: __m (bundled modules), SAMPLES, renderMarkdown.
+(function () {
+  const $ = (sel, el = document) => el.querySelector(sel);
+  const h = (html) => { const t = document.createElement("template"); t.innerHTML = html.trim(); return t.content.firstElementChild; };
+  const app = $("#app");
+  const table = __m["shared/table.js"];
+  const solution = document.body.dataset.solution;
+
+  function download(name, text, type = "text/plain") {
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(new Blob([text], { type }));
+    a.download = name;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+  }
+  async function readFiles(input) {
+    return Promise.all([...input.files].map(async (f) => ({ name: f.webkitRelativePath || f.name, text: await f.text() })));
+  }
+  function fileInto(input, textarea) {
+    input.addEventListener("change", async () => { const [f] = await readFiles(input); if (f) textarea.value = f.text; });
+  }
+  const resultCard = h(`<section class="card"><div id="downloads" class="actions" style="margin:0 0 8px"></div><div id="report" class="empty">Your report will appear here.</div></section>`);
+  function show(md, downloads = []) {
+    const r = $("#report", resultCard);
+    r.className = "";
+    r.innerHTML = renderMarkdown(md);
+    const d = $("#downloads", resultCard);
+    d.innerHTML = "";
+    for (const [label, name, text, type] of [["Download report (.md)", "report.md", md, "text/markdown"], ...downloads]) {
+      const b = h(`<button>${label}</button>`);
+      b.onclick = () => download(name, text, type);
+      d.append(b);
+    }
+    resultCard.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+  function showError(e) {
+    const r = $("#report", resultCard);
+    r.className = "error";
+    r.textContent = e && e.message ? e.message : String(e);
+  }
+  const safe = (fn) => () => { try { fn(); } catch (e) { console.error(e); showError(e); } };
+
+  // ------------------------------------------------------------------ Agent Payment Mandate Checker
+  if (solution === "agent-payment-mandate-checker") {
+    const c = __m["agent-payment-mandate-checker/src/checker.js"], rep = __m["agent-payment-mandate-checker/src/report.js"];
+    const card = h(`<section class="card"><h2>1 · Mandates <span class="hint">(JSON: what each agent may pay, to whom, up to what limit)</span></h2>
+      <input type="file" id="mf" accept=".json"><textarea id="m" placeholder='{"mandates":[{"id":"M-1","agent_id":"ap-agent","per_payment_limit":5000}]}'></textarea>
+      <h2 style="margin-top:16px">2 · Agent payment log <span class="hint">(CSV: payment_id, timestamp, agent_id, mandate_id, payee, amount, currency, category, approved_by, approval_time, purpose, status)</span></h2>
+      <input type="file" id="pf" accept=".csv,.txt"><textarea id="p"></textarea>
+      <div class="actions"><button class="primary" id="run">Check payments</button><button id="sample">Load sample data</button></div></section>`);
+    app.append(card, resultCard);
+    fileInto($("#mf", card), $("#m", card)); fileInto($("#pf", card), $("#p", card));
+    $("#sample", card).onclick = () => { $("#m", card).value = SAMPLES.mandates; $("#p", card).value = SAMPLES.payments; };
+    $("#run", card).onclick = safe(() => {
+      let raw;
+      try { raw = JSON.parse($("#m", card).value); } catch (e) { throw new Error("Mandates must be valid JSON: " + e.message); }
+      const { file, errors } = c.validateMandateFile(raw);
+      if (!file || errors.length) throw new Error(errors.join("\n"));
+      const res = c.checkPayments(file, c.readPayments(table.parseCsv($("#p", card).value)));
+      show(rep.toMarkdown(res), [["Download results (.csv)", "mandate-check.csv", rep.toResultCsv(res), "text/csv"]]);
+    });
+  }
+
+  // ------------------------------------------------------------------ Verify-Before-You-Pay
+  if (solution === "verify-before-you-pay") {
+    const a = __m["verify-before-you-pay/src/assess.js"], rep = __m["verify-before-you-pay/src/report.js"];
+    const card = h(`<section class="card"><div class="tabs"><button aria-selected="true" data-t="one">Check one request</button><button aria-selected="false" data-t="log">Audit an approval log</button></div>
+      <label>Your company's and key suppliers' email domains <span class="hint">(comma-separated, so look-alikes can be spotted)</span></label><input type="text" id="dom" placeholder="yourbank.com, mainsupplier.com">
+      <div data-p="one"><label>Paste the message, email or call notes</label><textarea id="txt" placeholder="Paste the payment request here…"></textarea>
+        <div class="row"><div><label>Who is asking?</label><input type="text" id="from" placeholder="e.g. Jane Smith"></div><div><label>Their title</label><input type="text" id="title" placeholder="e.g. CFO, Supplier"></div>
+        <div><label>How did it arrive?</label><select id="ch"><option value="">(not sure)</option><option>email</option><option>phone</option><option>voice note</option><option>video</option><option>teams</option><option>whatsapp</option><option>sms</option><option>in person</option></select></div></div>
+        <div class="row"><div><label>Amount</label><input type="text" id="amt" placeholder="e.g. 48500"></div><div><label>Currency</label><input type="text" id="ccy" placeholder="USD"></div>
+        <div><label>New payee?</label><select id="np"><option value="">(not sure)</option><option value="yes">Yes</option><option value="no">No</option></select></div><div><label>Bank details changed?</label><select id="bc"><option value="">(not sure)</option><option value="yes">Yes</option><option value="no">No</option></select></div></div>
+        <div class="actions"><button class="primary" id="go1">Check this request</button><button id="ex">Try an example</button></div></div>
+      <div data-p="log" hidden><label>Approval log CSV <span class="hint">(request_id, received_at, requested_by, requester_title, channel, sender, amount, currency, payee, payee_new, bank_details_changed, bank_change_at, message, callback_done, callback_source, challenge_passed, approver_1, approver_2, released_by, paid_at)</span></label>
+        <input type="file" id="lf" accept=".csv,.txt"><textarea id="log"></textarea><div class="actions"><button class="primary" id="go2">Audit log</button><button id="sl">Load sample log</button></div></div></section>`);
+    app.append(card, resultCard);
+    card.querySelectorAll(".tabs button").forEach((b) => b.onclick = () => {
+      card.querySelectorAll(".tabs button").forEach((x) => x.setAttribute("aria-selected", x === b));
+      card.querySelectorAll("[data-p]").forEach((p) => (p.hidden = p.dataset.p !== b.dataset.t));
+    });
+    fileInto($("#lf", card), $("#log", card));
+    const policy = () => ({ ...a.DEFAULT_POLICY, company_domains: $("#dom", card).value.split(",").map((s) => s.trim()).filter(Boolean) });
+    $("#ex", card).onclick = () => {
+      $("#txt", card).value = "From: d.chen@northwind-group.co\nHi, are you at your desk? I need a favour. Please wire $48,500 today to our new legal counsel for a confidential acquisition. Don't discuss this with anyone yet. I'm in a board meeting so can't talk, just email me when it's done.";
+      $("#dom", card).value = "northwind.com"; $("#from", card).value = "David Chen"; $("#title", card).value = "CEO"; $("#ch", card).value = "email"; $("#np", card).value = "yes";
+    };
+    $("#sl", card).onclick = () => { $("#log", card).value = SAMPLES.log; if (!$("#dom", card).value) $("#dom", card).value = "northwind-demo.com, globex-logistics.com"; };
+    $("#go1", card).onclick = safe(() => {
+      const text = $("#txt", card).value;
+      if (!text.trim()) throw new Error("Paste the request text first.");
+      const yn = (v) => (v === "yes" ? true : v === "no" ? false : null);
+      const extra = { requested_by: $("#from", card).value, requester_title: $("#title", card).value, payee_new: yn($("#np", card).value) };
+      if ($("#ch", card).value) extra.channel = $("#ch", card).value;
+      if ($("#amt", card).value) extra.amount = table.parseAmount($("#amt", card).value);
+      if ($("#ccy", card).value) extra.currency = $("#ccy", card).value.toUpperCase();
+      if (yn($("#bc", card).value) !== null) extra.bank_details_changed = yn($("#bc", card).value);
+      const req = a.requestFromText(text, extra);
+      show("# Verify-Before-You-Pay\n\n" + rep.oneToMarkdown(a.assess(req, policy())));
+    });
+    $("#go2", card).onclick = safe(() => {
+      const list = a.readRequests(table.parseCsv($("#log", card).value)).map((r) => a.assess(r, policy()));
+      if (!list.length) throw new Error("No rows found in the log.");
+      show(rep.toMarkdown(list), [["Download results (.csv)", "verify-report.csv", rep.toResultCsv(list), "text/csv"]]);
+    });
+  }
+
+  // ------------------------------------------------------------------ AI Use Register
+  if (solution === "ai-use-register") {
+    const c = __m["ai-use-register/src/classify.js"], rep = __m["ai-use-register/src/report.js"];
+    const card = h(`<section class="card"><h2>Your AI inventory <span class="hint">(CSV. Only name and description are required; every other column sharpens the register.)</span></h2>
+      <input type="file" id="f" accept=".csv,.txt"><textarea id="t"></textarea>
+      <div class="actions"><button class="primary" id="go">Build register</button><button id="tpl">Download blank template</button><button id="s">Load sample inventory</button></div></section>`);
+    app.append(card, resultCard);
+    fileInto($("#f", card), $("#t", card));
+    $("#tpl", card).onclick = () => download("ai-inventory-template.csv", rep.templateCsv(), "text/csv");
+    $("#s", card).onclick = () => ($("#t", card).value = SAMPLES.inventory);
+    $("#go", card).onclick = safe(() => {
+      const rows = table.parseCsv($("#t", card).value).filter((r) => !/^your reference/i.test(Object.values(r)[0] || ""));
+      if (!rows.length) throw new Error("No rows found. Load a CSV or the sample.");
+      const list = c.readUseCases(rows).map((u) => c.classify(u));
+      show(rep.toMarkdown(list), [["Download register (.csv)", "ai-register.csv", rep.toRegisterCsv(list), "text/csv"]]);
+    });
+  }
+
+  // ------------------------------------------------------------------ PQC Crypto Inventory
+  if (solution === "pqc-crypto-inventory") {
+    const sc = __m["pqc-crypto-inventory/src/scan.js"], rep = __m["pqc-crypto-inventory/src/report.js"];
+    const card = h(`<section class="card"><h2>Choose a code folder or files <span class="hint">(source, configs, scripts, certificates; read locally, never uploaded)</span></h2>
+      <div class="row"><div><label>Folder</label><input type="file" id="dir" webkitdirectory multiple></div><div><label>Or individual files</label><input type="file" id="files" multiple></div></div>
+      <label>Or paste code / config</label><textarea id="t" placeholder='KeyPairGenerator.getInstance("RSA") …'></textarea>
+      <div class="actions"><button class="primary" id="go">Scan</button><button id="s">Scan the demo repo</button></div><p class="hint" id="status"></p></section>`);
+    app.append(card, resultCard);
+    const SKIP = /(^|\/)(node_modules|\.git|dist|build|target|vendor|\.venv|venv|__pycache__)\//;
+    async function run(inputs) {
+      const findings = [];
+      let n = 0;
+      for (const f of inputs) {
+        if (SKIP.test(f.name) || (!sc.isScannable(f.name) && f.name !== "pasted.txt") || f.text.length > 2000000 || f.text.includes("\u0000")) continue;
+        n++;
+        findings.push(...sc.scanText(f.name, f.text));
+      }
+      const s = sc.summarise(findings, n);
+      $("#status", card).textContent = `Scanned ${n} file(s).`;
+      show(rep.toMarkdown(findings, s), [["Download findings (.csv)", "pqc-inventory.csv", rep.toResultCsv(findings), "text/csv"], ["Download CBOM (.json)", "cbom.json", JSON.stringify(sc.toCbom(findings), null, 2), "application/json"]]);
+    }
+    $("#go", card).onclick = async () => {
+      try {
+        const inputs = [...(await readFiles($("#dir", card))), ...(await readFiles($("#files", card)))];
+        if ($("#t", card).value.trim()) inputs.push({ name: "pasted.txt", text: $("#t", card).value });
+        if (!inputs.length) throw new Error("Choose a folder, some files, or paste code first.");
+        $("#status", card).textContent = `Reading ${inputs.length} file(s)…`;
+        await run(inputs);
+      } catch (e) { showError(e); }
+    };
+    $("#s", card).onclick = () => run(Object.entries(SAMPLES).map(([name, text]) => ({ name, text }))).catch(showError);
+  }
+
+  // ------------------------------------------------------------------ Legacy Runbook Builder
+  if (solution === "legacy-runbook-builder") {
+    const x = __m["legacy-runbook-builder/src/extract.js"], rep = __m["legacy-runbook-builder/src/report.js"];
+    const card = h(`<section class="card"><h2>Old procedures, handover notes and scripts <span class="hint">(text, shell/batch scripts, JCL, crontabs, SQL)</span></h2>
+      <input type="file" id="files" multiple><label>Or paste text</label><textarea id="t" placeholder="Paste a handover email, procedure or script…"></textarea>
+      <label>Runbook title <span class="hint">(optional)</span></label><input type="text" id="title" placeholder="e.g. USD nostro reconciliation">
+      <div class="actions"><button class="primary" id="go">Build runbook</button><button id="s">Load sample handover</button></div></section>`);
+    app.append(card, resultCard);
+    let sampleLoaded = false;
+    $("#s", card).onclick = () => { sampleLoaded = true; $("#t", card).value = "(sample: nostro recon handover email + SWIFT batch script + JCL + crontab will be used)"; $("#title", card).value = "Payments ops: SWIFT batch, GL extract & USD nostro recon"; };
+    $("#go", card).onclick = async () => {
+      try {
+        let inputs = await readFiles($("#files", card));
+        const pasted = $("#t", card).value;
+        if (sampleLoaded && pasted.startsWith("(sample")) inputs = inputs.concat(Object.entries(SAMPLES).map(([name, text]) => ({ name, text })));
+        else if (pasted.trim()) inputs.push({ name: "pasted.txt", text: pasted });
+        if (!inputs.length) throw new Error("Choose files or paste text first.");
+        const rb = x.buildRunbook(inputs, $("#title", card).value || undefined);
+        const prompt = rep.aiPrompt(rb, inputs);
+        show(rep.toMarkdown(rb), [["Download knowledge gaps (.csv)", "knowledge-gaps.csv", rep.gapsCsv(rb), "text/csv"], ["Download AI prompt (.txt)", "ai-prompt.txt", prompt, "text/plain"]]);
+      } catch (e) { showError(e); }
+    };
+  }
+
+  // ------------------------------------------------------------------ helpers for the second batch
+  const fromB64 = (s) => Uint8Array.from(atob(s.replace(/^base64:/, "")), (c) => c.charCodeAt(0));
+  async function readBytes(input) { return Promise.all([...input.files].map(async (f) => ({ name: f.webkitRelativePath || f.name, bytes: new Uint8Array(await f.arrayBuffer()) }))); }
+  function simpleCard(html) { const c = h(`<section class="card">${html}</section>`); app.append(c, resultCard); return c; }
+  const csvBox = (id, label, hint) => `<label>${label} <span class="hint">${hint || ""}</span></label><input type="file" id="${id}f" accept=".csv,.txt"><textarea id="${id}"></textarea>`;
+  const wire = (card, ids) => ids.forEach((id) => fileInto($(`#${id}f`, card), $(`#${id}`, card)));
+
+  if (solution === "t1-settlement-predictor") {
+    const m = __m["t1-settlement-predictor/src/predict.js"], rep = __m["t1-settlement-predictor/src/report.js"];
+    const card = simpleCard(`<h2>Trades and SSIs</h2>${csvBox("tr", "Trade blotter (CSV)", "trade_id, trade_date, trade_time, settlement_date, isin, counterparty, place_of_settlement, currency, account_currency, allocation_time, affirmation_time, instruction_time")}${csvBox("ss", "Standing settlement instructions (CSV)", "counterparty, place_of_settlement, currency, agent_bic, account, valid_from, valid_to, last_verified")}
+      <div class="row"><div><label><input type="checkbox" id="t1"> Treat all trades as T+1 (test today's blotter)</label></div><div><label>Holidays <span class="hint">(YYYY-MM-DD, comma-separated)</span></label><input type="text" id="hol"></div></div>
+      <div class="actions"><button class="primary" id="go">Check trades</button><button id="s">Load sample</button></div>`);
+    wire(card, ["tr", "ss"]);
+    $("#s", card).onclick = () => { $("#tr", card).value = SAMPLES.trades; $("#ss", card).value = SAMPLES.ssis; };
+    $("#go", card).onclick = safe(() => {
+      const cfg = { ...m.DEFAULT_CONFIG, assume_t1: $("#t1", card).checked, holidays: $("#hol", card).value.split(",").map((x) => x.trim()).filter(Boolean) };
+      const list = m.assessTrades(m.readTrades(table.parseCsv($("#tr", card).value)), m.readSsis(table.parseCsv($("#ss", card).value)), cfg);
+      if (!list.length) throw new Error("No trades found.");
+      show(rep.toMarkdown(list), [["Download results (.csv)", "t1-report.csv", rep.toResultCsv(list), "text/csv"]]);
+    });
+  }
+
+  if (solution === "vop-precheck") {
+    const m = __m["vop-precheck/src/precheck.js"], rep = __m["vop-precheck/src/report.js"];
+    const card = simpleCard(`<h2>Payment file and supplier master</h2>${csvBox("pa", "Payment file (CSV)", "payee_name, iban, amount")}${csvBox("ma", "Supplier master (CSV, optional but recommended)", "iban, account_holder_name, trading_names")}
+      <div class="actions"><button class="primary" id="go">Check payments</button><button id="s">Load sample</button></div>`);
+    wire(card, ["pa", "ma"]);
+    $("#s", card).onclick = () => { $("#pa", card).value = SAMPLES.payments; $("#ma", card).value = SAMPLES.master; };
+    $("#go", card).onclick = safe(() => {
+      const list = m.precheck(m.readPayments(table.parseCsv($("#pa", card).value)), $("#ma", card).value.trim() ? m.readMaster(table.parseCsv($("#ma", card).value)) : []);
+      if (!list.length) throw new Error("No payments found.");
+      show(rep.toMarkdown(list), [["Download results (.csv)", "vop-precheck.csv", rep.toResultCsv(list), "text/csv"]]);
+    });
+  }
+
+  if (solution === "payment-investigation-assistant") {
+    const m = __m["payment-investigation-assistant/src/investigate.js"], rep = __m["payment-investigation-assistant/src/report.js"];
+    const card = simpleCard(`<h2>Payment query</h2><label>Paste an MT199/n99, an email or call notes</label><textarea id="t" style="min-height:200px"></textarea>
+      <div class="actions"><button class="primary" id="go">Analyse</button><button id="s1">Sample: MT199 non-receipt</button><button id="s2">Sample: fraud recall email</button></div>`);
+    $("#s1", card).onclick = () => ($("#t", card).value = SAMPLES.mt199);
+    $("#s2", card).onclick = () => ($("#t", card).value = SAMPLES.fraud);
+    $("#go", card).onclick = safe(() => { const t = $("#t", card).value; if (!t.trim()) throw new Error("Paste a query first."); show(rep.toMarkdown(m.analyse(t))); });
+  }
+
+  if (solution === "translation-loss-auditor") {
+    const m = __m["translation-loss-auditor/src/audit.js"], rep = __m["translation-loss-auditor/src/report.js"];
+    const card = simpleCard(`<h2>The two versions of one payment</h2><div class="row"><div><label>ISO 20022 pacs.008 (XML)</label><input type="file" id="mxf" accept=".xml,.txt"><textarea id="mx" style="min-height:220px"></textarea></div>
+      <div><label>MT103 (FIN text)</label><input type="file" id="mtf" accept=".txt,.fin,.mt"><textarea id="mt" style="min-height:220px"></textarea></div></div>
+      <div class="actions"><button class="primary" id="go">Compare</button><button id="s">Load sample</button></div>`);
+    wire(card, ["mx", "mt"]);
+    $("#s", card).onclick = () => { $("#mx", card).value = SAMPLES.mx; $("#mt", card).value = SAMPLES.mt; };
+    $("#go", card).onclick = safe(() => {
+      const mx = m.parsePacs008($("#mx", card).value), mt = m.parseMt103($("#mt", card).value);
+      const pairs = [{ name: "payment", uetr: mx.uetr, findings: m.audit(mx, mt) }];
+      show(rep.toMarkdown(pairs), [["Download findings (.csv)", "translation-audit.csv", rep.toResultCsv(pairs), "text/csv"]]);
+    });
+  }
+
+  if (solution === "sanctions-fp-analyser") {
+    const m = __m["sanctions-fp-analyser/src/analyse.js"], rep = __m["sanctions-fp-analyser/src/report.js"];
+    const card = simpleCard(`<h2>Closed alerts export</h2>${csvBox("al", "Alerts (CSV)", "alert_id, created_at, screened_name, matched_name, list, match_score, matched_field, message_type, disposition, handling_minutes, customer_id")}
+      <div class="row"><div><label>Cleared at least … times to count as a repeat pair</label><input type="text" id="mc" value="3"></div><div><label>Minutes per alert when not recorded</label><input type="text" id="mn" value="30"></div></div>
+      <div class="actions"><button class="primary" id="go">Analyse</button><button id="s">Load sample (invented names)</button></div>`);
+    wire(card, ["al"]);
+    $("#s", card).onclick = () => ($("#al", card).value = SAMPLES.alerts);
+    $("#go", card).onclick = safe(() => {
+      const a = m.analyse(m.readAlerts(table.parseCsv($("#al", card).value)), { minClears: Number($("#mc", card).value) || 3, defaultMinutes: Number($("#mn", card).value) || 30 });
+      if (!a.total) throw new Error("No alerts found.");
+      show(rep.toMarkdown(a), [["Download good-guy candidates (.csv)", "good-guy-candidates.csv", rep.goodGuysCsv(a), "text/csv"]]);
+    });
+  }
+
+  if (solution === "report-sanity-checker") {
+    const m = __m["report-sanity-checker/src/check.js"], rep = __m["report-sanity-checker/src/report.js"];
+    const card = simpleCard(`<h2>Report extract</h2>${csvBox("rp", "Report (CSV)", "columns are recognised by name: uti, *_lei, isin, notional, currency, *_date, country…")}
+      <div class="row"><div><label>Required columns <span class="hint">(comma-separated, optional)</span></label><input type="text" id="req"></div><div><label>Report date <span class="hint">(optional)</span></label><input type="text" id="rd" placeholder="YYYY-MM-DD"></div></div>
+      <div class="actions"><button class="primary" id="go">Check report</button><button id="s">Load sample</button></div>`);
+    wire(card, ["rp"]);
+    $("#s", card).onclick = () => ($("#rp", card).value = SAMPLES.report);
+    $("#go", card).onclick = safe(() => {
+      const res = m.checkReport(table.parseCsv($("#rp", card).value), { required: $("#req", card).value.split(",").map((x) => x.trim()).filter(Boolean), reportDate: $("#rd", card).value || undefined });
+      if (!res.rows) throw new Error("No rows found.");
+      show(rep.toMarkdown(res), [["Download issues (.csv)", "report-issues.csv", rep.toIssuesCsv(res.issues), "text/csv"]]);
+    });
+  }
+
+  if (solution === "dora-register-precheck") {
+    const m = __m["dora-register-precheck/src/precheck.js"], rep = __m["dora-register-precheck/src/report.js"];
+    const card = simpleCard(`<h2>Working register</h2>${csvBox("rg", "Register (CSV, one row per contractual arrangement)", "")}
+      <label>Reference date <span class="hint">(end of the reporting year)</span></label><input type="text" id="rd" placeholder="e.g. 2026-12-31">
+      <div class="actions"><button class="primary" id="go">Check register</button><button id="s">Load sample</button></div>`);
+    wire(card, ["rg"]);
+    $("#s", card).onclick = () => { $("#rg", card).value = SAMPLES.register; $("#rd", card).value = "2026-12-31"; };
+    $("#go", card).onclick = safe(() => {
+      const list = m.readRegister(table.parseCsv($("#rg", card).value));
+      if (!list.length) throw new Error("No arrangements found.");
+      const issues = m.precheck(list, { referenceDate: $("#rd", card).value || undefined });
+      show(rep.toMarkdown(list, issues), [["Download fix list (.csv)", "dora-issues.csv", rep.toIssuesCsv(issues), "text/csv"]]);
+    });
+  }
+
+  if (solution === "copybook-decoder") {
+    const m = __m["copybook-decoder/src/copybook.js"], rep = __m["copybook-decoder/src/report.js"];
+    const card = simpleCard(`<h2>Copybook and data file</h2><label>COBOL copybook</label><input type="file" id="cbf" accept=".cpy,.cbl,.cob,.txt"><textarea id="cb" style="min-height:200px"></textarea>
+      <label>Data file <span class="hint">(optional: fixed-length records; read locally)</span></label><input type="file" id="df">
+      <div class="row"><div><label>Encoding</label><select id="enc"><option value="ebcdic">EBCDIC (mainframe)</option><option value="ascii">ASCII</option></select></div><div><label>Record format</label><select id="fmt"><option value="fixed">Fixed length</option><option value="rdw">Variable (RDW)</option><option value="lines">One record per line</option></select></div></div>
+      <div class="actions"><button class="primary" id="go">Decode</button><button id="s">Load sample</button></div><p class="hint" id="st"></p>`);
+    fileInto($("#cbf", card), $("#cb", card));
+    let sampleData = null;
+    $("#s", card).onclick = () => { $("#cb", card).value = SAMPLES.copybook; sampleData = fromB64(SAMPLES.data); $("#st", card).textContent = `Sample data loaded (${sampleData.length} bytes, EBCDIC).`; };
+    $("#go", card).onclick = async () => {
+      try {
+        const { root, warnings } = m.parseCopybook($("#cb", card).value);
+        const l = m.layout(root);
+        let md = rep.dictionaryMarkdown(l.fields, l.recordLength, [...warnings, ...l.warnings]);
+        const dl = [["Download data dictionary (.csv)", "data-dictionary.csv", rep.dictionaryCsv(l.fields), "text/csv"]];
+        const [f] = await readBytes($("#df", card));
+        const bytes = f ? f.bytes : sampleData;
+        if (bytes) {
+          const fmt = $("#fmt", card).value;
+          const d = m.decodeData(l.fields, bytes, { encoding: $("#enc", card).value, recordLength: l.recordLength, rdw: fmt === "rdw", lineSeparated: fmt === "lines" });
+          md += "\n" + rep.decodeSummary(d);
+          dl.push(["Download decoded data (.csv)", "decoded.csv", rep.dataCsv(d), "text/csv"]);
+        }
+        show(md, dl);
+      } catch (e) { showError(e); }
+    };
+  }
+
+  if (solution === "migration-reconciler") {
+    const m = __m["migration-reconciler/src/reconcile.js"], rep = __m["migration-reconciler/src/report.js"];
+    const card = simpleCard(`<h2>Source and target extracts</h2><div class="row"><div>${csvBox("src", "Source (legacy) CSV", "")}</div><div>${csvBox("tgt", "Target (new system) CSV", "")}</div></div>
+      <div class="row"><div><label>Key column(s) in source</label><input type="text" id="key" placeholder="customer_id"></div><div><label>Column mapping <span class="hint">source:target, comma-separated</span></label><input type="text" id="map"></div></div>
+      <div class="row"><div><label>Numeric tolerance</label><input type="text" id="tol" value="0"></div><div><label>Ignore columns</label><input type="text" id="ign"></div></div>
+      <label><input type="checkbox" id="lz" checked> Ignore leading zeros in keys</label> <label><input type="checkbox" id="ic" checked> Ignore case in keys</label>
+      <div class="actions"><button class="primary" id="go">Reconcile</button><button id="s">Load sample</button></div>`);
+    wire(card, ["src", "tgt"]);
+    $("#s", card).onclick = () => { $("#src", card).value = SAMPLES.source; $("#tgt", card).value = SAMPLES.target; $("#key", card).value = "customer_id"; $("#map", card).value = "customer_id:cust_no,full_name:customer_name,address_line:address,postcode:post_code,date_of_birth:dob,balance:balance_amt,marketing_consent:consent_marketing"; };
+    $("#go", card).onclick = safe(() => {
+      const map = Object.fromEntries($("#map", card).value.split(",").filter(Boolean).map((p) => p.split(":").map((x) => x.trim())));
+      const r = m.reconcile(table.parseCsv($("#src", card).value), table.parseCsv($("#tgt", card).value), { key: $("#key", card).value.split(",").map((x) => x.trim()).filter(Boolean), map, tolerance: Number($("#tol", card).value) || 0, ignoreLeadingZeros: $("#lz", card).checked, ignoreCase: $("#ic", card).checked, ignoreFields: $("#ign", card).value.split(",").map((x) => x.trim()).filter(Boolean) });
+      show(rep.toMarkdown(r), [["Download differences (.csv)", "differences.csv", rep.diffsCsv(r), "text/csv"]]);
+    });
+  }
+
+  if (solution === "euc-risk-scanner") {
+    const m = __m["euc-risk-scanner/src/scan.js"], rep = __m["euc-risk-scanner/src/report.js"], zip = __m["shared/zip.js"];
+    const card = simpleCard(`<h2>Spreadsheets to scan</h2><div class="row"><div><label>Folder</label><input type="file" id="dir" webkitdirectory multiple></div><div><label>Or files</label><input type="file" id="files" multiple accept=".xlsx,.xlsm,.xls,.xltx,.xltm"></div></div>
+      <div class="actions"><button class="primary" id="go">Scan</button><button id="s">Scan samples</button></div><p class="hint" id="st"></p>`);
+    async function run(items) {
+      const reports = [];
+      for (const it of items.filter((x) => /\.(xlsx|xlsm|xls|xltx|xltm)$/i.test(x.name) && !/(^|\/)~\$/.test(x.name))) {
+        try { reports.push(await m.scanWorkbook(it.name, it.bytes, zip.browserInflate)); } catch (e) { console.warn(it.name, e); }
+      }
+      if (!reports.length) throw new Error("No Excel workbooks found.");
+      $("#st", card).textContent = `Scanned ${reports.length} workbook(s).`;
+      show(rep.toMarkdown(reports), [["Download EUC register (.csv)", "euc-register.csv", rep.registerCsv(reports), "text/csv"]]);
+    }
+    $("#go", card).onclick = async () => { try { await run([...(await readBytes($("#dir", card))), ...(await readBytes($("#files", card)))]); } catch (e) { showError(e); } };
+    $("#s", card).onclick = () => run(Object.entries(SAMPLES).map(([name, v]) => ({ name, bytes: fromB64(v) }))).catch(showError);
+  }
+
+  if (solution === "batch-dependency-mapper") {
+    const m = __m["batch-dependency-mapper/src/map.js"], rep = __m["batch-dependency-mapper/src/report.js"];
+    const card = simpleCard(`<h2>Batch files</h2><p class="hint">JCL, Control-M XML exports, crontabs and shell scripts.</p><div class="row"><div><label>Folder</label><input type="file" id="dir" webkitdirectory multiple></div><div><label>Or files</label><input type="file" id="files" multiple></div></div>
+      <div class="actions"><button class="primary" id="go">Map</button><button id="s">Load sample</button></div>`);
+    const diagram = h(`<section class="card" hidden><h2>Diagram</h2><div id="svg" style="overflow:auto"></div></section>`);
+    app.insertBefore(diagram, resultCard);
+    function run(files) {
+      const { jobs, skipped } = m.parseAll(files);
+      if (!jobs.length) throw new Error("No jobs found in these files.");
+      const g = m.buildGraph(jobs);
+      const svgText = rep.svg(g);
+      diagram.hidden = false;
+      $("#svg", diagram).innerHTML = svgText;
+      show(rep.toMarkdown(g, skipped).replace(/```mermaid[\s\S]*?```\n/, ""), [["Download diagram (.svg)", "batch-map.svg", svgText, "image/svg+xml"], ["Download dependencies (.csv)", "dependencies.csv", rep.edgesCsv(g), "text/csv"], ["Download Mermaid (.mmd)", "batch-map.mmd", rep.mermaid(g), "text/plain"]]);
+    }
+    $("#go", card).onclick = async () => { try { run([...(await readFiles($("#dir", card))), ...(await readFiles($("#files", card)))]); } catch (e) { showError(e); } };
+    $("#s", card).onclick = safe(() => run(Object.entries(SAMPLES).map(([name, text]) => ({ name, text }))));
+  }
+})();
+
+</script>
+</body>
+</html>

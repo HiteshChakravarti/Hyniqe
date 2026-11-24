@@ -1,0 +1,2 @@
+15 6 * * 1-5 /opt/scripts/fx_rates_fetch.sh >> /var/log/fx.log 2>&1
+0 22 * * 1-5 /opt/scripts/eod_cleanup.sh
