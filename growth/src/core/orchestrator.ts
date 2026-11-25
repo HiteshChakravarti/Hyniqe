@@ -40,12 +40,13 @@ export interface NewCompany {
   team?: Omit<Teammate, 'id'>[];
 }
 
-export function createCompany(input: NewCompany): Company {
+/** fixedId is for the demo companies, so their seeded demo weeks repeat exactly. */
+export function createCompany(input: NewCompany, fixedId?: string): Company {
   if (!input.name?.trim()) throw new Error('Company name is required.');
   if (input.mode !== 'autopilot' && input.mode !== 'copilot') throw new Error('Mode must be autopilot or copilot.');
   const t = loadTemplate(input.template);
   const c: Company = {
-    id: `${slug(input.name) || 'company'}-${id('c').slice(2, 7)}`,
+    id: fixedId ?? `${slug(input.name) || 'company'}-${id('c').slice(2, 7)}`,
     name: input.name.trim(),
     website: (input.website ?? '').trim(),
     industry: t.industry,
