@@ -74,5 +74,6 @@ export function captureLead(c: Company, input: LeadInput): Lead {
 export function markReplied(c: Company, lead: Lead, by: string, minutes: number): void {
   lead.status = 'replied';
   lead.firstResponseMinutes = minutes;
+  lead.repliedBy = by;
   audit(c, by, 'lead.replied', lead.id, { minutes });
 }

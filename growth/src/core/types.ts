@@ -113,6 +113,8 @@ export interface Lead {
   replyDraft: string;
   receivedAt: string;
   firstResponseMinutes?: number;
+  /** 'auto' for the approved auto-reply, otherwise who replied. */
+  repliedBy?: string;
 }
 
 export interface Finding {

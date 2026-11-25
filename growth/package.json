@@ -12,6 +12,7 @@
     "demo": "node --disable-warning=ExperimentalWarning scripts/demo-week.ts",
     "check": "node --disable-warning=ExperimentalWarning scripts/health-check.ts",
     "test": "node --disable-warning=ExperimentalWarning --test test/*.test.ts",
+    "sample": "node --disable-warning=ExperimentalWarning scripts/export-sample.ts",
     "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
