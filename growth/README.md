@@ -17,8 +17,9 @@ cd growth
 npm start            # dashboard at http://127.0.0.1:4400
 npm run demo         # one full week for both demo companies, in the terminal
 npm run check -- https://yourcompany.com   # marketing health check from the command line
-npm test             # 16 tests
+npm test             # 18 tests
 npm run sample       # regenerate the sample output in samples/
+npm run site         # the Hyniqe Growth website at http://127.0.0.1:4410
 ```
 
 Two demo companies are loaded on first start:
@@ -31,6 +32,10 @@ Two demo companies are loaded on first start:
 Press **Run week 1**, work through **Approvals**, click **Simulate this week's inbound leads**, then **Close week** to get the Friday report.
 
 **Real copy instead of demo copy:** set `ANTHROPIC_API_KEY` (optionally `HYNIQE_MODEL`). Without a key every agent uses a built-in writer, so the whole product runs offline.
+
+## Website
+
+`site/` is the public website for Hyniqe Growth: a static page (no framework, no build server) with a **free marketing health check that runs in the visitor's browser**, using the product's own rules. `npm run build:site` regenerates `site/assets/health-core.js` and `site/assets/data.js` from the source, and a test fails if they drift. Host the `site/` folder on any static host (GitHub Pages, Netlify, Vercel) when you are ready; links point to the `main` branch, set in `site/assets/site.js`.
 
 ## How it works
 
@@ -103,14 +108,16 @@ growth/
 │   │   └── types.ts
 │   ├── agents/                one file per agent (index.ts lists them)
 │   ├── checks/
-│   │   ├── health-check.ts    marketing health check (19 rules in rules.json)
+│   │   ├── health-core.ts     marketing health check rules (19, in rules.json); also runs in the browser
+│   │   ├── health-check.ts    Node wrapper: loads the rules, fetches live pages
 │   │   └── claims.ts          content guard
 │   ├── leads/                 capture, scoring, routing, reply drafts
 │   └── connectors/            dry-run publishers + live webhook
 ├── public/index.html          the dashboard (no build step)
 ├── templates/                 SaaS, local business, fintech, agency
 ├── data/demo/                 demo companies, websites and sample leads
-├── scripts/                   terminal demo and health-check CLI
+├── site/                      the public website (static; free health check in the browser)
+├── scripts/                   terminal demo, health-check CLI, sample and site builders
 └── test/
 ```
 
