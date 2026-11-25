@@ -121,13 +121,13 @@ def findings_total(a: dict) -> int:
 
 # ---------------------------------------------------------------- layout
 
-LOGO = ('<svg width="26" height="30" viewBox="0 0 26 30" aria-hidden="true"><path d="M13 1 2 5v9c0 7 4.6 12.6 11 15 '
-        '6.4-2.4 11-8 11-15V5z" fill="#08303d"/><circle cx="13" cy="9.5" r="2.6" fill="#e7f2f5"/><path d="m8 16 3.6 3.6L18.5 13" '
-        'fill="none" stroke="#e7f2f5" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>')
-NAV = [("/directory/", "Directory"), ("/check/", "Check an add-on"), ("/rules/", "Rules"), ("/about/", "How it works"),
-       (REPO_URL, "GitHub")]
+LOGO = ('<svg width="18" height="18" viewBox="0 0 26 26" aria-hidden="true"><path d="M13 2 23 6v7c0 6-4.5 9.5-10 11'
+        'C7.5 22.5 3 19 3 13V6Z" fill="none" stroke="#9fe3f2" stroke-width="2.4"/></svg>')
+FAVICON = ('<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32"><rect width="32" height="32" rx="8" fill="#03141a"/>'
+           '<path d="M16 5 26 9v7c0 6-4.5 9.5-10 11C10.5 25.5 6 22 6 16V9Z" fill="none" stroke="#9fe3f2" stroke-width="2.6"/></svg>')
+NAV = [("/check/", "Check"), ("/directory/", "Directory"), ("/rules/", "Rules"), ("/badges/", "Badges"), ("/about/", "About")]
 FONTS = ('<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>'
-         '<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@100..125,400..900&family=Atkinson+Hyperlegible+Next:wght@400;700&display=swap" rel="stylesheet">')
+         '<link href="https://fonts.googleapis.com/css2?family=Geist:wght@300..800&family=Geist+Mono:wght@400;600&display=swap" rel="stylesheet">')
 
 
 def page(path: str, title: str, desc: str, body: str, current: str = "", scripts: str = "") -> None:
@@ -145,7 +145,8 @@ def page(path: str, title: str, desc: str, body: str, current: str = "", scripts
 <meta property="og:description" content="{e(desc)}">
 <meta property="og:type" content="website">
 <meta property="og:url" content="{BASE_URL}{path}">
-<meta name="theme-color" content="#08303d">
+<meta name="theme-color" content="#03141a">
+<meta name="color-scheme" content="dark">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 {FONTS}
 <link rel="stylesheet" href="/assets/site.css">
@@ -153,16 +154,17 @@ def page(path: str, title: str, desc: str, body: str, current: str = "", scripts
 <body>
 <a class="skip" href="#main">Skip to content</a>
 <header class="site-head"><div class="wrap">
-<a class="brand" href="/">{LOGO}Hyniqe Shield</a>
-<nav class="nav" aria-label="Main">{nav}<a class="btn small" href="{e(SUBMIT_URL)}">Submit an add-on</a></nav>
+<a class="brand" href="/">{LOGO}Shield</a>
+<nav class="tabs" aria-label="Main">{nav}</nav>
+<a class="pill" href="{e(SUBMIT_URL)}">Submit an add-on</a>
 </div></header>
 <main id="main">
 {body}
 </main>
 <footer class="site-foot"><div class="wrap">
-<p>Hyniqe Shield is free and open source (AGPL-3.0), part of <a href="{REPO_URL}">Hyniqe</a>.<br>
-Rules mapped to the OWASP Top 10 for Agentic Applications 2026.</p>
-<nav aria-label="Footer"><a href="/directory/">Directory</a><a href="/check/">Check an add-on</a><a href="/rules/">Rules</a><a href="/about/">How it works</a><a href="/about/#badges">Badges</a><a href="{REPO_URL}/issues/new?title=Shield%20scan%20request">Request a scan</a></nav>
+<p>Hyniqe Shield is free and open source (AGPL-3.0), part of <a href="{REPO_URL}">Hyniqe</a>. Rules mapped to the OWASP Top 10 for Agentic Applications 2026.
+Static analysis only, so a clean result is a good sign, not a guarantee.</p>
+<nav aria-label="Footer"><a href="{REPO_URL}">GitHub</a><a href="/rules/">Rules</a><a href="/badges/">Badges</a><a href="/about/">About</a><a href="{e(SUBMIT_URL)}">Request a scan</a></nav>
 </div></footer>
 {scripts}
 </body>
@@ -173,23 +175,25 @@ Rules mapped to the OWASP Top 10 for Agentic Applications 2026.</p>
     out.write_text(doc, "utf-8")
 
 
-def tag(a: dict, tilt: bool = False, heading: str = "p") -> str:
+def tag(a: dict, heading: str = "p") -> str:
+    """The verdict panel shown beside a report."""
     word, cls = VERDICT[a["verdict"]]
     n = findings_total(a)
-    return f"""<div class="tag-hang"><div class="tag v-{cls}{' tilt' if tilt else ''}">
-<div class="verdict-band"><div class="issuer">Hyniqe Shield inspection</div><{heading} class="verdict">{word}</{heading}></div>
+    pub = publisher(a)
+    return f"""<div class="glass verdict-panel v-{cls}">
+<div class="issuer">Hyniqe Shield result</div><{heading} class="vword">{word}.</{heading}>
 <dl>
-<dt>Add-on</dt><dd>{e(label(a))}</dd>
 <dt>Type</dt><dd>{KIND[a['kind']]}</dd>
-<dt>Publisher</dt><dd>{e(publisher(a)) + ' <span class="official">Official</span>' if publisher(a) else e(a['repo'].split('/')[0])}</dd>
+<dt>Publisher</dt><dd>{e(pub) + ' <span class="official">Official</span>' if pub else e(a['repo'].split('/')[0])}</dd>
 <dt>Source</dt><dd><a href="{gh_tree(a)}">{e(source(a))}</a></dd>
 <dt>Commit</dt><dd><code>{a['commit'][:7]}</code></dd>
 <dt>Files read</dt><dd>{a['files']:,}</dd>
 <dt>Findings</dt><dd>{n if n else 'None'}</dd>
-<dt>Checked</dt><dd>{e(DATA['scanned_on'])}, rules {e(DATA['rules_version'])}</dd>
+<dt>Risk score</dt><dd>{a['score']} of 100</dd>
+<dt>Checked</dt><dd>{e(SCANNED_ON)}, rules {e(DATA['rules_version'])}</dd>
 </dl>
 <div class="perf">Static check of the code at this commit. Not a guarantee of safety.</div>
-</div></div>"""
+</div>"""
 
 
 def chip(verdict: str) -> str:
@@ -199,96 +203,135 @@ def chip(verdict: str) -> str:
 
 # ---------------------------------------------------------------- pages
 
+def _visible(raw: str) -> tuple[str, str]:
+    visible = "".join(c for c in raw if not 0xE0000 <= ord(c) <= 0xE007F)
+    hidden = "".join(chr(ord(c) - 0xE0000) for c in raw if 0xE0020 <= ord(c) <= 0xE007E)
+    return visible, hidden
+
+
+def slab_html(name: str, text: str, z: int) -> tuple[str, list]:
+    """One file of the 3D stack: a window of its lines with flagged lines lit, scanned live at build time."""
+    res = Scanner().scan_text(text, name)
+    real = [f for f in res.findings if f.severity != "info"]
+    sev = {f.severity for f in real}
+    cls = "flag-high" if sev & {"critical", "high"} else "flag-med" if "medium" in sev else "flag-low" if sev else ""
+    lines = text.rstrip("\n").split("\n")
+    hit_lines = {f.line: f.severity for f in real}
+    first = min(hit_lines) if hit_lines else 1
+    start = max(1, first - 2)
+    rows = []
+    for i in range(start, min(len(lines), start + 8) + 1):
+        vis, hidden = _visible(lines[i - 1])
+        vis = vis.strip("\r")
+        if len(vis) > 44:
+            vis = vis[:43] + "…"
+        if hidden:
+            vis = (vis[:24] + "…" if len(vis) > 25 else vis) + " [invisible text]"
+        txt = f"{i:>2}  {e(vis)}"
+        if i in hit_lines:
+            med = "" if hit_lines[i] in ("critical", "high") else " med"
+            txt = f'<span class="hit{med}">{txt}</span>'
+        rows.append(txt)
+    body = "\n".join(rows)
+    return (f'<div class="slab {cls}" style="transform:translateZ({z}px)"><div class="code"><b>{e(name)}</b>{body}</div></div>', real)
+
+
 def home() -> None:
     clear = sum(a["verdict"] == "NO_KNOWN_RISKS" for a in ADDONS)
     caution = sum(a["verdict"] == "CAUTION" for a in ADDONS)
-    danger = sum(a["verdict"] == "DANGEROUS" for a in ADDONS)
-    hero_addon = next(a for a in ADDONS if a["slug"] == "mcp-filesystem")
 
-    # annotated specimen: the malicious test skill, scanned live at build time
+    # The hero stack: three clean files and one poisoned skill from Shield's own test suite, scanned at build time.
     runpy.run_path(str(ROOT / "scripts" / "make_fixtures.py"))
-    spec_text = (ROOT / "tests" / "fixtures" / "malicious" / "evil-skill" / "SKILL.md").read_text("utf-8")
-    res = Scanner().scan_text(spec_text, "SKILL.md")
-    by_line: dict[int, list] = {}
-    for f in res.findings:
-        by_line.setdefault(f.line, []).append(f)
-    lines = []
-    for i, raw in enumerate(spec_text.rstrip("\n").split("\n"), 1):
-        visible = "".join(c for c in raw if not 0xE0000 <= ord(c) <= 0xE007F)
-        hidden = "".join(chr(ord(c) - 0xE0000) for c in raw if 0xE0020 <= ord(c) <= 0xE007E)
-        cls = ""
-        if i in by_line:
-            sev = {f.severity for f in by_line[i]}
-            cls = ' class="hit"' if sev & {"critical", "high"} else ' class="hit med"'
-        reveal = f'<span class="reveal" style="display:inline">  [invisible: {e(hidden)}]</span>' if hidden else ""
-        lines.append(f'<span{cls}><i>{i}</i>{e(visible)}{reveal}</span>')
-    notes, seen = [], set()
-    order = ["critical", "high", "medium", "low", "info"]
-    for f in sorted(res.findings, key=lambda f: (order.index(f.severity), f.line)):
-        if f.rule_id in seen or len(notes) >= 6:
-            continue
-        seen.add(f.rule_id)
-        notes.append(f'<li><b>{e(f.title)}</b><span class="where">Line {f.line} &middot; {f.severity} &middot; '
-                     f'<a href="/rules/#{f.rule_id}">{f.rule_id}</a></span></li>')
+    fx = ROOT / "tests" / "fixtures"
+    stack = [("README.md", fx / "benign" / "README.md"), ("mcp.json", fx / "benign" / "mcp.json"),
+             ("weather_server.py", fx / "benign" / "weather_server.py"), ("SKILL.md", fx / "malicious" / "evil-skill" / "SKILL.md")]
+    slabs, poison = [], []
+    for i, (name, p) in enumerate(stack):
+        html_, real = slab_html(name, p.read_text("utf-8"), i * 78)
+        slabs.append(html_)
+        if real:
+            poison = real
+    order = ["critical", "high", "medium", "low"]
+    top = sorted(poison, key=lambda f: (order.index(f.severity), f.line))[0]
+    skill_lines = (fx / "malicious" / "evil-skill" / "SKILL.md").read_text("utf-8").split("\n")
+    hidden = _visible(skill_lines[top.line - 1])[1].strip()
+    more = "…" if len(hidden) > 88 else ""
+    said = f"Hidden text the AI can read but you can't: “{e(hidden[:88])}{more}”" if hidden else e(top.title)
+    n_distinct = len({f.rule_id for f in poison})
 
-    recent = sorted(ADDONS, key=lambda a: (a["kind"] != "mcp", -a["files"]))[:8]
-    rows = "".join(f'<tr><td><a class="name" href="/a/{a["slug"]}/">{e(label(a))}</a><span class="desc">{e(source(a))}</span></td>'
-                   f'<td class="hide-sm">{KIND[a["kind"]]}</td><td>{chip(a["verdict"])}</td><td class="num hide-sm">{a["files"]:,}</td></tr>' for a in recent)
+    featured = [a for a in ADDONS if a["verdict"] != "NO_KNOWN_RISKS"][:3] + \
+               [a for a in ADDONS if a["verdict"] == "NO_KNOWN_RISKS" and publisher(a)][:3]
+    rows = "".join(f'<a href="/a/{a["slug"]}/"><span><strong>{e(label(a))}</strong><small>{KIND[a["kind"]]}, '
+                   f'{a["files"]:,} files{", " + e(publisher(a)) if publisher(a) else ""}</small></span>{chip(a["verdict"])}</a>' for a in featured)
+    areas = "".join(f'<div class="feature"><h3>{e(ar["title"])}</h3><p>{e(ar["blurb"])}.</p></div>' for ar in AREAS)
+    sample = next(a for a in ADDONS if a["slug"] == "mcp-time")
 
     body = f"""
-<section class="band"><div class="wrap hero">
-<div>
-<h1>Know what an AI add-on will do before you install it.</h1>
-<p class="lede">Skills, MCP servers and agent workflows get access to your files, email and accounts. Hyniqe Shield reads them first and tells you, in plain English, what they could do with that access.</p>
+<section class="hero center"><div class="wrap">
+<p class="eyebrow">Hyniqe Shield</p>
+<h1>Scanned before it runs.</h1>
+<p class="lede">A security check for Claude skills, MCP servers and n8n workflows. Every line. In your browser.</p>
 <form class="find" action="/check/" method="get">
-<label class="sr" for="url">GitHub link to a skill or MCP server</label>
-<input id="url" name="url" type="text" inputmode="url" spellcheck="false" placeholder="Paste a GitHub link, e.g. github.com/owner/repo" autocomplete="off" required>
-<button class="btn" type="submit">Check it</button>
+<label class="sr" for="url">GitHub link to an add-on</label>
+<input id="url" name="url" type="text" inputmode="url" spellcheck="false" placeholder="Paste a GitHub link" autocomplete="off" required>
+<button class="btn" type="submit">Check</button>
 </form>
-<p class="tally-line">Free, runs in your browser, and nothing is uploaded. Or <a href="/directory/">browse {len(ADDONS)} add-ons we've already checked</a>: <b>{clear}</b> with no known risks, <b>{caution}</b> to review, <b>{danger}</b> dangerous.</p>
+<p class="alt"><a href="/directory/">Or browse {len(ADDONS)} checked add-ons</a></p>
+</div></section>
+
+<section class="stage" role="img" aria-label="Four files from Shield's test suite stacked in 3D while a scan beam passes through them. The poisoned SKILL.md is flagged.">
+<div class="rig">{''.join(slabs)}<div class="beam"></div></div>
+<div class="callout"><b>Dangerous. SKILL.md, line {top.line}.</b><span>{said}</span>
+<small>{n_distinct} different rules matched this file. It's a test file from Shield's own suite.</small></div>
+</section>
+
+<div class="wrap"><div class="stats">
+<div class="stat"><b>{N_RULES}</b><span>open detection rules</span></div>
+<div class="stat"><b>{len(ADDONS)}</b><span>add-ons in the directory</span></div>
+<div class="stat"><b>300</b><span>files per check, at most</span></div>
+<div class="stat"><b>0</b><span>files sent to our servers</span></div>
+</div></div>
+
+<section class="band light"><div class="wrap">
+<h2 class="center">Six areas.<br><span style="color:#5d7f89">One verdict.</span></h2>
+<div class="grid wide" style="margin-top:64px">{areas}</div>
+<div class="grid" style="margin-top:72px">
+<div class="card"><div class="big-word t-clear">No known risks.</div><p>None of the {N_RULES} rules matched enough to raise a concern.</p></div>
+<div class="card"><div class="big-word t-caution">Caution.</div><p>A serious finding, or smaller ones that add up. Read them first.</p></div>
+<div class="card"><div class="big-word t-danger">Dangerous.</div><p>A critical finding, or two different serious ones. Don't install it.</p></div>
 </div>
-{tag(hero_addon, tilt=True)}
 </div></section>
 
 <section class="band"><div class="wrap">
-<h2>What a poisoned skill looks like</h2>
-<p class="lede">This is a test file from Shield's own suite. It reads like a harmless PDF helper. Line 9 also carries a sentence written in invisible Unicode characters, which you can't see but the AI can read. Shield decodes it and flags every risky line.</p>
-<div class="specimen">
-<pre class="src" aria-label="Contents of a malicious SKILL.md with flagged lines highlighted"><code>{''.join(lines)}</code></pre>
-<ol aria-label="What Shield found">{''.join(notes)}</ol>
-</div>
+<div class="head-row"><h2>Already checked.</h2><a href="/directory/">See all {len(ADDONS)} add-ons</a></div>
+<div class="list">{rows}</div>
+<p class="dim small" style="margin-top:18px">{clear} with no known risks and {caution} to review, checked on {SCANNED_ON}.</p>
 </div></section>
 
-<section class="band"><div class="wrap">
-<h2>Checked add-ons</h2>
-<p class="lede">Popular skills and MCP servers, scanned at a recorded commit. Every finding links to the exact line on GitHub, so you can judge it yourself.</p>
-<div class="table-wrap" style="margin-top:24px"><table>
-<thead><tr><th scope="col">Add-on</th><th scope="col" class="hide-sm">Type</th><th scope="col">Result</th><th scope="col" class="num hide-sm">Files read</th></tr></thead>
-<tbody>{rows}</tbody></table></div>
-<p style="margin-top:18px"><a class="btn ghost small" href="/directory/">See all {len(ADDONS)} add-ons</a></p>
-</div></section>
-
-<section class="band"><div class="wrap">
-<h2>Made for three kinds of people</h2>
-<div class="ways">
-<div class="way"><h3>You install add-ons</h3><p>Before you add a skill or MCP server to Claude, Cursor or your own agent, paste its link and read the verdict. Check the servers you already use from the terminal too.</p>
-<pre class="cmd"><code>python3 -m hyniqe_shield scan ~/.cursor/mcp.json</code></pre>
-<p class="way-cta"><a class="btn ghost small" href="/check/">Check a link</a></p></div>
-<div class="way"><h3>You build add-ons</h3><p>Show users your add-on is safe. Run Shield on every pull request, then put the badge on your README so people can see the full report.</p>
+<section class="band tight"><div class="wrap">
+<h2 class="center" style="margin-bottom:56px">Made for three kinds of people.</h2>
+<div class="grid">
+<div class="card"><h3>You install add-ons</h3><p>Paste a link before you add a skill or MCP server to Claude, Cursor or your own agent. Check the ones you already use from the terminal.</p>
+<pre class="cmd"><code>python3 -m hyniqe_shield scan ~/.cursor/mcp.json</code></pre></div>
+<div class="card"><h3>You build add-ons</h3><p>Run Shield on every pull request and show the badge on your README.</p>
 <pre class="cmd"><code>- uses: HiteshChakravarti/Hyniqe/shield@main
   with:
-    fail-on: dangerous</code></pre>
-<p class="way-cta"><a class="btn ghost small" href="{e(SUBMIT_URL)}">Get your add-on listed</a></p></div>
-<div class="way"><h3>You run a team</h3><p>Decide which add-ons your company's AI agents may use. Shield for Teams adds an approved list, checks on every new install, and alerts when an approved add-on changes.</p>
-<p class="muted small">In development. Early teams help shape it.</p>
-<p class="way-cta"><a class="btn ghost small" href="{e(TEAMS_URL)}">Join the early list</a></p></div>
+    fail-on: dangerous</code></pre></div>
+<div class="card"><h3>You run a team</h3><p>Shield for Teams will add an approved list, checks on every new install, and alerts when an approved add-on changes. In development.</p>
+<p><a href="{e(TEAMS_URL)}">Join the early list</a></p></div>
 </div>
 </div></section>
 
-<section class="band"><div class="wrap">
-<h2>What a clear result means, and what it doesn't</h2>
-<p class="lede">"No known risks" means none of the {N_RULES} rules matched. It does not prove an add-on is safe. Shield never runs the code, so it can't see what a remote server does after you connect, and new attack tricks appear all the time. Install from people you trust, keep confirmations on for tools that write, delete, pay or send, and pin versions.</p>
-<p><a href="/about/">How Shield checks an add-on</a></p>
+<section class="band"><div class="wrap" style="display:flex;flex-wrap:wrap;align-items:center;gap:48px">
+<div style="flex:1 1 380px">
+<h2 style="font-size:clamp(32px,4vw,48px)">Built an add-on?<br><span class="dim">Show it's been checked.</span></h2>
+<p class="muted" style="margin-top:18px;font-size:17px">Every add-on in the directory gets a badge that links to its public report.</p>
+<a class="btn ghost" href="/badges/" style="margin-top:8px">Get your badge</a>
+</div>
+<div class="glass" style="flex:1 1 380px;padding:36px;display:grid;gap:18px">
+<img src="/badge/{sample['slug']}.svg" alt="Hyniqe Shield: no known risks" height="28" style="height:28px;width:auto">
+<code style="color:#87b1bc;font-size:13px;line-height:1.6;overflow-wrap:anywhere">[![Hyniqe Shield]({BASE_URL}/badge/{sample['slug']}.svg)]({BASE_URL}/a/{sample['slug']}/)</code>
+</div>
 </div></section>
 """
     page("/", "Hyniqe Shield: check AI agent add-ons before you install them",
@@ -319,9 +362,9 @@ def directory() -> None:
 
     body = f"""
 <section class="band"><div class="wrap">
-<h1>Directory</h1>
-<p class="lede">{len(ADDONS)} skills and MCP servers, each checked at a recorded commit. Open one to see its safety checklist, every finding, and the exact line each came from.</p>
-<p class="small muted">Last checked on {SCANNED_ON} with rules version {e(DATA['rules_version'])}. <a href="{e(SUBMIT_URL)}">Submit an add-on</a> to have it checked.</p>
+<h1>Directory.</h1>
+<p class="lede" style="margin-top:20px">{len(ADDONS)} skills and MCP servers, each checked at a recorded commit. Open one to see its safety checklist, every finding, and the exact line each came from.</p>
+<p class="small dim">Last checked on {SCANNED_ON} with rules version {e(DATA['rules_version'])}. <a href="{e(SUBMIT_URL)}">Submit an add-on</a> to have it checked.</p>
 <div class="filters">
 <label>Search<input id="fq" type="search" placeholder="Name, repo, publisher or purpose" autocomplete="off"></label>
 <label>Sort by<select id="fs"><option value="risk">Riskiest first</option><option value="name">Name, A to Z</option><option value="findings">Most findings</option><option value="files">Largest (files read)</option></select></label>
@@ -335,7 +378,7 @@ def directory() -> None:
 <div class="table-wrap"><table>
 <thead><tr><th scope="col">Add-on</th><th scope="col" class="hide-sm">Repository</th><th scope="col" class="hide-sm">Type</th><th scope="col">Result</th><th scope="col" class="num">Findings</th></tr></thead>
 <tbody id="rows">{''.join(rows)}</tbody></table></div>
-<p class="muted small" style="margin-top:16px">"Official" means the add-on is published by the company or project behind the product. Maintain an add-on listed here? <a href="{REPO_URL}/issues/new?title=Shield%20re-check%20request">Request a re-check</a>.</p>
+<p class="dim small" style="margin-top:16px">"Official" means the add-on is published by the company or project behind the product. Maintain an add-on listed here? <a href="{REPO_URL}/issues/new?title=Shield%20re-check%20request">Request a re-check</a>.</p>
 </div></section>"""
     page("/directory/", "Directory of checked add-ons",
          f"Safety results for {len(ADDONS)} popular Claude skills and MCP servers, with every finding linked to its source line.",
@@ -351,7 +394,7 @@ def report(a: dict) -> None:
     elif a["verdict"] == "NO_KNOWN_RISKS":
         summary = "Only low-severity notes, listed below. Nothing here raised a concern on its own."
     else:
-        reasons = [RULE_INFO[g["rule_id"]]["title"].lower() for g in real if g["severity"] in ("critical", "high", "medium")]
+        reasons = [(lambda t: t[0].lower() + t[1:])(RULE_INFO[g["rule_id"]]["title"]) for g in real if g["severity"] in ("critical", "high", "medium")]
         lead = "Do not install without understanding these findings" if a["verdict"] == "DANGEROUS" else "Review before installing"
         summary = f"{lead}. The result comes from: {', '.join(reasons[:4])}{' and more' if len(reasons) > 4 else ''}."
 
@@ -378,14 +421,14 @@ def report(a: dict) -> None:
     findings = "".join(group_html(g) for g in real) or '<p class="muted">No findings.</p>'
     info_html = ""
     if info:
-        info_html = "<h2 style='margin-top:40px'>For your information</h2><p class='muted'>Not risks on their own, but worth knowing.</p>" + "".join(group_html(g) for g in info)
+        info_html = "<h2 class='section-title'>For your information</h2><p class='muted'>Not risks on their own, but worth knowing.</p>" + "".join(group_html(g) for g in info)
     badge_md = f"[![Hyniqe Shield: {word}]({BASE_URL}/badge/{a['slug']}.svg)]({BASE_URL}/a/{a['slug']}/)"
     body = f"""
 <section class="band"><div class="wrap">
 <p class="crumbs"><a href="/directory/">Directory</a> / {KIND[a['kind']]}</p>
 <div class="report">
 <aside>{tag(a, heading="h2")}
-<div class="snippet">
+<div class="glass snippet">
 <label for="badge-md"><b>Badge for your README</b></label>
 <img src="/badge/{a['slug']}.svg" alt="Hyniqe Shield: {word}" height="20">
 <textarea id="badge-md" readonly>{e(badge_md)}</textarea>
@@ -396,10 +439,10 @@ def report(a: dict) -> None:
 <div>
 <h1>{e(label(a))}</h1>
 <p class="lede">{e(a['description']) if a['description'] else e(source(a))}</p>
-<p><b>{e(summary)}</b></p>
-<h2 style="margin-top:32px">Safety checklist</h2>
+<p class="summary">{e(summary)}</p>
+<h2 class="section-title">Safety checklist</h2>
 {checklist(a)}
-<h2 style="margin-top:40px">Findings</h2>
+<h2 class="section-title">Findings</h2>
 {findings}
 {info_html}
 <div class="note"><p><b>About this result.</b> Shield read {a['files']:,} text files at commit <a href="{gh_tree(a)}"><code>{a['commit'][:7]}</code></a> and skipped tests, examples, demos and docs. It never ran any code. A finding is a pattern worth looking at, not proof of bad intent. The code may have changed since then.</p>
@@ -412,21 +455,24 @@ def report(a: dict) -> None:
          '<script src="/assets/copy.js"></script>')
 
 
-def badge(a: dict) -> None:
-    word, cls = VERDICT[a["verdict"]]
-    colors = {"clear": "#0b7f5c", "caution": "#b56d00", "danger": "#d4145a"}
-    left, right = "Hyniqe Shield", word.lower()
+def badge_svg(right: str, color: str) -> str:
+    left = "Hyniqe Shield"
     lw, rw = int(len(left) * 6.6 + 14), int(len(right) * 6.6 + 14)
-    svg = f"""<svg xmlns="http://www.w3.org/2000/svg" width="{lw + rw}" height="20" role="img" aria-label="{left}: {right}">
+    return f"""<svg xmlns="http://www.w3.org/2000/svg" width="{lw + rw}" height="20" role="img" aria-label="{left}: {right}">
 <title>{left}: {right}</title>
-<clipPath id="r"><rect width="{lw + rw}" height="20" rx="3"/></clipPath>
-<g clip-path="url(#r)"><rect width="{lw}" height="20" fill="#08303d"/><rect x="{lw}" width="{rw}" height="20" fill="{colors[cls]}"/></g>
+<clipPath id="r"><rect width="{lw + rw}" height="20" rx="4"/></clipPath>
+<g clip-path="url(#r)"><rect width="{lw}" height="20" fill="#0d2f3a"/><rect x="{lw}" width="{rw}" height="20" fill="{color}"/></g>
 <g fill="#fff" text-anchor="middle" font-family="Verdana,DejaVu Sans,sans-serif" font-size="11">
 <text x="{lw / 2}" y="14">{left}</text><text x="{lw + rw / 2}" y="14">{right}</text></g></svg>
 """
+
+
+def badge(a: dict) -> None:
+    word, cls = VERDICT[a["verdict"]]
+    colors = {"clear": "#0b7f5c", "caution": "#b56d00", "danger": "#d4145a"}
     out = DIST / "badge" / f"{a['slug']}.svg"
     out.parent.mkdir(parents=True, exist_ok=True)
-    out.write_text(svg, "utf-8")
+    out.write_text(badge_svg(word.lower(), colors[cls]), "utf-8")
 
 
 def rules_page() -> None:
@@ -438,9 +484,9 @@ def rules_page() -> None:
 <div><h3>{e(r['title'])}</h3><p>{e(r['explain'])}</p><p><b>What to do:</b> {e(r['fix'])}</p><p class="owasp">OWASP: {e(owasp)}</p></div></div>""")
     body = f"""
 <section class="band"><div class="wrap">
-<h1>Rules</h1>
-<p class="lede">The {N_RULES} checks Shield runs, ordered by severity, each mapped to the OWASP Top 10 for Agentic Applications 2026. Rules version {e(RULES['version'])}.</p>
-<p>A result is <b>Dangerous</b> when any critical rule matches, or two or more different high-severity rules do. It is <b>Caution</b> when a high-severity rule matches or smaller findings add up. Otherwise it is <b>No known risks</b>.</p>
+<h1>Rules.</h1>
+<p class="lede" style="margin-top:20px">The {N_RULES} checks Shield runs, ordered by severity, each mapped to the OWASP Top 10 for Agentic Applications 2026. Rules version {e(RULES['version'])}.</p>
+<p class="muted">A result is <b>Dangerous</b> when any critical rule matches, or two or more different high-severity rules do. It is <b>Caution</b> when a high-severity rule matches or smaller findings add up. Otherwise it is <b>No known risks</b>.</p>
 <div class="rules-list">{''.join(items)}</div>
 </div></section>"""
     page("/rules/", "Rules", f"The {N_RULES} checks Hyniqe Shield runs on AI agent add-ons, with what each means and how to fix it.",
@@ -448,35 +494,77 @@ def rules_page() -> None:
 
 
 def about() -> None:
-    sample = next(a for a in ADDONS if a["slug"] == "mcp-filesystem")
     body = f"""
-<section class="band"><div class="wrap">
-<h1>How Shield checks an add-on</h1>
-<p class="lede">Shield reads an add-on's files and looks for patterns that let it misuse the access you give your AI. It never runs the code.</p>
+<section class="band"><div class="wrap prose">
+<h1>How it works.</h1>
+<p class="lede" style="margin-top:20px">Shield reads an add-on's files and looks for patterns that let it misuse the access you give your AI. It never runs the code.</p>
 
-<h2 style="margin-top:44px">What it reads</h2>
+<h2>What it reads</h2>
 <p>Skill files (<code>SKILL.md</code> and the scripts that come with them), MCP server source code, MCP configuration files such as <code>claude_desktop_config.json</code> and <code>.cursor/mcp.json</code>, and exported n8n workflows.</p>
-<p>For the directory, Shield skips tests, examples, demos, documentation sites and CI files, because they aren't installed on your machine.</p>
+<p>Shield skips tests, examples, demos, documentation sites and CI files, because they aren't installed on your machine.</p>
 
-<h2 style="margin-top:44px">What it looks for</h2>
-<p>Hidden instructions (including text written in invisible Unicode characters), prompt injection and tool poisoning, instructions to send your data elsewhere, reading of keys and credentials, hard-coded secrets, remote shells, scripts piped straight from the internet, packages that aren't pinned to a version, broad file access, privileged containers, tools approved to run without asking, and unprotected webhooks. The full list is on the <a href="/rules/">rules page</a>.</p>
+<h2>What it looks for</h2>
+<p>Hidden instructions (including text written in invisible Unicode characters), prompt injection and tool poisoning, instructions to send your data elsewhere, reading of keys and credentials, hard-coded secrets, remote shells, scripts piped straight from the internet, packages that aren't pinned to a version, broad file access, privileged containers, tools approved to run without asking, and unprotected webhooks. All {N_RULES} checks are on the <a href="/rules/">rules page</a>.</p>
 
-<h2 style="margin-top:44px">How results are worked out</h2>
+<h2>How results are worked out</h2>
 <p>Each finding has a severity. <b>Dangerous</b> means a critical finding, or two or more different high-severity problems. <b>Caution</b> means a high-severity finding, or several smaller ones that add up. <b>No known risks</b> means nothing matched enough to raise a concern.</p>
 <p>Shield was tuned against the real code of every add-on in the directory, so it flags real risks rather than ordinary code. If you find a wrong result, please <a href="{REPO_URL}/issues/new?title=Shield%20wrong%20finding">report it</a>.</p>
 
-<h2 style="margin-top:44px">Limits</h2>
+<h2>Privacy</h2>
+<p>When you check a link, your browser fetches the files straight from GitHub and runs the rules on your device. Nothing is sent to us. GitHub allows about 60 lookups an hour without signing in, so very large repositories can hit that limit.</p>
+
+<h2>Limits</h2>
 <p>A static check can miss new attack techniques, and it cannot see what a remote server does after you connect. Code changes after a scan. Treat a clear result as one good sign, not a guarantee.</p>
 
-<h2 style="margin-top:44px" id="badges">Badges</h2>
-<p>Every add-on in the directory has a badge that links to its full report. Maintainers can copy the Markdown from their report page.</p>
-<p><img src="/badge/{sample['slug']}.svg" alt="Hyniqe Shield: no known risks" height="20"></p>
-
-<h2 style="margin-top:44px">Getting an add-on checked</h2>
-<p>Open an issue on <a href="{REPO_URL}/issues/new?title=Shield%20scan%20request">GitHub</a> with a link to the repository. You can also run the same check yourself: everything is open source under AGPL-3.0, with a commercial licence for companies that want to build it into their products.</p>
+<h2>Getting an add-on checked</h2>
+<p>Open an issue on <a href="{e(SUBMIT_URL)}">GitHub</a> with a link to the repository. You can also run the same check yourself: everything is open source under AGPL-3.0, with a commercial licence for companies that want to build it into their products.</p>
 </div></section>"""
     page("/about/", "How it works", "How Hyniqe Shield checks AI agent add-ons, how results are worked out, and its limits.",
          body, "/about/")
+
+
+def badges_page() -> None:
+    sample = next(a for a in ADDONS if a["slug"] == "mcp-time")
+    md = f"[![Hyniqe Shield]({BASE_URL}/badge/{sample['slug']}.svg)]({BASE_URL}/a/{sample['slug']}/)"
+    html_snip = f'<a href="{BASE_URL}/a/{sample["slug"]}/"><img src="{BASE_URL}/badge/{sample["slug"]}.svg" alt="Hyniqe Shield result"></a>'
+    body = f"""
+<section class="hero center"><div class="wrap">
+<h1>Show it's been checked.</h1>
+<p class="lede">A badge for your README. It shows your add-on's Shield result and links to the full public report.</p>
+</div></section>
+<div class="wrap badge-row" aria-label="The three possible badges">
+<img src="/assets/badge-clear.svg" alt="Hyniqe Shield: no known risks"><img src="/assets/badge-caution.svg" alt="Hyniqe Shield: caution"><img src="/assets/badge-danger.svg" alt="Hyniqe Shield: dangerous">
+</div>
+
+<section class="band light" style="margin-top:56px"><div class="wrap">
+<h2 class="center">Three steps.</h2>
+<ol class="grid" style="list-style:none;margin:56px 0 0;padding:0">
+<li class="card"><div class="big-word" style="color:#5d7f89">1</div><h3 style="margin-top:10px">Get listed</h3><p>Find your add-on in the <a href="/directory/">directory</a>. Not there yet? <a href="{e(SUBMIT_URL)}">Submit it</a> and we'll add it on the next scan.</p></li>
+<li class="card"><div class="big-word" style="color:#5d7f89">2</div><h3 style="margin-top:10px">Copy the snippet</h3><p>Every report page has its own badge code, ready to copy.</p></li>
+<li class="card"><div class="big-word" style="color:#5d7f89">3</div><h3 style="margin-top:10px">Paste it in your README</h3><p>It shows at the top of your repository and links people to your report.</p></li>
+</ol>
+</div></section>
+
+<section class="band"><div class="wrap">
+<h2 style="font-size:32px;margin-bottom:8px">Badge code</h2>
+<p class="dim">Example for <a href="/a/{sample['slug']}/">{e(label(sample))}</a>. Your report page has yours.</p>
+<div class="glass codebox" style="margin-top:20px">
+<div class="seg" role="tablist" aria-label="Format"><button type="button" role="tab" aria-selected="true" data-fmt="badge-md">Markdown</button><button type="button" role="tab" aria-selected="false" data-fmt="badge-html">HTML</button></div>
+<div class="body">
+<label class="sr" for="badge-md">Badge Markdown</label><textarea id="badge-md" readonly>{e(md)}</textarea>
+<label class="sr" for="badge-html">Badge HTML</label><textarea id="badge-html" readonly hidden>{e(html_snip)}</textarea>
+<button class="btn" type="button" data-copy="badge-md" id="copy-btn">Copy code</button>
+</div>
+</div>
+<p class="status" id="copy-status" aria-live="polite"></p>
+<div class="grid wide" style="margin-top:56px">
+<div class="feature"><h3>What it means</h3><p>The result of Shield's {N_RULES} rules at the commit we last checked. The report shows that commit and the date.</p></div>
+<div class="feature"><h3>Got caution?</h3><p>Open your report, fix or explain each finding, then <a href="{REPO_URL}/issues/new?title=Shield%20re-check%20request">ask for a re-check</a>.</p></div>
+<div class="feature"><h3>What it doesn't mean</h3><p>It's not a certificate. Shield reads files and doesn't run them, so a clean badge is a good sign, not a guarantee.</p></div>
+</div>
+</div></section>"""
+    page("/badges/", "Badges", "Add a Hyniqe Shield badge to your README. It shows your add-on's result and links to the full report.",
+         body, "/badges/", '<script src="/assets/copy.js"></script>')
 
 
 def check() -> None:
@@ -493,47 +581,68 @@ def check() -> None:
     (DIST / "assets" / "check-data.js").write_text(
         "window.SHIELD_DATA=" + json.dumps(payload, ensure_ascii=True).replace("</", "<\\/") + ";\n", "utf-8")
     body = f"""
-<section class="band"><div class="wrap">
-<h1>Check an add-on</h1>
-<p class="lede">Paste a GitHub link to a skill or MCP server, or paste a file. The check runs in your browser: files come straight from GitHub to you, and nothing is uploaded to us.</p>
-<form class="find" id="gh-form" style="max-width:760px">
+<section class="check-head"><div class="wrap">
+<div id="intro" class="center">
+<h1 style="font-size:clamp(44px,7vw,88px)">Check an add-on.</h1>
+<p class="lede" style="margin-top:20px">Paste a GitHub link to a skill, MCP server or n8n workflow. Your browser fetches the files from GitHub and checks them here. Nothing is uploaded.</p>
+</div>
+<form class="find" id="gh-form">
 <label class="sr" for="gh">GitHub link</label>
 <input id="gh" name="url" type="text" inputmode="url" spellcheck="false" placeholder="github.com/owner/repo, or a folder or file inside it" autocomplete="off" required>
-<button class="btn" type="submit">Check link</button>
+<button class="btn" type="submit" id="gh-btn">Check</button>
 </form>
-<p class="status" id="gh-status" aria-live="polite"></p>
+<p class="status center" id="gh-status" aria-live="polite"></p>
+
+<div class="scan-layout" id="scan" hidden>
+<div class="stage live" id="stage" role="img" aria-label="The add-on's files as a 3D stack, lit up as they are checked"><div class="rig" id="rig"><div class="beam" id="beam"></div></div></div>
+<div class="live-panel" id="live">
+<div><p class="live-dot" id="live-label">Checking</p><p class="live-count" id="live-count">0 files</p><div class="bar"><i id="bar"></i></div>
+<p class="dim small" style="margin-top:12px" id="where"></p></div>
+<div class="tally"><div><b id="t-high" class="t-danger">0</b><span>critical or high</span></div><div><b id="t-med" class="t-caution">0</b><span>medium</span></div><div><b id="t-low">0</b><span>low</span></div></div>
+<ol class="log" id="log"></ol>
+</div>
+</div>
+
+<div class="results" id="results" hidden>
+<div class="result-head" id="result"></div>
+<div id="findings"></div>
+<div class="note"><p>Shield reads the files, it doesn't run them. A result shows what the {N_RULES} rules found at this commit, not a guarantee.</p>
+<p><a href="{REPO_URL}/issues/new?title=Shield%20wrong%20finding">Report a wrong result</a></p></div>
+</div>
+
+<details class="paste" id="paste">
+<summary>Or paste a file, drop a folder, or try an example</summary>
 <div class="checker">
-<div>
-<h2 class="or">Or paste a file</h2>
 <div class="examples" id="examples" role="group" aria-label="Load an example"></div>
-<div class="drop" id="drop">Drop files or a folder here, or <label for="files" style="text-decoration:underline;cursor:pointer">choose files</label>
+<div class="drop" id="drop">Drop files or a folder here, or <label for="files">choose files</label>
 <input class="sr" type="file" id="files" multiple></div>
 <label class="sr" for="src">Content to check</label>
 <textarea id="src" spellcheck="false" placeholder="Paste the add-on here"></textarea>
 <div class="row"><label class="sr" for="fname">File name</label><input type="text" id="fname" value="SKILL.md" aria-describedby="fname-help" autocomplete="off" spellcheck="false">
 <button class="btn" id="run" type="button">Check it</button></div>
-<p class="muted small" id="fname-help">The file name tells Shield what kind of file this is, for example SKILL.md or mcp.json.</p>
+<p class="dim small" id="fname-help">The file name tells Shield what kind of file this is, for example SKILL.md or mcp.json.</p>
 </div>
-<div id="result" aria-live="polite"></div>
-</div>
-<div id="findings" style="margin-top:36px"></div>
-</div></section>"""
+</details>
+</div></section>
+<div style="height:80px"></div>"""
     page("/check/", "Check an add-on", "Check a Claude skill, MCP server, MCP config or n8n workflow from a GitHub link or a file, in your browser. Nothing is uploaded.",
          body, "/check/",
          '<script src="/assets/engine.js"></script><script src="/assets/check-data.js"></script><script src="/assets/check.js"></script>')
 
 
 def not_found() -> None:
-    body = """<section class="band"><div class="wrap"><h1>Page not found</h1>
-<p class="lede">That address doesn't match a page. The add-on may not be in the directory yet.</p>
+    body = """<section class="band"><div class="wrap"><h1>Page not found.</h1>
+<p class="lede" style="margin-top:20px">That address doesn't match a page. The add-on may not be in the directory yet.</p>
 <p><a class="btn" href="/directory/">Search the directory</a></p></div></section>"""
     page("/404.html", "Page not found", "Page not found.", body)
 
 
 def extras() -> None:
-    favicon = LOGO.replace('aria-hidden="true"', 'xmlns="http://www.w3.org/2000/svg"')
-    (DIST / "favicon.svg").write_text(favicon, "utf-8")
-    urls = ["/", "/directory/", "/check/", "/rules/", "/about/"] + [f"/a/{a['slug']}/" for a in ADDONS]
+    (DIST / "favicon.svg").write_text(FAVICON, "utf-8")
+    colors = {"clear": ("no known risks", "#0b7f5c"), "caution": ("caution", "#b56d00"), "danger": ("dangerous", "#d4145a")}
+    for k, (w, c) in colors.items():
+        (DIST / "assets" / f"badge-{k}.svg").write_text(badge_svg(w, c), "utf-8")
+    urls = ["/", "/directory/", "/check/", "/rules/", "/badges/", "/about/"] + [f"/a/{a['slug']}/" for a in ADDONS]
     (DIST / "sitemap.xml").write_text('<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
                                       + "".join(f"<url><loc>{BASE_URL}{u}</loc></url>\n" for u in urls) + "</urlset>\n", "utf-8")
     (DIST / "robots.txt").write_text(f"User-agent: *\nAllow: /\nSitemap: {BASE_URL}/sitemap.xml\n", "utf-8")
@@ -548,7 +657,7 @@ def main() -> None:
     for f in (SITE / "assets").iterdir():
         shutil.copy(f, DIST / "assets" / f.name)
     shutil.copy(ROOT / "web" / "engine.js", DIST / "assets" / "engine.js")
-    home(); directory(); rules_page(); about(); check(); not_found(); extras()
+    home(); directory(); rules_page(); about(); badges_page(); check(); not_found(); extras()
     for a in ADDONS:
         report(a)
         badge(a)
