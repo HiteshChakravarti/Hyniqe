@@ -7,8 +7,8 @@ import { site } from './helpers.ts';
 
 const ROOT = new URL('../', import.meta.url);
 
-test('the website\'s generated files are up to date (run npm run build:site)', () => {
-  for (const [path, content] of Object.entries(buildSiteFiles())) {
+test('the website\'s generated files are up to date (run npm run build:site)', async () => {
+  for (const [path, content] of Object.entries(await buildSiteFiles())) {
     assert.equal(readFileSync(new URL(path, ROOT), 'utf8'), content, `${path} is out of date`);
   }
 });
