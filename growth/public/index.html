@@ -253,7 +253,7 @@ function pageLeads() {
     (L.length ? `<div class="card"><table><thead><tr><th>Lead</th><th>Grade</th><th>Why</th><th>Owner</th><th>Status</th><th></th></tr></thead><tbody>${L.map((l) => `<tr>
       <td><b>${esc(l.name || l.email)}</b><div class="small muted">${esc(l.title)}${l.company ? ' · ' + esc(l.company) : ''}</div><div class="small">${esc(l.message)}</div></td>
       <td><span class="tag g-${l.grade}">${l.grade} · ${l.score}</span></td><td class="small">${esc(l.reasons.join(', '))}</td><td class="small">${esc(person(l.routeTo))}</td>
-      <td class="small">${l.status === 'new' ? '<span class="tag s-pending_approval">needs reply</span>' : `<span class="tag s-published">${nice(l.status)}</span>${l.firstResponseMinutes !== undefined ? `<div class="muted">in ${l.firstResponseMinutes} min${l.firstResponseMinutes <= 1 && l.status === 'replied' ? ' (auto)' : ''}</div>` : ''}`}</td>
+      <td class="small">${l.status === 'new' ? '<span class="tag s-pending_approval">needs reply</span>' : `<span class="tag s-published">${nice(l.status)}</span>${l.firstResponseMinutes !== undefined ? `<div class="muted">in ${l.firstResponseMinutes} min${l.repliedBy === 'auto' ? ' (auto)' : ''}</div>` : ''}`}</td>
       <td>${l.status === 'new' && l.score > 0 ? `<button class="btn sm" data-lead="${l.id}">Review reply</button>` : ''}</td></tr>`).join('')}</tbody></table></div>` : '<div class="card empty">No leads yet.</div>');
 }
 
