@@ -35,7 +35,7 @@ Press **Run week 1**, work through **Approvals**, click **Simulate this week's i
 
 ## Website
 
-`site/` is the public website for Hyniqe Growth: a static page (no framework, no build server) with a **free marketing health check that runs in the visitor's browser**, using the product's own rules. `npm run build:site` regenerates `site/assets/health-core.js` and `site/assets/data.js` from the source, and a test fails if they drift. Host the `site/` folder on any static host (GitHub Pages, Netlify, Vercel) when you are ready; links point to the `main` branch, set in `site/assets/site.js`.
+`site/` is the public website for Hyniqe Growth, live at **https://hyniqe-growth.vercel.app**. It is a static page (no framework) in the same visual family as the Hyniqe Shield site, with two things built from the product's own code: a **clickable dashboard preview** (a real week 1 for both demo companies: overview, approvals, the week's calendar, leads, the Friday report, the health check and the team) and a **free marketing health check that runs in the visitor's browser** with the product's 19 rules. `npm run build:site` regenerates `site/assets/health-core.js` and `site/assets/data.js`, and a test fails if they drift. Demo companies have fixed ids, so the demo week, the samples and the preview repeat exactly. Links point to the `main` branch, set in `site/assets/site.js`.
 
 ## How it works
 
