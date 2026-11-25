@@ -1,0 +1,25 @@
+{
+  "id": "fintech",
+  "label": "Financial services / fintech",
+  "industry": "Financial services",
+  "weeklyAdBudget": 300,
+  "trust": "cautious",
+  "goals": ["Qualified sign-ups from businesses", "Trust and brand awareness", "Stay compliant in every message"],
+  "brand": {
+    "oneLiner": "Financial tools that are simple, transparent and secure.",
+    "voice": "calm, precise and trustworthy",
+    "voiceDo": ["explain fees plainly", "be specific", "include required risk wording"],
+    "voiceDont": ["promise returns", "use hype", "downplay risk"],
+    "audience": "finance teams and business owners",
+    "painPoints": ["Hidden fees", "Slow onboarding", "Unclear compliance requirements"],
+    "offers": [{ "name": "Business account", "pitch": "Open an account online with clear, published fees." }],
+    "competitors": [],
+    "channels": ["linkedin", "email", "blog"],
+    "keywords": ["business banking fees", "fast business onboarding", "payments compliance"],
+    "bannedClaims": ["guaranteed returns", "no risk", "free money"]
+  },
+  "team": [
+    { "name": "Marketing Lead", "role": "Marketing", "reviews": ["marketing-lead", "content", "seo", "social", "design", "ads", "web-cro", "analytics", "reputation"] },
+    { "name": "Compliance Reviewer", "role": "Compliance", "reviews": ["email", "sdr"] }
+  ]
+}

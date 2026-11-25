@@ -1,0 +1,46 @@
+[
+  {
+    "name": "Chai & Crumb",
+    "website": "https://chaiandcrumb.example",
+    "template": "local-business",
+    "mode": "autopilot",
+    "trust": "balanced",
+    "owner": { "name": "Anika", "email": "hello@chaiandcrumb.example" },
+    "weeklyAdBudget": 50,
+    "site": "chai-and-crumb.html",
+    "brand": {
+      "oneLiner": "A neighbourhood café in Pune serving masala chai, fresh bakes and chaat, with catering for office teams.",
+      "audience": "people living and working in Baner, office teams, families",
+      "painPoints": ["Finding a reliable caterer for office lunches", "Long waits at busy cafés", "Not knowing what's fresh today"],
+      "offers": [
+        { "name": "Office chai & snacks box", "price": "₹1,499 for 10", "pitch": "Chai, samosas and fresh bakes for your team, delivered to your office." },
+        { "name": "Weekend chaat special", "pitch": "Our weekend chaat menu, made fresh every morning." }
+      ],
+      "location": "Baner, Pune",
+      "keywords": ["office catering Baner", "best chai near me", "chaat in Pune"]
+    }
+  },
+  {
+    "name": "Ledgerly",
+    "website": "https://ledgerly.example",
+    "template": "saas",
+    "mode": "copilot",
+    "trust": "balanced",
+    "owner": { "name": "Ravi Menon", "email": "ravi@ledgerly.example" },
+    "weeklyAdBudget": 400,
+    "site": "ledgerly.html",
+    "brand": {
+      "oneLiner": "Ledgerly automates invoicing, payment reminders and bank reconciliation for small finance teams.",
+      "audience": "finance managers and founders at 20-200 person service companies",
+      "painPoints": ["Chasing late invoices by hand", "Month-end reconciliation that takes days", "Spreadsheets nobody trusts"],
+      "offers": [{ "name": "14-day free trial", "price": "$39/user/month", "pitch": "Send invoices, chase payments and reconcile your bank in one place." }],
+      "keywords": ["automate invoice reminders", "bank reconciliation software", "close the books faster"],
+      "bannedClaims": ["guaranteed ROI", "never chase an invoice again"]
+    },
+    "team": [
+      { "name": "Sara Kapoor", "role": "Head of Marketing", "email": "sara@ledgerly.example", "reviews": ["marketing-lead", "ads", "analytics", "web-cro"] },
+      { "name": "Jon Reyes", "role": "Content & Social", "email": "jon@ledgerly.example", "reviews": ["content", "seo", "social", "design", "reputation"] },
+      { "name": "Meera Iyer", "role": "Sales & Lifecycle", "email": "meera@ledgerly.example", "reviews": ["sdr", "email"] }
+    ]
+  }
+]

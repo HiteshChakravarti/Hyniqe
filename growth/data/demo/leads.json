@@ -1,0 +1,14 @@
+{
+  "local-business": [
+    { "name": "Rohan Desai", "email": "rohan.desai@brightpath.in", "company": "Brightpath Software", "title": "Office Manager", "source": "contact-form", "message": "Hi, we need chai and snacks for 40 people every Friday. Can you share pricing? Would like to start this week." },
+    { "name": "Neha", "email": "neha.k@gmail.com", "company": "", "title": "", "source": "social", "message": "Are you open on Sunday mornings?" },
+    { "name": "Arjun Mehta", "email": "arjun@mehtaevents.in", "company": "Mehta Events", "title": "Founder", "source": "referral", "message": "Planning a corporate event for 120 guests next month, looking for a catering quote." },
+    { "name": "SEO Pro", "email": "rank@seo-gurus.biz", "company": "SEO Gurus", "title": "", "source": "contact-form", "message": "We offer SEO services and backlinks to rank you #1 on Google." }
+  ],
+  "saas": [
+    { "name": "Hannah Cole", "email": "hannah@northwindstudio.com", "company": "Northwind Studio", "title": "Head of Finance", "source": "demo-request", "message": "We're a team of 60 and currently use spreadsheets for invoice chasing. Can we book a demo this week and see pricing?" },
+    { "name": "Diego Alvarez", "email": "diego.alvarez@outlook.com", "company": "", "title": "Freelancer", "source": "newsletter", "message": "Just signed up for the newsletter." },
+    { "name": "Priya Nair", "email": "priya@kitecreative.io", "company": "Kite Creative", "title": "COO", "source": "ad", "message": "Looking for an alternative to our current tool, reconciliation takes us 3 days." },
+    { "name": "Tom Becker", "email": "tom@beckerlaw.de", "company": "Becker Law", "title": "Office Manager", "source": "contact-form", "message": "Does it work with German banks?" }
+  ]
+}

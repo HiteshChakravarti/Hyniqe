@@ -1,0 +1,25 @@
+{
+  "id": "agency",
+  "label": "Agency / professional services",
+  "industry": "Professional services",
+  "weeklyAdBudget": 200,
+  "trust": "balanced",
+  "goals": ["More inbound enquiries", "Thought leadership on LinkedIn", "Win 2 new clients a month"],
+  "brand": {
+    "oneLiner": "A specialist team that gets results clients can measure.",
+    "voice": "confident, expert and human",
+    "voiceDo": ["share real lessons", "show the work", "be specific about outcomes"],
+    "voiceDont": ["vague buzzwords", "over-promising"],
+    "audience": "founders and marketing directors at growing companies",
+    "painPoints": ["Agencies that over-promise", "No clear reporting", "Slow turnaround"],
+    "offers": [{ "name": "Free 30-minute audit", "pitch": "A clear, honest audit with three things to fix first." }],
+    "competitors": [],
+    "channels": ["linkedin", "email", "blog"],
+    "keywords": ["marketing audit", "growth strategy", "agency reporting"],
+    "bannedClaims": []
+  },
+  "team": [
+    { "name": "Founder", "role": "Founder", "reviews": ["marketing-lead", "ads", "analytics", "sdr"] },
+    { "name": "Account Manager", "role": "Content & Delivery", "reviews": ["content", "seo", "social", "design", "email", "web-cro", "reputation"] }
+  ]
+}

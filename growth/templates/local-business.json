@@ -1,0 +1,22 @@
+{
+  "id": "local-business",
+  "label": "Local business (café, salon, clinic, shop)",
+  "industry": "Local business",
+  "weeklyAdBudget": 50,
+  "trust": "balanced",
+  "goals": ["More walk-ins and bookings", "More Google reviews", "Grow Instagram following"],
+  "brand": {
+    "oneLiner": "A neighbourhood favourite people come back to.",
+    "voice": "warm, local and personal",
+    "voiceDo": ["talk like the owner would", "mention the neighbourhood", "show real people and products"],
+    "voiceDont": ["corporate language", "fake urgency"],
+    "audience": "people living and working nearby, families, office teams",
+    "painPoints": ["Not knowing what's good nearby", "Long waits at busy times", "Finding somewhere reliable for group orders"],
+    "offers": [{ "name": "Weekend special", "pitch": "Our weekend menu, made fresh every morning." }],
+    "competitors": [],
+    "channels": ["instagram", "facebook", "reviews", "email"],
+    "keywords": ["near me", "best local spot", "group orders"],
+    "bannedClaims": []
+  },
+  "team": [{ "name": "Owner", "role": "Owner", "reviews": ["marketing-lead", "content", "seo", "social", "design", "ads", "email", "sdr", "web-cro", "analytics", "reputation"] }]
+}
