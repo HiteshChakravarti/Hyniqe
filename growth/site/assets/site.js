@@ -3,7 +3,7 @@
 import { checkPage } from './health-core.js';
 import { AGENTS, DEMO_SITES, RULES } from './data.js';
 
-// Where the links point. Change BRANCH to 'main' once the code is merged.
+// Where the links point. They go to main, so they work once the growth branch is merged.
 const REPO = 'https://github.com/HiteshChakravarti/Hyniqe';
 const BRANCH = 'main';
 const LINKS = {
