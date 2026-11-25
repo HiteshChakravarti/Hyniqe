@@ -13,6 +13,8 @@
     "check": "node --disable-warning=ExperimentalWarning scripts/health-check.ts",
     "test": "node --disable-warning=ExperimentalWarning --test test/*.test.ts",
     "sample": "node --disable-warning=ExperimentalWarning scripts/export-sample.ts",
+    "build:site": "node --disable-warning=ExperimentalWarning scripts/build-site.ts",
+    "site": "node --disable-warning=ExperimentalWarning scripts/serve-site.ts",
     "typecheck": "tsc --noEmit"
   },
   "devDependencies": {

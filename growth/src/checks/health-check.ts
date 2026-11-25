@@ -1,144 +1,18 @@
 // Marketing Health Check: the Shield pattern applied to marketing.
 // Scan a web page → a plain verdict → a fix for every problem, each handed to
 // the agent that will fix it. It only reads the page; it never changes it.
+// The rules live in health-core.ts so the website can run them in the browser.
 
 import { readFileSync } from 'node:fs';
-import type { AgentId, Finding, HealthCheck } from '../core/types.ts';
-import { now } from '../core/util.ts';
+import type { HealthCheck } from '../core/types.ts';
+import { checkPage, type Rule, type SiteSnapshot } from './health-core.ts';
 
-interface Rule {
-  id: string;
-  title: string;
-  category: string;
-  severity: Finding['severity'];
-  agent: AgentId;
-  fix: string;
-}
+export type { Rule, SiteSnapshot };
 
 export const RULES: Rule[] = JSON.parse(readFileSync(new URL('./rules.json', import.meta.url), 'utf8'));
 
-export interface SiteSnapshot {
-  url: string;
-  html: string;
-  /** Present only when the site was fetched live. */
-  llmsTxt?: boolean;
-}
-
-const PENALTY = { critical: 15, warning: 4, info: 2 } as const;
-
-function text(html: string): string {
-  return html
-    .replace(/<script[\s\S]*?<\/script>/gi, ' ')
-    .replace(/<style[\s\S]*?<\/style>/gi, ' ')
-    .replace(/<[^>]+>/g, ' ')
-    .replace(/&nbsp;/g, ' ')
-    .replace(/\s+/g, ' ');
-}
-
-function attr(tag: string, name: string): string | undefined {
-  return tag.match(new RegExp(`${name}\\s*=\\s*["']([^"']*)["']`, 'i'))?.[1];
-}
-
-type Eval = { passed: boolean; evidence: string };
-
-function evaluate(id: string, s: SiteSnapshot): Eval {
-  const h = s.html;
-  const t = text(h);
-  switch (id) {
-    case 'https':
-      if (!/^https?:\/\//i.test(s.url)) return { passed: true, evidence: 'Not checked: no web address given.' };
-      return /^https:\/\//i.test(s.url) ? { passed: true, evidence: 'Served over HTTPS.' } : { passed: false, evidence: 'The site is served over plain HTTP.' };
-    case 'cta': {
-      const re = /<(a|button)\b[^>]*>([\s\S]*?)<\/\1>/gi;
-      const hits: string[] = [];
-      for (const m of h.matchAll(re)) {
-        const label = text(m[2] ?? '').trim();
-        if (/\b(book|get started|start free|try|demo|quote|contact|sign ?up|order|buy|call us|schedule|reserve|join|subscribe|enquire|apply)\b/i.test(label)) hits.push(label);
-      }
-      return hits.length ? { passed: true, evidence: `Found: "${hits.slice(0, 3).join('", "')}".` } : { passed: false, evidence: 'No button or link that asks the visitor to act.' };
-    }
-    case 'lead-capture': {
-      const forms = (h.match(/<form\b/gi) ?? []).length;
-      const booking = /(calendly\.com|cal\.com|hubspot\.com\/meetings|tidycal|savvycal|opentable|resy\.com)/i.test(h);
-      const tel = /href=["'](tel:|mailto:)/i.test(h);
-      const bits = [forms ? `${forms} form(s)` : '', booking ? 'a booking link' : '', tel ? 'click-to-call or email link' : ''].filter(Boolean);
-      return bits.length ? { passed: true, evidence: `Found ${bits.join(', ')}.` } : { passed: false, evidence: 'No form, booking link, or click-to-call/email link.' };
-    }
-    case 'title': {
-      const title = h.match(/<title[^>]*>([\s\S]*?)<\/title>/i)?.[1]?.trim() ?? '';
-      if (!title) return { passed: false, evidence: 'No <title> tag.' };
-      return title.length >= 10 && title.length <= 65 ? { passed: true, evidence: `"${title}" (${title.length} characters).` } : { passed: false, evidence: `"${title}" is ${title.length} characters.` };
-    }
-    case 'meta-description': {
-      const tag = h.match(/<meta[^>]+name=["']description["'][^>]*>/i)?.[0];
-      const d = tag ? (attr(tag, 'content') ?? '') : '';
-      if (!d) return { passed: false, evidence: 'No meta description.' };
-      return d.length >= 50 && d.length <= 170 ? { passed: true, evidence: `${d.length} characters.` } : { passed: false, evidence: `${d.length} characters; aim for 120-160.` };
-    }
-    case 'h1': {
-      const n = (h.match(/<h1\b/gi) ?? []).length;
-      return n === 1 ? { passed: true, evidence: 'One H1.' } : { passed: false, evidence: `${n} H1 headings.` };
-    }
-    case 'form-length': {
-      const forms = [...h.matchAll(/<form\b[\s\S]*?<\/form>/gi)].map((m) => m[0]);
-      if (!forms.length) return { passed: true, evidence: 'No forms to check.' };
-      const counts = forms.map((f) => (f.match(/<(input|select|textarea)\b(?![^>]*type=["'](hidden|submit|button)["'])/gi) ?? []).length);
-      const longest = Math.max(...counts);
-      return longest <= 5 ? { passed: true, evidence: `Longest form has ${longest} field(s).` } : { passed: false, evidence: `A form has ${longest} fields.` };
-    }
-    case 'trust':
-      return /(testimonial|review|★|rated|trusted by|our clients|case stud|customers say|what people say)/i.test(t)
-        ? { passed: true, evidence: 'Testimonials, reviews or client proof found.' }
-        : { passed: false, evidence: 'No testimonials, reviews or client logos detected.' };
-    case 'contact-visible':
-      return /(\+?\d[\d\s().-]{8,}\d)|([\w.+-]+@[\w-]+\.[\w.]+)/.test(t) ? { passed: true, evidence: 'Phone or email shown on the page.' } : { passed: false, evidence: 'No phone number or email address on the page.' };
-    case 'mobile':
-      return /<meta[^>]+name=["']viewport["']/i.test(h) ? { passed: true, evidence: 'Viewport tag present.' } : { passed: false, evidence: 'No viewport tag; the page may not fit phones.' };
-    case 'analytics-tag': {
-      const m = h.match(/(googletagmanager\.com|gtag\(|google-analytics\.com|plausible\.io|posthog|usefathom|segment\.com\/analytics|clarity\.ms|matomo)/i);
-      return m ? { passed: true, evidence: `Found ${m[1]}.` } : { passed: false, evidence: 'No analytics script found.' };
-    }
-    case 'structured-data':
-      return /<script[^>]+application\/ld\+json/i.test(h) ? { passed: true, evidence: 'JSON-LD structured data present.' } : { passed: false, evidence: 'No JSON-LD structured data.' };
-    case 'ai-visibility': {
-      const faq = /(faq|frequently asked|FAQPage)/i.test(h);
-      const llms = s.llmsTxt === true;
-      if (faq || llms) return { passed: true, evidence: [faq ? 'FAQ content found' : '', llms ? '/llms.txt found' : ''].filter(Boolean).join('; ') + '.' };
-      return { passed: false, evidence: s.llmsTxt === false ? 'No FAQ content and no /llms.txt.' : 'No FAQ content found.' };
-    }
-    case 'open-graph':
-      return /<meta[^>]+property=["']og:(title|image)["']/i.test(h) ? { passed: true, evidence: 'Open Graph tags present.' } : { passed: false, evidence: 'No og:title or og:image.' };
-    case 'social-links': {
-      const m = h.match(/(linkedin\.com|instagram\.com|facebook\.com|x\.com|twitter\.com|youtube\.com|tiktok\.com)/gi) ?? [];
-      return m.length ? { passed: true, evidence: `Links to ${[...new Set(m.map((x) => x.toLowerCase()))].join(', ')}.` } : { passed: false, evidence: 'No social profile links.' };
-    }
-    case 'content-hub':
-      return /href=["'][^"']*(\/blog|\/resources|\/articles|\/news|\/insights|\/guides)/i.test(h) ? { passed: true, evidence: 'Blog or resources link found.' } : { passed: false, evidence: 'No blog or resources section linked.' };
-    case 'email-capture':
-      return /(newsletter|subscribe|type=["']email["'])/i.test(h) ? { passed: true, evidence: 'Email sign-up found.' } : { passed: false, evidence: 'No newsletter or email sign-up.' };
-    case 'privacy':
-      return /href=["'][^"']*privacy/i.test(h) ? { passed: true, evidence: 'Privacy policy linked.' } : { passed: false, evidence: 'No privacy policy link.' };
-    case 'page-weight': {
-      const scripts = (h.match(/<script\b/gi) ?? []).length;
-      const kb = Math.round(Buffer.byteLength(h) / 1024);
-      return scripts <= 25 && kb <= 500 ? { passed: true, evidence: `${kb} KB HTML, ${scripts} scripts.` } : { passed: false, evidence: `${kb} KB HTML, ${scripts} scripts.` };
-    }
-    default:
-      return { passed: true, evidence: 'Not checked.' };
-  }
-}
-
 export function runHealthCheck(s: SiteSnapshot): HealthCheck {
-  const findings: Finding[] = RULES.map((r) => ({ ...r, ...evaluate(r.id, s) }));
-  const score = Math.max(0, 100 - findings.filter((f) => !f.passed).reduce((n, f) => n + PENALTY[f.severity], 0));
-  const critical = findings.filter((f) => !f.passed && f.severity === 'critical').length;
-  const verdict: HealthCheck['verdict'] = critical || score < 50 ? 'Leaking leads' : score < 80 ? 'Needs work' : 'Healthy';
-  const failed = findings.filter((f) => !f.passed);
-  const summary =
-    verdict === 'Healthy'
-      ? `Score ${score}/100. The basics are in place; ${failed.length} small improvement(s) left.`
-      : `Score ${score}/100. ${critical ? `${critical} critical leak(s) are losing you leads right now. ` : ''}${failed.length} fix(es) in total, each assigned to an agent.`;
-  return { at: now(), url: s.url, score, verdict, summary, findings };
+  return checkPage(RULES, s);
 }
 
 /** Fetch a live page (and /llms.txt). Used by the server on the user's own machine. */
