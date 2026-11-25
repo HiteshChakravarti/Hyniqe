@@ -1,0 +1,26 @@
+{
+  "id": "saas",
+  "label": "B2B software (SaaS)",
+  "industry": "B2B software",
+  "weeklyAdBudget": 500,
+  "trust": "balanced",
+  "goals": ["Book 20 demo calls a month", "Grow organic traffic", "Lower cost per lead"],
+  "brand": {
+    "oneLiner": "Software that takes the busywork out of a team's week.",
+    "voice": "clear, friendly and practical",
+    "voiceDo": ["lead with the customer's problem", "use numbers only when true", "short sentences"],
+    "voiceDont": ["jargon", "hype", "exclamation marks in every line"],
+    "audience": "operations and finance leaders at 20-500 person companies",
+    "painPoints": ["Manual spreadsheet work every month", "Tools that don't talk to each other", "No time to fix processes"],
+    "offers": [{ "name": "14-day free trial", "price": "$49/user/month", "pitch": "Set up in an afternoon, no credit card needed." }],
+    "competitors": [],
+    "channels": ["linkedin", "x", "email", "blog"],
+    "keywords": ["workflow automation", "reduce manual work", "team productivity software"],
+    "bannedClaims": ["guaranteed ROI"]
+  },
+  "team": [
+    { "name": "Head of Marketing", "role": "Head of Marketing", "reviews": ["marketing-lead", "ads", "analytics", "web-cro"] },
+    { "name": "Content Lead", "role": "Content & Social", "reviews": ["content", "seo", "social", "design", "reputation"] },
+    { "name": "Growth / Sales", "role": "Sales & Lifecycle", "reviews": ["sdr", "email"] }
+  ]
+}

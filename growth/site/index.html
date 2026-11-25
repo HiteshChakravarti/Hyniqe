@@ -1,0 +1,235 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hyniqe Growth: your AI marketing department</title>
+<meta name="description" content="Eleven AI agents plan, write, publish and follow up on leads every week. You approve what matters. For companies with no marketing team, and for teams that want more hands. Free and open source.">
+<meta property="og:title" content="Hyniqe Growth: your AI marketing department">
+<meta property="og:description" content="Eleven AI agents plan, write, publish and follow up on leads every week. You approve what matters. Free and open source.">
+<meta property="og:type" content="website">
+<meta name="theme-color" content="#03141a">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@300..800&family=Geist+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/site.css">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"SoftwareApplication","name":"Hyniqe Growth","applicationCategory":"BusinessApplication","operatingSystem":"Any","description":"An open-source AI digital marketing department: a Marketing Lead agent and ten specialists that plan, write, get approval, publish, capture leads and report every week.","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"license":"https://www.gnu.org/licenses/agpl-3.0.html"}</script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+
+<header class="site-head"><div class="wrap">
+  <a class="brand" href="#top" aria-label="Hyniqe Growth home">
+    <svg width="26" height="26" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="8" fill="rgba(159,240,196,.14)"/><path d="M7 23 L13 15 L18 20 L25 10" fill="none" stroke="#9ff0c4" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/><path d="M19.5 10 H25 V15.5" fill="none" stroke="#9ff0c4" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    Hyniqe Growth
+  </a>
+  <nav class="tabs" aria-label="Main">
+    <a href="#dashboard">Dashboard</a>
+    <a href="#check">Free check</a>
+    <a href="#how">How it works</a>
+    <a href="#modes">Modes</a>
+    <a href="#team">Team</a>
+    <a href="#safety">Safety</a>
+    <a href="#faq">FAQ</a>
+  </nav>
+  <a class="pill" data-repo href="#">GitHub ↗</a>
+</div></header>
+
+<main id="main">
+<section class="hero center" id="top"><div class="wrap">
+  <p class="eyebrow">Open-source AI marketing department</p>
+  <h1>Your marketing team, without the hiring.</h1>
+  <p class="lede">Eleven AI agents plan, write, publish and follow up on every lead, every week. You approve what matters.</p>
+  <div class="btns">
+    <a class="btn" href="#dashboard">See the dashboard</a>
+    <a class="btn ghost" href="#check">Check your website free</a>
+  </div>
+  <p class="note">Free and open source (AGPL-3.0). Runs on your own computer. Nothing goes out without passing the approval gate.</p>
+  <div class="stage" aria-hidden="true"><div class="app" id="hero-app"></div></div>
+  <div class="stage-fade"></div>
+</div></section>
+
+<section class="band tight"><div class="wrap">
+  <div class="stats">
+    <div class="stat"><b>11</b><span>agents, one per marketing job</span></div>
+    <div class="stat"><b>19</b><span>checks in the free website health check</span></div>
+    <div class="stat"><b>0</b><span>spends, sends or flagged posts without a human yes</span></div>
+    <div class="stat"><b>$0</b><span>open source, runs on your machine</span></div>
+  </div>
+</div></section>
+
+<section class="band" id="dashboard" style="padding-top:clamp(32px,5vw,64px)"><div class="wrap">
+  <div class="head-row">
+    <div>
+      <p class="eyebrow">The dashboard</p>
+      <h2>One week, two companies. Click around.</h2>
+    </div>
+    <p class="muted small" style="max-width:34em;margin:0">This is week 1 from the real product, run with the built-in writers: the plan, every draft, every approval, every lead and the Friday report. Pick a company and a screen.</p>
+  </div>
+  <div class="dash-controls">
+    <div class="seg" role="tablist" aria-label="Company" id="co-switch"></div>
+    <span class="small" id="co-mode"></span>
+  </div>
+  <div class="app" id="dash" aria-live="polite"></div>
+  <p class="preview-note">A read-only preview. In the product every button works, and it runs at <code>127.0.0.1:4400</code> after <code>npm start</code>. <a data-samples href="#">Read every draft in full</a>.</p>
+</div></section>
+
+<section class="band light" id="check"><div class="wrap">
+  <p class="eyebrow">Free marketing health check</p>
+  <h2>Is your website leaking leads?</h2>
+  <p class="lede" style="margin-top:18px">A score, a plain verdict and a fix for every leak, each assigned to the agent who would fix it. It runs in your browser with the product's own 19 rules; your page never leaves this tab.</p>
+  <div class="check-grid">
+    <div class="card">
+      <label class="l" for="html">Paste your page's HTML</label>
+      <textarea id="html" spellcheck="false" placeholder="Open your website, press Ctrl+U (Cmd+Option+U on a Mac), select all, copy, and paste here."></textarea>
+      <div class="check-row">
+        <button class="btn small" id="run" type="button">Check my page</button>
+        <span class="or">or try</span>
+        <button class="btn small ghost" data-demo="cafe" type="button">A weak café site</button>
+        <button class="btn small ghost" data-demo="saas" type="button">A strong SaaS site</button>
+      </div>
+      <div class="err" id="err" role="alert"></div>
+      <p class="hint">Browsers can't read other websites directly, which is why you paste the source. To check a live address, run <code>npm run check -- yoursite.com</code> from the repository.</p>
+    </div>
+    <div class="card result empty" id="result" aria-live="polite">
+      <p>Your verdict appears here: a score out of 100, the leaks that matter most, and who on the AI team fixes each one.</p>
+    </div>
+  </div>
+</div></section>
+
+<section class="band" id="how"><div class="wrap center">
+  <p class="eyebrow">How it works</p>
+  <h2>A real marketing week, run by agents.</h2>
+  <p class="lede" style="margin-top:18px">Not a pile of AI tools. One Marketing Lead runs a weekly rhythm with ten specialists, the way a good marketing team works.</p>
+  <div class="loop" style="text-align:left">
+    <div class="step reveal"><div class="day">Monday</div><h3>Plan</h3><p>Nova sets the week's goal from your targets, your health check and last week's results, then briefs every specialist.</p></div>
+    <div class="step reveal"><div class="day">Mon–Fri</div><h3>Create</h3><p>Blog posts, SEO fixes, social posts, a creative pack, ads, emails, outreach and review replies, in your brand's voice.</p></div>
+    <div class="step reveal"><div class="day">Every draft</div><h3>Guard</h3><p>Each draft is scanned for risky claims, banned phrases, missing unsubscribe lines and over-budget spend.</p></div>
+    <div class="step reveal"><div class="day">Every draft</div><h3>Approve</h3><p>Safe work runs on its own. Risky work waits for the owner, or for the teammate who owns that area.</p></div>
+    <div class="step reveal"><div class="day">All week</div><h3>Publish &amp; capture</h3><p>Approved work goes out. Every lead is scored A, B or C with reasons and gets a reply drafted at once.</p></div>
+    <div class="step reveal"><div class="day">Friday</div><h3>Learn</h3><p>Quinn writes the Friday report. Its lessons, and every rejection reason, feed next Monday's plan.</p></div>
+  </div>
+  <p class="loop-note">↻ Every week starts from what the last one taught.</p>
+</div></section>
+
+<section class="band light" id="modes"><div class="wrap">
+  <p class="eyebrow">Two modes</p>
+  <h2>With a marketing team, or without one.</h2>
+  <div class="modes">
+    <div class="card mode reveal">
+      <div class="kicker">AUTOPILOT</div>
+      <h3>No marketing team</h3>
+      <p class="for">For founders, shop owners and small companies.</p>
+      <ul>
+        <li>The agents run the whole week for you.</li>
+        <li>You only see what is risky: publishing, sending, spending, or anything flagged.</li>
+        <li>Hot leads come straight to you with a reply ready; others get an instant, approved auto-reply.</li>
+        <li>Choose how much runs on its own:</li>
+      </ul>
+      <div class="trust">
+        <div><b>Cautious</b>Anything external needs your yes.</div>
+        <div><b>Balanced</b>Posts go out alone if nothing is flagged.</div>
+        <div><b>Hands-off</b>Only spend, outreach and flags ask.</div>
+      </div>
+    </div>
+    <div class="card mode reveal">
+      <div class="kicker">COPILOT</div>
+      <h3>You have a team</h3>
+      <p class="for">For marketing teams that need more output.</p>
+      <ul>
+        <li>Every agent works like an extra team member.</li>
+        <li>Each agent's work goes to the person who owns that area: content to your content lead, outreach to sales.</li>
+        <li>Reviewers can approve, edit, request changes, comment or reassign.</li>
+        <li>The owner can see and step into every queue.</li>
+        <li>Leads are routed to your sales owner automatically.</li>
+      </ul>
+    </div>
+  </div>
+</div></section>
+
+<section class="band" id="team"><div class="wrap">
+  <p class="eyebrow">The team</p>
+  <h2>Eleven agents. Every job on a marketing team.</h2>
+  <p class="lede" style="margin-top:18px">Each agent covers one role and knows your brand: your voice, your customers, your offers, and the claims you must never make.</p>
+  <div class="team" id="agents"></div>
+</div></section>
+
+<section class="band" id="safety" style="padding-top:0"><div class="wrap">
+  <p class="eyebrow">Safety first</p>
+  <h2>Fast, but never reckless.</h2>
+  <p class="lede" style="margin-top:18px">AI that posts for your brand needs guardrails. Hyniqe Growth comes from the team behind Hyniqe Shield, so safety is built in.</p>
+  <div class="guard">
+    <div class="compare reveal">
+      <div class="post before"><div class="lab"><span>Draft from Kai</span><span>⚑ Flagged</span></div>Weekend plans sorted. Our regulars <mark>voted us the best in town</mark>, come and see why.</div>
+      <div class="post after"><div class="lab"><span>After “Ask Kai to fix”</span><span>✓ Passed</span></div>Weekend plans sorted. Our regulars keep coming back, come and see why.</div>
+      <p class="small dim" style="margin:6px 0 0">From the sample week: the guard caught an unprovable claim, the agent rewrote it, and the fixed post went out on its own.</p>
+    </div>
+    <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(min(100%,230px),1fr))">
+      <div class="card reveal"><h3>Content guard</h3><p>Flags “guaranteed”, “#1”, “risk-free”, health and money promises, your own banned phrases, emails with no unsubscribe line and outreach with no opt-out.</p></div>
+      <div class="card reveal"><h3>Approval gate</h3><p>Spending money and one-to-one outreach always need a human. Anything flagged always needs a human. Nothing is published unless it is approved.</p></div>
+      <div class="card reveal"><h3>Tamper-evident log</h3><p>Every action by every agent and person is hash-chained, so any later edit to the record is detected.</p></div>
+      <div class="card reveal"><h3>Dry-run by default</h3><p>Connectors record exactly what would go out until you switch them on, or send approved work to your own n8n, Make or Zapier flow.</p></div>
+    </div>
+  </div>
+</div></section>
+
+<section class="band light" id="get"><div class="wrap oss">
+  <div class="reveal">
+    <p class="eyebrow">Open source</p>
+    <h2>Running in two minutes.</h2>
+    <p class="lede" style="margin-top:18px">Everything runs on your own computer with Node.js. No install step, no account, and the two demo companies above load straight away.</p>
+    <ul style="color:var(--ink-2)">
+      <li>Add <code>ANTHROPIC_API_KEY</code> and Claude writes the copy for your brand.</li>
+      <li>Without a key, built-in writers let you try every feature offline.</li>
+      <li>AGPL-3.0, with a commercial license for companies that want to embed it.</li>
+    </ul>
+    <a class="btn" data-repo href="#">Open the repository</a>
+  </div>
+  <pre class="term reveal" style="background:var(--ink)" aria-label="Commands to run Hyniqe Growth"><span class="c"># get the code</span>
+<span class="p">$</span> git clone https://github.com/HiteshChakravarti/Hyniqe.git
+<span class="p">$</span> cd Hyniqe/growth
+
+<span class="c"># open the dashboard at http://127.0.0.1:4400</span>
+<span class="p">$</span> npm start
+
+<span class="c"># or run a full week in the terminal</span>
+<span class="p">$</span> npm run demo
+
+<span class="c"># check any website from the command line</span>
+<span class="p">$</span> npm run check -- yourcompany.com</pre>
+</div></section>
+
+<section class="band" id="faq"><div class="wrap">
+  <div class="center">
+    <p class="eyebrow">Questions</p>
+    <h2>Fair questions.</h2>
+  </div>
+  <div class="faq">
+    <details><summary>Does it replace my marketing team?</summary><p>If you have no team, Autopilot does the work a small team would do, and you approve the risky parts. If you have a team, Copilot gives each person more hands: the agents draft, your people decide. Relationships, partnerships and PR still need humans.</p></details>
+    <details><summary>Will it post things without asking me?</summary><p>Only what your trust level allows, and never anything flagged. Spending money and one-to-one outreach always need a human yes. In Copilot mode, every external item goes to the teammate who owns it.</p></details>
+    <details><summary>Which channels does it publish to?</summary><p>Today, every connector is dry-run: it records exactly what would go out. The webhook connector is live, so approved work can flow into your own n8n, Make or Zapier automations. Direct WordPress, email, LinkedIn, Meta and Google Business Profile publishing is on the roadmap; each needs the platform's app approval.</p></details>
+    <details><summary>Is the dashboard above real?</summary><p>Yes. The website is built from the product's own code: it runs week 1 for both demo companies with the built-in writers and shows the result. The numbers, drafts, approvals and leads are exactly what the product produces. Only the buttons are switched off.</p></details>
+    <details><summary>Do I need an AI subscription?</summary><p>No. It runs with built-in writers so you can try everything. Add your own Anthropic API key when you want Claude to write real copy for your brand; you pay Anthropic directly for what you use.</p></details>
+    <details><summary>Is my data private?</summary><p>It runs on your own machine and stores everything in local files. The health check on this page runs in your browser, so the page you paste never leaves this tab.</p></details>
+    <details><summary>Who is it for?</summary><p>Templates are ready for local businesses, B2B software, financial services and agencies. The financial-services template starts in Cautious mode with banned claims like “guaranteed returns” already set.</p></details>
+  </div>
+</div></section>
+
+<section class="band center" style="padding-top:0"><div class="wrap">
+  <h2>Give your business a marketing team this week.</h2>
+  <p class="lede" style="margin-top:18px">Start with the free health check, then let the agents fix what it finds.</p>
+  <div class="btns">
+    <a class="btn" href="#check">Check your website free</a>
+    <a class="btn ghost" data-repo href="#">Get it on GitHub</a>
+  </div>
+</div></section>
+</main>
+
+<footer class="site-foot"><div class="wrap">
+  <span>Hyniqe Growth is part of <a data-hyniqe href="#">Hyniqe</a>, alongside <a href="https://hyniqe-shield.vercel.app" rel="noopener">Hyniqe Shield</a>. Open source under AGPL-3.0.</span>
+  <span><a data-repo href="#">GitHub</a> · <a data-samples href="#">Sample week</a> · <a href="#faq">FAQ</a></span>
+</div></footer>
+
+<script type="module" src="assets/site.js"></script>
+</body>
+</html>

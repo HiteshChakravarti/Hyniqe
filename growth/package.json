@@ -1,0 +1,25 @@
+{
+  "name": "hyniqe-growth",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Hyniqe Growth: an AI digital marketing department. A Marketing Lead agent and ten specialists plan, create, get approval, publish, capture leads and report every week, for companies with or without a marketing team.",
+  "type": "module",
+  "engines": {
+    "node": ">=22.18"
+  },
+  "scripts": {
+    "start": "node --disable-warning=ExperimentalWarning src/server.ts",
+    "demo": "node --disable-warning=ExperimentalWarning scripts/demo-week.ts",
+    "check": "node --disable-warning=ExperimentalWarning scripts/health-check.ts",
+    "test": "node --disable-warning=ExperimentalWarning --test test/*.test.ts",
+    "sample": "node --disable-warning=ExperimentalWarning scripts/export-sample.ts",
+    "build:site": "node --disable-warning=ExperimentalWarning scripts/build-site.ts",
+    "site": "node --disable-warning=ExperimentalWarning scripts/serve-site.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/node": "^22.18.0",
+    "typescript": "^5.9.0"
+  },
+  "license": "AGPL-3.0-only"
+}
