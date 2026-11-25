@@ -6,7 +6,14 @@
   var $ = function (id) { return document.getElementById(id); };
   var esc = function (s) { return String(s).replace(/[&<>"']/g, function (c) { return {"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]; }); };
   var V = {DANGEROUS: ["Dangerous", "danger"], CAUTION: ["Caution", "caution"], NO_KNOWN_RISKS: ["No known risks", "clear"]};
-  var TEXT_EXT = /\.(md|markdown|txt|json|jsonc|ya?ml|toml|py|js|mjs|cjs|ts|tsx|jsx|sh|bash|zsh|ps1|rb|go|rs|java|kt|php|env|html|xml|ini|cfg)$/i;
+  // Same file choice as the command-line tool: these extensions, files with no extension
+  // (shell scripts such as script/lint, Dockerfile, LICENSE), and SKILL.md. Binary files are dropped after fetching.
+  var TEXT_EXTS = ".md .markdown .txt .json .jsonc .yaml .yml .toml .ini .cfg .py .js .mjs .cjs .ts .tsx .jsx .sh .bash .zsh .ps1 .rb .go .rs .java .kt .php .env .html .xml".split(" ");
+  function readable(path) {
+    var base = path.split("/").pop(), dot = base.lastIndexOf(".");
+    var ext = dot > 0 ? base.slice(dot).toLowerCase() : "";
+    return ext === "" || TEXT_EXTS.indexOf(ext) !== -1 || ["skill.md", "dockerfile", "makefile"].indexOf(base.toLowerCase()) !== -1;
+  }
   var MAX_FILES = 300, MAX_SLABS = 8;
   var reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   var loaded = [], busy = false, NUL = String.fromCharCode(0), ELL = String.fromCharCode(8230);
@@ -179,7 +186,7 @@
   var EXCL = (D.excludes || []).map(globRe);
   function excluded(rel) {
     var base = rel.split("/").pop();
-    if (/(^|\/)(node_modules|\.git|dist|build|\.next|__pycache__|\.venv|venv)\//.test(rel)) return true;
+    if (/(^|\/)(node_modules|\.git|dist|build|\.next|__pycache__|\.venv|venv|\.tox)\//.test(rel)) return true;
     return EXCL.some(function (re) { return re.test(rel) || re.test(base); });
   }
   async function gh(url) {
@@ -209,7 +216,7 @@
         files = tree.tree.filter(function (t) {
           if (t.type !== "blob" || (prefix && t.path.indexOf(prefix) !== 0) || (t.size || 0) > 2000000) return false;
           var rel = t.path.slice(prefix.length);
-          return (TEXT_EXT.test(rel) || /(^|\/)SKILL\.md$/i.test(rel)) && !excluded(rel);
+          return readable(rel) && !excluded(rel);
         });
       }
       if (!files.length) { status("No files Shield can read were found at that link."); return; }
@@ -240,7 +247,7 @@
       var blobBase = "https://github.com/" + g.owner + "/" + g.repo + "/blob/" + g.ref + "/" + (dir ? dir + "/" : "");
       render(S.summarise(target, results), target, {blob: blobBase, key: (g.owner + "/" + g.repo + (g.path && !g.file ? "/" + g.path : "")).toLowerCase()});
       status(total > MAX_FILES ? "Checked the first " + MAX_FILES + " of " + total + " files. Run the command-line tool to check them all." :
-        "Checked " + results.length + " files from " + target + " at " + g.ref + ". Tests, examples and docs were skipped.");
+        "Checked " + results.length + (results.length === 1 ? " file" : " files") + " from " + target + " at " + g.ref + ". Tests, examples and docs were skipped.");
     } catch (e) {
       if (e.message === "not-found") status("GitHub couldn't find that repository. It may be private, or the link may be wrong.");
       else if (e.message === "rate") status("GitHub allows about 60 lookups an hour without signing in, and that limit has been reached. Try again later, or paste the file below.");
@@ -270,7 +277,7 @@
     for (var i = 0; i < list.length; i++) {
       var f = list[i], path = f.webkitRelativePath || f.name;
       if (f.size > 2000000 || /(^|\/)(node_modules|\.git)\//.test(path)) continue;
-      if (!TEXT_EXT.test(path)) continue;
+      if (!readable(path)) continue;
       var text = await f.text();
       if (text.slice(0, 4096).indexOf(NUL) !== -1) continue;
       out.push({name: path, text: text});
