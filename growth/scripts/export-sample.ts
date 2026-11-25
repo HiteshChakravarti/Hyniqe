@@ -179,7 +179,7 @@ for (const [name, c, sections] of files) {
   const log = c.audit.slice(-12).map((e) => `| ${e.seq} | ${e.actor.startsWith('tm_') ? personName(c, e.actor) : e.actor} | ${e.action} | \`${e.hash.slice(0, 12)}…\` |`);
   const logTable = [`## Activity log (last 12 of ${c.audit.length} entries, chain ${v.ok ? 'verified ✅' : 'BROKEN'})`, '', '| # | Who | What | Hash |', '|---|---|---|---|', ...log].join('\n');
   const body = [header(c), healthSection(c), ...sections, logTable, ''].join('\n\n');
-  writeFileSync(join(OUT, name), body.replace(/\n{3,}/g, '\n\n'));
+  writeFileSync(join(OUT, name), body.replace(/\n{3,}/g, '\n\n').trimEnd() + '\n');
   console.log(`wrote samples/${name}`);
 }
 
