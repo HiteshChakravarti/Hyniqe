@@ -6,6 +6,8 @@ Part of [Hyniqe](../README.md). Open source under AGPL-3.0 (see [LICENSING.md](.
 
 > **Status: working demo / skeleton (v0.1).** The weekly loop, agents, approval gate, content guard, lead scoring, health check, dashboard and audit log all work. Publishing connectors are **dry-run**: they record exactly what would go out. The generic webhook connector is live (see [Connectors](#connectors)).
 
+**See every output without running anything:** [sample weeks for both demo companies](samples/README.md): health checks, plans, every draft, approvals, scored leads, Friday reports and the activity log.
+
 ## Run it
 
 Needs Node.js 22.18 or later. Nothing to install.
@@ -16,6 +18,7 @@ npm start            # dashboard at http://127.0.0.1:4400
 npm run demo         # one full week for both demo companies, in the terminal
 npm run check -- https://yourcompany.com   # marketing health check from the command line
 npm test             # 16 tests
+npm run sample       # regenerate the sample output in samples/
 ```
 
 Two demo companies are loaded on first start:
