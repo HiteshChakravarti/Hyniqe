@@ -70,6 +70,10 @@ Each command writes an HTML report (prints cleanly to PDF) and a CSV or correcte
 
 **3. Inside your own systems.** The solutions are plain TypeScript modules with no dependencies. Import `checkSsis`, `findDuplicates` or `repairRecords` directly, or run the full agent team in [`engine/`](engine/), which adds task queues, budgets, human approvals and a tamper-evident audit trail.
 
+## Hyniqe Growth
+
+A separate product in this repo: [Hyniqe Growth](growth/) is an AI digital marketing department. A Marketing Lead agent and ten specialists plan, write, get approval, publish, capture leads and report every week, for companies with no marketing team (Autopilot) or with one (Copilot). Run it with `cd growth && npm start`.
+
 ## How the pieces fit
 
 ```
@@ -82,6 +86,7 @@ solutions/
   corporate-actions-checker/, vendor-master-cleanup/, payment-returns-triage/,
   data-quality-scorecard/                                                              (AGPL-3.0)
   shared/            CSV, XML and report helpers
+growth/              Hyniqe Growth: an AI digital marketing department (see growth/README.md)  (AGPL-3.0)
 site/                website pages, styles and the browser adapter for each tool
 docs/                the website; scripts/build-site.ts adds the browser modules and samples, GitHub Pages serves it
 ```
