@@ -209,6 +209,7 @@ export async function editTask(c: Company, taskId: string, by: string, body: str
 }
 
 const SOFTEN: [RegExp, string][] = [
+  [/voted us (the )?best in (the )?(town|city|area)/gi, 'keep coming back'],
   [/(voted us |we're |we are )?(the )?best in (the )?(town|city|world|market|industry)/gi, 'a local favourite'],
   [/\bguaranteed?\b/gi, 'designed to deliver'],
   [/\b(risk[- ]free|no risk)\b/gi, 'low-commitment'],
